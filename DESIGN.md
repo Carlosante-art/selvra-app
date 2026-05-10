@@ -47,6 +47,26 @@ ingenstans.
 - Coach-språk ("du borde göra X")
 - Generisk wellness-app-positionering
 
+### Ordvalet "reflektion" — anti-positionering
+
+Tre distinktioner som ordet *reflektion* bär och som skiljer Selvra från
+AI-memory-konkurrenter:
+
+1. **"Brief" är vad någon annan ger dig** (chef, analytiker). *Reflektion*
+   är något som tillhör dig. Användar-ägd ner på ordnivå.
+
+2. **Anti-positionering mot konkurrenter:** Engramme har "memory", Mem0 har
+   "memories", Personal AI har "PLM" — tekniska eller jargong-ord. Selvra
+   har "reflektion" — mänskligt, ägt, existerar i mänsklig erfarenhet sedan
+   tusentals år, nu något AI kan göra strukturerat och longitudinellt.
+
+3. **Strukturella implikationer** som matchar redan-låsta positioner:
+   - Reflektion är *passiv tills efterfrågad* → matchar designval 7
+     (ingen prescriptive notification, hon kommer till Selvra)
+   - Reflektion är *subjektiv-kompatibel* → matchar designval 3 (observation
+     OK, prescription inte) + drift-mekaniken där gapet är värdet, inte
+     att Selvra har rätt
+
 ### Canonical framing (copy-fraser)
 
 - *"Reflektion, inte spegel."*
