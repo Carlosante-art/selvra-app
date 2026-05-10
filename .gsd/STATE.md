@@ -28,41 +28,46 @@ DESIGN.md. Inget byggt funktionellt än utöver landing-sidan.
 
 Minsta möjliga slice som ger gripbart result. ~1–1½ fokuserad session.
 
-### Steg 0 — Pre-implementation reading (30–60 min, gör FÖRST)
+### Steg 0 — Pre-implementation reading (DONE 2026-05-10 sent)
 
-- [ ] Läs `~/selvra/src/selvra/representation/schema.py` för att förstå
-      event-struktur. `IntentionDeclared` ska följa befintligt mönster.
-- [ ] Identifiera HTTP-routing-pattern i `~/selvra/`-fasaden (sannolikt
-      FastAPI). Ny endpoint ska matcha konvention för `/v1/subjects/{id}/*`
-      som redan finns (jfr `sref-export`-endpoint, PR #14 2026-05-10).
+Resultatet ligger i `.gsd/INTENTIONS-PLAN.md` — läs den i stället för
+att rekonstruera från koden. Höjdpunkter:
 
-### Steg 1 — Protokoll-sidan (`~/selvra/`) — ~½–1 dag
+- Selvra har redan en **canonical generisk events-endpoint**
+  (`POST /v1/subjects/{id}/events`). Ingen ny endpoint behövs i v1.
+- `event_type`-konvention: `"selvra.intention.declared"` med
+  `category: "data_ingested"`.
+- Inga hårdkodade event_type-listor i projection/validation →
+  systemet accepterar nya event_types generiskt.
+- Protokoll-sidans arbete reducerat från ~½–1 dag till **~1–2 timmar**
+  (eller noll om vi skippar Pydantic-payload-schema i v1).
+- Huvudarbetet är på selvra-app-sidan: JWT-acquisition, client,
+  UI-form, round-trip-vy.
 
-- [ ] Definiera `IntentionDeclared`-event med **tre fält**
-      (Carl-refinement 2026-05-10):
-  - `intent_type`: `Literal["self_directed", "delivery_rhythm"]`
-  - `text` (eller strukturerad payload för delivery_rhythm)
-  - `temporal_validity` per event-sourced Princip 9
+### Steg 1 + Steg 2 — implementation
 
-  Variant-fältet gör leverans-tajming till **observerbar intention som kan
-  drifta**, inte settings-flagga. Doktrinärt konsistent med designval 6 +
-  "reflektionen är produkten"-doktrinen. **Inte re-litigerbart.**
+Detaljerad spec i `.gsd/INTENTIONS-PLAN.md`. Sammanfattning:
 
-- [ ] Endpoints: `POST /v1/subjects/{id}/intentions` (skapar event) +
-      `GET /v1/subjects/{id}/intentions` (returnerar aktuella per
-      intent_type).
-- [ ] Auth: hardcoded API-nyckel för dogfood, eller `selvra_app_writer`-roll
-      likt Stillra-readonly-pattern. Magic-link senare.
+**Protokoll-sidan (~/selvra/):** Sannolikt ingen kod-ändring krävs för
+minimal slice. Använd generisk `/v1/subjects/{id}/events` med
+`event_type: "selvra.intention.declared"` + `category: "data_ingested"`.
+Eventuell Pydantic-payload-schema är opt-in polish.
 
-### Steg 2 — selvra-app-sidan — ~½ dag
+**selvra-app-sidan (huvudarbetet):**
+- Steg A: Acquire JWT för Carl-tenant (kolla `~/selvra/scripts/` för
+  create-tenant + JWT-script; sannolikt 30 min).
+- Steg B: `src/lib/protocol/client.ts` med `declareIntention()` +
+  `listIntentions()` (skiss finns i plan-doc).
+- Steg C: `app/onboarding/intentions/page.tsx` (Client Component) med
+  form (5 self_directed-rader + 4 delivery_rhythm-radios).
+- Steg D: `app/onboarding/intentions/confirm/page.tsx` som GETtar och
+  visar back. **Round-trip sanity-check är hela testet.**
+- Steg E: Uppdatera landings `Börja`-knapp att peka till
+  `/onboarding/intentions` (just nu går den till `/onboarding` som inte
+  finns).
 
-- [ ] Route `/onboarding/intentions` med klient-komponent. Formulär: upp
-      till 5 free-text-rader för `self_directed` + 4 radio-options för
-      `delivery_rhythm`.
-- [ ] `src/lib/protocol/client.ts`-stub. Hardcoded `subject_id` (env-var) +
-      protokoll-bas-URL från `.env`.
-- [ ] Submit → POST → redirect till visnings-vy som GET:ar intentionerna
-      tillbaka. **Round-trip sanity-check är hela testet.**
+Carl-refinement på `IntentionDeclared` (locked): två varianter via
+`intent_type`-fält. Detaljer i plan-doc.
 
 ### Medvetet utelämnat denna slice
 
