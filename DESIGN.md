@@ -24,6 +24,51 @@ togglar källor; Selvra läser där hon redan finns och levererar
 Reflektionen formas av kontexten. Samma motor, samma representation, olika
 reflektioner.
 
+### Reflektionen är produkten
+
+Selvra är inte en produkt med en retention-mekanism. Den är en **motor som
+genererar rätt reflektion för rätt användare** baserat på deras data,
+deras kontext, deras liv.
+
+Användaren togglar källor och Selvra inferrerar vilken reflektions-typ som
+är relevant — eller användaren väljer själv.
+
+**Pitch i en mening:**
+
+> *"Selvra ger dig rätt reflektion om dig själv när du behöver den."*
+
+Konkret reflektions-typer per kontext:
+
+- T1D-användare med Garmin + CGM + Stillra → **läkar-reflektion** inför
+  kvartalskontrollen
+- Founder med kalender + Elefant + Notion → **kvartalsplanering-reflektion**
+  mot tidigare mål
+- Person i terapi med journaling + Spotify + sömn-data →
+  **terapi-reflektion** inför nästa session
+- Någon i transition med foton + meddelanden + kalender →
+  **"året som var"-reflektion** vid årsdag
+
+Detta löser retention strukturellt: reflektionen är **naturligt tidsbunden**
+— den finns när du behöver den, inte som daglig notification. Mätbart
+(öppnade hen reflektionen, agerade hen på den) och skalbart (varje ny
+vertikal = ny reflektions-typ).
+
+#### Konsekvenser
+
+- **För vertikalerna:** Stillras läkar-reflektion är *inte en feature i
+  Stillra*. Den är den första instansen av Selvras reflektions-mekanism.
+  Motiq får sin egen reflektions-typ (kreativ retrospekt / projekt-review).
+  Elefant får sin (fokus-rapport, intention vs output). Konsument-appen
+  (`selvra-app`) är inte en separat produkt — den är **reflektions-väljaren
+  ovanpå alla aktiverade källor**.
+
+- **För SREF v1** (protokoll-sidan, lever i `~/selvra/`): det är inte bara
+  en portabilitets-spec. Det är **specifikationen för en strukturerad
+  representation som kan generera arbiträra reflektioner**.
+  Tredjeparts-app kan säga *"ge mig användarens drift-mönster för Q3"* och
+  Selvra svarar med en **reflektion**, inte rådata. Det är hur Selvra blir
+  öppet protokoll utan att ge bort suveränitet över användarens data.
+
 **Tesen under allt:** I AI-eran har människor inte ett *minnes-problem*, de
 har ett *förståelse-problem*. Data finns överallt, sammanhang finns
 ingenstans.
