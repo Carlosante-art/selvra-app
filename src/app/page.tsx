@@ -1,65 +1,55 @@
-import Image from "next/image";
+import Link from 'next/link'
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="flex flex-1 flex-col items-center px-6 py-24 sm:py-32">
+      <article className="max-w-prose w-full flex flex-col gap-8">
+        <header>
+          <h1 className="text-4xl font-medium tracking-tight">Selvra</h1>
+        </header>
+
+        <p className="text-xl leading-relaxed">
+          Ett brev till dig själv, varje vecka, från någon som har observerat
+          den.
+        </p>
+
+        <section
+          aria-label="Exempel-reflektion"
+          className="border-l-2 border-neutral-300 dark:border-neutral-700 pl-6 py-2 text-neutral-700 dark:text-neutral-300 italic"
+        >
+          <p className="text-sm uppercase tracking-wide not-italic text-neutral-500 dark:text-neutral-500 mb-3">
+            Exempel
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <p className="leading-relaxed">
+            &ldquo;Garmin visade 1 träningspass förra veckan. Din intention
+            från mars: 4 pass. Du skrev till Selvra på torsdagen att veckan
+            varit avvikande. Sömn-snitt: 6h 12min — under din egen markering
+            på 7h.&rdquo;
+          </p>
+        </section>
+
+        <p className="leading-relaxed">
+          Selvra läser källor du redan använder och speglar mönster mellan
+          vad du säger att du vill och vad datan visar att du gör.
+        </p>
+
+        <p className="leading-relaxed text-neutral-700 dark:text-neutral-300">
+          Inte en dashboard. Inte en coach. Inte ett socialt nätverk.
+        </p>
+
+        <p className="leading-relaxed text-neutral-700 dark:text-neutral-300">
+          Du äger representationen. Den ligger i EU. Exporterbar. Raderbar.
+        </p>
+
+        <div className="pt-4">
+          <Link
+            href="/onboarding"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-8 text-base font-medium hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Börja
+          </Link>
         </div>
-      </main>
-    </div>
-  );
+      </article>
+    </main>
+  )
 }
