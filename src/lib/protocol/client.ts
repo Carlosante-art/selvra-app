@@ -7,6 +7,7 @@ import type {
   IntentionPayload,
   MCPScope,
   SubjectSnapshot,
+  ThoughtPayload,
 } from './types'
 
 /**
@@ -120,11 +121,29 @@ export async function declareIntention(
   })
 }
 
+export async function recordThought(
+  payload: ThoughtPayload,
+): Promise<EventResponse> {
+  const cfg = getConfig()
+  const body: CreateEventRequest = {
+    category: 'data_ingested',
+    event_type: 'selvra.thought.recorded',
+    source_ai_id: cfg.sourceId,
+    payload: payload as unknown as Record<string, unknown>,
+  }
+  return call<EventResponse>(`/v1/subjects/${cfg.subjectId}/events`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    scopes: ['write'],
+  })
+}
+
 /**
  * Hämta nuvarande snapshot. NOTE 2026-05-11: ProjectionEngine projicerar
- * inte `selvra.intention.declared` till ProfileFacts än, så detta returnerar
- * tomt även när events finns. Se STATE.md "Reading-back-problemet" för
- * lösningar (a) projection-regel eller (b) GET /events-endpoint.
+ * inte `selvra.intention.declared` eller `selvra.thought.recorded` till
+ * ProfileFacts än, så detta returnerar tomt även när events finns. Se
+ * STATE.md "Reading-back-problemet" för lösningar (a) projection-regel
+ * eller (b) GET /events-endpoint.
  */
 export async function getSnapshot(): Promise<SubjectSnapshot> {
   const cfg = getConfig()

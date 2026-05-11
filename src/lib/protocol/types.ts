@@ -56,6 +56,13 @@ export type IntentionPayload =
   | IntentionSelfDirectedPayload
   | IntentionDeliveryRhythmPayload
 
+// ─── Tanke-event (Lager 2 freeform) ────────────────────────────────
+
+export type ThoughtPayload = {
+  text: string
+  captured_at: string // ISO-8601
+}
+
 // ─── Generisk event-request/response ───────────────────────────────
 
 export type CreateEventRequest = {

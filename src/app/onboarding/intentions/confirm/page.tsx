@@ -59,7 +59,13 @@ export default async function ConfirmPage() {
           brevet.
         </p>
 
-        <div className="flex gap-3 pt-4">
+        <div className="flex flex-wrap gap-3 pt-4">
+          <Link
+            href="/thoughts"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-6 text-base font-medium hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
+          >
+            Skriv en tanke
+          </Link>
           <Link
             href="/onboarding/intentions"
             className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-300 dark:border-neutral-700 px-6 text-base font-medium hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
