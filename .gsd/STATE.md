@@ -2,12 +2,11 @@
 
 ## Where I am
 
-**Full dogfood-loop levande:** intentions-input, tankar-yta, brev-rendering
-(exempel) byggda och pushade. Carl har 5 intentioner + 1 tanke i prod-Selvra.
-**Source Strategy Pivot Fas 1 klar** — Path C verifierad mot Carls 5095
-glucose_readings via cross-DB readonly. Next-up: Open Wearables Fas 2
-(deployment) för Garmin/Strava, eller dogfood-vecka för att samla substrat
-inför synthesis-arbete.
+**Synthesis-pipeline-skiss levererad — första riktiga reflektionen genererad
+och rendrad.** Carl har första brevet från Claude Opus baserat på sina
+riktiga events. End-to-end loop validerad. Dogfood-vecka pågår parallellt.
+
+Förbi C; nu på iteration + auto-trigger + multi-user-formalisering.
 
 ## Last session, jag gjorde
 
@@ -48,7 +47,46 @@ inför synthesis-arbete.
 - `256a52f` STATE.md med locked next-session plan
 - `b3a2536` INTENTIONS-PLAN.md från Steg 0 reading
 
-## Last session — 2026-05-11 (eftermiddag)
+## 2026-05-11 (eftermiddag) — synthesis-pipeline-skiss levererad
+
+**Stor milstolpe: första riktiga reflektionen från Claude Opus, genererad
+mot Carls verkliga data, renderad i `/brev`.**
+
+### Protokoll-sidan (`~/selvra/`, commits f266ad9 + 8b15506 + 6c8614a)
+
+- `src/selvra/representation/reflection_synthesis.py` — synthesis-logik
+  som plats:ar på existerande infrastruktur (call_layer3 via multi-provider
+  router, EventStore.append, ProjectionEngine). Data-gathering från tre
+  källor: intentions (Selvra event-log), tankar (samma), glucose (Stillra-
+  Supabase via Path C). Prompt med 10 designval-positionerna inbakade.
+  Output persisteras som `selvra.reflection.generated`-event och
+  projiceras till `synthesis_snapshots`-tabellen.
+- `scripts/synthesize_carl_reflection.py` — CLI-trigger för proof-of-loop.
+  Run via `railway run -- ./.venv/bin/python scripts/synthesize_carl_reflection.py`.
+- `GET /v1/subjects/{id}/reflections/latest` läs-endpoint för senaste
+  projicerade SynthesisSnapshot. Optional ?synthesis_type-filter.
+
+### selvra-app-sidan (commits b87d545)
+
+- `getLatestReflection()` i protocol-client.ts (JWT-signerad GET).
+- `/brev/page.tsx` byter ut hardcoded exempel mot live fetch. Rendrar
+  vecka-nr + genereringstid + model + paragrafer (sista får källor-styling).
+  Empty-state om 404. Error-state om annan failure. Tankar-input behåller
+  designval 10 (alltid tillgänglig).
+
+### Bevisat live
+
+- **Inputs:** 5 intentions + 2 thoughts + 1735 glucose readings
+- **Model:** claude-opus-4-20250514
+- **Output:** 1299 chars svensk brev-form
+- **Designval respekterade:** käll-attribuering, andra-person-passiv,
+  mönster-OK-prescription-INTE, max-1-fråga, källor-i-footer, brev-form,
+  ingen klinisk tolkning, svenska prosa
+- **Gap-detektering bekräftad:** LLM noterade självt eko mellan intention
+  "Ha intention när jag gör något" och Carls lördags-tanke om syfte. Det
+  är doktrinens hjärta i kod.
+
+### Tidigare i sessionen (2026-05-11 eftermiddag)
 
 - ✅ **Steg B**: `src/lib/protocol/client.ts` + types.ts. jose-JWT-signing,
   declareIntention() + recordThought() + getSnapshot(). Build + live
@@ -78,48 +116,37 @@ inför synthesis-arbete.
   `.gsd/decisions/SUBJECT_ALIASING_OPEN_QUESTION_2026-05-11.md`. Blocker
   innan synthesis-pipeline.
 
-## Next up — LÅST 2026-05-11 (Carl)
+## Next up
 
-**B + C parallellt. A parkerat.**
+C levererad. Naturliga next-slices:
 
-### B) Dogfood-vecka — Carls del
+### Polish & auto-trigger
+- **Söndag-cron** i `~/selvra/`: scheduled Celery-task som triggar
+  `synthesize_carl_reflection` veckovis enligt user-deklarerad
+  delivery_rhythm. Stillra-cron-pattern finns redan att kopiera.
+- **HTTP-route plats:as in:** ersätt synthesize-route-stubben i
+  `~/selvra/src/selvra/http/routes/synthesis.py` med riktig anrop till
+  `reflection_synthesis.synthesize_for_subject()`. Generaliseras från
+  hardcoded Carl till alla subjects.
+- **selvra-app: trigger-knapp** för manuellt generera brev när Carl vill
+  (utöver scheduled). Anropar POST /v1/subjects/{id}/synthesize.
 
-Carl skriver tankar dagligen via `/thoughts`, lever med deklarerade
-intentioner. Inget kod-arbete. Substrat ackumuleras för synthesis att
-läsa när C är klar. **0 kod, 7 dagar.**
+### B (dogfood-vecka) — pågående, Carls del
+Carl skriver tankar via `/thoughts`, lever med intentionerna. Substrat
+ackumuleras. Varje gång han kör `synthesize_carl_reflection`-scriptet
+genereras ett nytt brev med uppdaterad data. Empiriskt-grundad
+prompt-iteration baserat på vad som faktiskt landar.
 
-### C) Synthesis-pipeline-skiss — Claude Codes del
+### Subject-aliasing formalisering
+Alt 4 hardcoded fungerar för Carl-v0 men måste ersättas innan multi-user.
+Beslut mellan Alt 1 (alias-tabell), Alt 2 (SREF-as-input), Alt 3 (external
+identity som primär). Se `decisions/SUBJECT_ALIASING_OPEN_QUESTION_2026-05-11.md`.
+Tas innan synthesize-route generaliseras.
 
-Bygga första proof-of-loop:
-
-- Reads från Selvra event-log: intentions + tankar för Carl-subject
-- Reads från Stillra-Supabase via Path C: senaste N dagars glucose_readings
-  för Carl (Pattern-1 StillraGlucoseReading-model finns)
-- Subject-aliasing: **Alt 4 hardcoded** för v0 (synthesis-config-rad som
-  säger "selvra-app subject 2bfe0414-... motsvarar Stillra-user 12647887-...").
-  Dokumenterat som teknisk skuld i
-  `decisions/SUBJECT_ALIASING_OPEN_QUESTION_2026-05-11.md` — måste lösas
-  innan publik release.
-- Synthesis-prompt mot Anthropic API (Claude Opus 4.7 default, fallback
-  via befintlig multi-provider-router i Selvra).
-- Output: reflektions-prosa enligt de 10 lock-positionerna (käll-
-  attribuering, brev-metafor, max 1 fråga, observation-not-prescription).
-  Skrivas som `selvra.reflection.generated`-event i event-loggen.
-- Render i `/brev`-route: byt ut hardcoded exempel mot
-  senast-genererade-reflection-event från snapshot eller direct query.
-
-**Tids-estimat: 1-2 dagar för proof-of-loop**, längre för polish.
-
-Synthesis-pipeline-skissen avslöjar empiriskt vilka av designval 1-10
-som håller och vilka som behöver iteration. Det är där reflektions-
-formatet möter verkligheten.
-
-### A) Open Wearables Fas 2-5 — PARKERAT till efter dogfood-vecka
-
-Per pivot-doc Fas 2-5. Garmin/Strava-source via self-hosted Open Wearables.
-Inte i kritisk väg för första brev — Dexcom + intentions + tankar räcker
-för att verifiera om Selvras tes håller för Carl. Återupptas efter
-dogfood-vecka när vi vet om hypotesen håller.
+### A (Open Wearables Fas 2-5) — fortfarande parkerat
+Per pivot-doc. Garmin/Strava via self-hosted Open Wearables. Inte i
+kritisk väg för dogfood — Dexcom + intentions + tankar räcker för loop-
+validering. Återupptas när tesen är bevisad eller motbevisad.
 
 ## Blockers
 
