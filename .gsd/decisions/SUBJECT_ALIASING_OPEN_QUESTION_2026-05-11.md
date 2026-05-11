@@ -128,5 +128,18 @@ denna doc — uppdatera när formell lösning väljs och implementeras.
 - [x] Problemet identifierat (2026-05-11)
 - [x] Beskrivet i decisions-katalog (2026-05-11)
 - [x] v0-lösning vald: **Alt 4 hardcoded** (2026-05-11, Carl-beslut)
-- [ ] **v1-lösning vald** (Alt 1/2/3) — INNAN publik release
-- [ ] **Teknisk skuld betald** — Alt 1/2/3 implementerad
+- [x] **v1-lösning vald: Alt 1 — subject_aliases-tabell** (2026-05-11)
+- [x] **Alt 1 implementerad** (2026-05-11) — migration 0009, SubjectAlias-model,
+      subject_aliasing-helpers, reflection_synthesis wired med fallback för
+      transition-säkerhet. Carls alias seedad i prod (b3a87256-... →
+      2bfe0414-..., type=stillra, metadata.stillra_user_id=12647887-...).
+- [ ] **HTTP admin-route** för programmatisk alias-create (POST
+      /v1/subjects/{primary}/aliases) — krävs när onboarding-flödet ska
+      provisionera aliaser för nya users. Inte v1-blocker — Carls alias är
+      seedad direkt via railway-run-script under v0.
+- [ ] **RLS / audit-policy för cross-tenant lookups** — tabellen är medvetet
+      ej-RLS-isolerad (designkrav), men service-role-design + audit-logg är
+      pending innan publik release.
+- [ ] **Ta bort CARL_STILLRA_USER_ID_FALLBACK** i reflection_synthesis när
+      alias-rad verifierat stabilt i prod (~efter en veckas dogfood utan
+      fallback-warnings).

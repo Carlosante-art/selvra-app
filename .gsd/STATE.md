@@ -2,11 +2,19 @@
 
 ## Where I am
 
-**Synthesis-pipeline-skiss levererad — första riktiga reflektionen genererad
-och rendrad.** Carl har första brevet från Claude Opus baserat på sina
-riktiga events. End-to-end loop validerad. Dogfood-vecka pågår parallellt.
+Streamlined-v1 låst per Carl-direktiv 2026-05-11 — 9-punkts-scope, 14–15
+dagar mot AB-tidslinje. Levererat hittills i denna fas:
 
-Förbi C; nu på iteration + auto-trigger + multi-user-formalisering.
+- **Slice 1 (Magic-link)**: scaffold klar (Auth.js v5 + Drizzle + Resend),
+  väntar på Carls Resend/Postgres/AUTH_SECRET för wiring.
+- **Slice 6 (Visual design grundnivå)**: nav-header + footer + active-state
+  + typography-polish levererad.
+- **Slice 4 (Subject-aliasing Alt 1)**: migration 0009, SubjectAlias-model,
+  subject_aliasing-helpers, reflection_synthesis wired med fallback. Carls
+  alias seedad i prod. Verifierat fungerande end-to-end.
+
+Pågående parallellt: Carl-actions (Resend, Postgres, AUTH_SECRET, Open
+Wearables one-click deploy) + AB-registrering.
 
 ## Last session, jag gjorde
 
