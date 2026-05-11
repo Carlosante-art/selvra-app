@@ -115,3 +115,23 @@ export type SubjectSnapshot = {
   total_count: number
   limit: number
 }
+
+// ─── Reflection / synthesis-snapshot ──────────────────────────────────
+
+export type ReflectionContent = {
+  text: string
+  format?: string // "letter"
+  language?: string // "sv"
+  [extra: string]: unknown
+}
+
+export type LatestReflection = {
+  subject_id: string
+  synthesis_type: string // "weekly_letter" | "morning_brief" | ...
+  version: number
+  content: ReflectionContent
+  model_used: string
+  layer_used: number
+  source_event_id: string | null
+  created_at: string // ISO-8601
+}

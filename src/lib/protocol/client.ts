@@ -5,6 +5,7 @@ import type {
   CreateEventRequest,
   EventResponse,
   IntentionPayload,
+  LatestReflection,
   MCPScope,
   SubjectSnapshot,
   ThoughtPayload,
@@ -151,4 +152,35 @@ export async function getSnapshot(): Promise<SubjectSnapshot> {
     method: 'GET',
     scopes: ['read'],
   })
+}
+
+/**
+ * Hämta senaste reflektion (projicerad SynthesisSnapshot från
+ * `selvra.reflection.generated`-events). Returns null om ingen finns
+ * (404 från protokollet).
+ */
+export async function getLatestReflection(
+  synthesisType?: string,
+): Promise<LatestReflection | null> {
+  const cfg = getConfig()
+  const token = await mintToken(['read'])
+  const qs = synthesisType
+    ? `?synthesis_type=${encodeURIComponent(synthesisType)}`
+    : ''
+  const res = await fetch(
+    `${cfg.baseUrl}/v1/subjects/${cfg.subjectId}/reflections/latest${qs}`,
+    {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    },
+  )
+  if (res.status === 404) return null
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(
+      `Selvra GET reflections/latest → ${res.status}: ${body}`,
+    )
+  }
+  return (await res.json()) as LatestReflection
 }

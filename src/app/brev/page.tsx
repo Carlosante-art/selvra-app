@@ -1,4 +1,6 @@
 import { submitThought } from '@/lib/actions/thoughts'
+import { getLatestReflection } from '@/lib/protocol/client'
+import type { LatestReflection } from '@/lib/protocol/types'
 
 type SearchParams = Promise<{ saved?: string }>
 
@@ -11,6 +13,36 @@ function formatSavedFlash(savedIso: string | undefined): string | null {
   return `Tanke sparad ${hh}:${mm}.`
 }
 
+function formatGeneratedAt(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  const date = d.toLocaleDateString('sv-SE', {
+    day: 'numeric',
+    month: 'long',
+  })
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${date}, ${hh}:${mm}`
+}
+
+function isoWeek(iso: string): number {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return 0
+  // ISO 8601 week number — torsdagsbaserad
+  const target = new Date(d.valueOf())
+  target.setUTCDate(target.getUTCDate() + 4 - (target.getUTCDay() || 7))
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1))
+  return Math.ceil(((target.valueOf() - yearStart.valueOf()) / 86400000 + 1) / 7)
+}
+
+async function loadReflection(): Promise<LatestReflection | { error: string } | null> {
+  try {
+    return await getLatestReflection('weekly_letter')
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
 export default async function BrevPage({
   searchParams,
 }: {
@@ -18,71 +50,16 @@ export default async function BrevPage({
 }) {
   const params = await searchParams
   const flash = formatSavedFlash(params.saved)
+  const reflection = await loadReflection()
 
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-16 sm:py-24">
       <article className="max-w-prose w-full flex flex-col gap-10">
-        {/* Förhandsvisning-banner — tydlig om att detta är handskriven exempel */}
-        <aside
-          aria-label="Förhandsvisning-status"
-          className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
-        >
-          <p className="font-medium mb-1">Förhandsvisa brev-formatet</p>
-          <p>
-            Texten nedan är handskriven exempel baserad på dina riktiga
-            events från idag. När synthesis-pipelinen är byggd genereras
-            brevet automatiskt enligt samma format.
-          </p>
-        </aside>
-
-        <section className="flex flex-col gap-8">
-          <header>
-            <p className="text-sm uppercase tracking-wide text-neutral-500 dark:text-neutral-500 mb-2">
-              Speglingar
-            </p>
-            <h1 className="text-3xl font-medium tracking-tight">
-              Vecka 19
-            </h1>
-          </header>
-
-          <div className="flex flex-col gap-6 text-lg leading-relaxed">
-            <p>
-              Du deklarerade tre intentioner i morse:
-              <em>
-                {' '}
-                &ldquo;Träna 3 gånger i veckan&rdquo;,{' '}
-                &ldquo;Sova 7 timmar&rdquo;,{' '}
-                &ldquo;Ha intention när jag gör något.&rdquo;
-              </em>
-            </p>
-
-            <p>
-              Du skrev åtta minuter senare:{' '}
-              <em>
-                &ldquo;Jag vill att det jag gör ska ha ett syfte, att jag
-                rör mig mot något och att allt jag gör leder till ett
-                mål.&rdquo;
-              </em>
-            </p>
-
-            <p>
-              Två av dina tre intentioner berör målmedvetenhet. Din tanke
-              åtta minuter senare återanvänder samma tema med andra ord
-              — &ldquo;syfte&rdquo;, &ldquo;riktning&rdquo;,
-              &ldquo;mål&rdquo;.
-            </p>
-
-            <p className="text-neutral-700 dark:text-neutral-300">
-              — Är detta något du upptäcker nu, eller något du redan
-              visste om dig själv?
-            </p>
-          </div>
-
-          <footer className="text-sm italic text-neutral-500 dark:text-neutral-500 border-t border-neutral-200 dark:border-neutral-800 pt-4">
-            Källor: dina egna intentioner (declared 2026-05-11 12:58) · dina
-            egna tankar (recorded 2026-05-11 13:06)
-          </footer>
-        </section>
+        {reflection && 'content' in reflection ? (
+          <LiveReflection reflection={reflection} />
+        ) : (
+          <EmptyOrError reflection={reflection} />
+        )}
 
         {/* Tankar-yta under brevet — designval 10 */}
         <section
@@ -123,5 +100,80 @@ export default async function BrevPage({
         </section>
       </article>
     </main>
+  )
+}
+
+function LiveReflection({ reflection }: { reflection: LatestReflection }) {
+  const text = reflection.content.text
+  // Dela upp på dubbla newlines → stycken; bevarar prosa-flow.
+  const paragraphs = text.split(/\n\n+/).map((p) => p.trim()).filter((p) => p.length > 0)
+  const generatedAt = formatGeneratedAt(reflection.created_at)
+  const weekNum = isoWeek(reflection.created_at)
+
+  return (
+    <section className="flex flex-col gap-8">
+      <header>
+        <p className="text-sm uppercase tracking-wide text-neutral-500 dark:text-neutral-500 mb-2">
+          Speglingar
+        </p>
+        <h1 className="text-3xl font-medium tracking-tight">
+          Vecka {weekNum}
+        </h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-500 mt-1">
+          Genererat {generatedAt} · {reflection.model_used}
+        </p>
+      </header>
+
+      <div className="flex flex-col gap-6 text-lg leading-relaxed">
+        {paragraphs.map((p, i) => (
+          <p
+            key={i}
+            className={
+              i === paragraphs.length - 1 && p.startsWith('Källor')
+                ? 'text-sm italic text-neutral-500 dark:text-neutral-500 border-t border-neutral-200 dark:border-neutral-800 pt-4'
+                : undefined
+            }
+          >
+            {p}
+          </p>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function EmptyOrError({
+  reflection,
+}: {
+  reflection: { error: string } | null
+}) {
+  if (reflection && 'error' in reflection) {
+    return (
+      <section
+        aria-label="Fel vid hämtning av reflektion"
+        className="rounded-md border border-red-200 bg-red-50 px-4 py-4 text-sm leading-relaxed text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200"
+      >
+        <p className="font-medium mb-1">Kunde inte hämta brevet</p>
+        <p className="font-mono text-xs">{reflection.error}</p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="flex flex-col gap-6">
+      <header>
+        <h1 className="text-3xl font-medium tracking-tight">
+          Inget brev än
+        </h1>
+      </header>
+      <p className="text-lg leading-relaxed text-neutral-700 dark:text-neutral-300">
+        Selvra observerar dina källor och dina anteckningar. Första brevet
+        kommer enligt rytmen du valt.
+      </p>
+      <p className="leading-relaxed text-neutral-600 dark:text-neutral-400">
+        Tills dess: skriv tankar nedan. De blir källa för brevet när det
+        skrivs.
+      </p>
+    </section>
   )
 }
