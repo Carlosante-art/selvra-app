@@ -15,6 +15,7 @@ import { NavLink } from './nav-link'
 const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: '/brev', label: 'Brev' },
   { href: '/thoughts', label: 'Tankar' },
+  { href: '/traces', label: 'Bakgrund' },
   { href: '/onboarding/intentions', label: 'Intentioner' },
   { href: '/onboarding/sources', label: 'Källor' },
 ]
