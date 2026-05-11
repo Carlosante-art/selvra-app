@@ -211,6 +211,77 @@ export async function triggerDreamerRun(): Promise<{
 }
 
 /**
+ * Hämta lifecycle-status för subject. Returnerar INTE 410 om deleted —
+ * UI:n behöver kunna fråga "är jag deleted?" utan att gå runt deletion-
+ * gate.
+ */
+export type SubjectLifecycle =
+  | {
+      subject_id: string
+      status: 'active'
+    }
+  | {
+      subject_id: string
+      status: 'pending_deletion'
+      deletion_event_id: string
+      deletion_requested_at: string | null
+      hard_delete_eligible_after_days: number
+    }
+
+export async function getSubjectLifecycle(): Promise<SubjectLifecycle> {
+  const cfg = getConfig()
+  return call<SubjectLifecycle>(`/v1/subjects/${cfg.subjectId}/lifecycle`, {
+    method: 'GET',
+    scopes: ['read'],
+  })
+}
+
+/**
+ * Markera subject för soft-deletion (GDPR right-to-deletion).
+ *
+ * Returnerar:
+ * - status="deletion_requested" + 202 — ny deletion-event skapad
+ * - status="already_deleted" + 200 — idempotent re-call
+ *
+ * Efter call:n returnerar alla read/write-paths 410 Gone. Användaren
+ * kan ångra inom 30 dagar via `restoreSubject()`. Hard-delete sker
+ * via manuellt batch-job efter 30-dagars-fönstret.
+ */
+export async function deleteSubject(): Promise<{
+  subject_id: string
+  deletion_event_id: string
+  status: 'deletion_requested' | 'already_deleted'
+  hard_delete_eligible_after_days?: number
+  message: string
+}> {
+  const cfg = getConfig()
+  return call(`/v1/subjects/${cfg.subjectId}`, {
+    method: 'DELETE',
+    scopes: ['write'],
+  })
+}
+
+/**
+ * Ångra pending soft-deletion. Måste anropas innan hard-delete-batchen
+ * har körts (inom 30-dagars-fönstret).
+ *
+ * Returnerar 200 om subject var deleted (cancellation skapad), 409 om
+ * subject inte var markerad för deletion.
+ */
+export async function restoreSubject(): Promise<{
+  subject_id: string
+  cancellation_event_id: string
+  status: 'restored'
+  message: string
+}> {
+  const cfg = getConfig()
+  return call(`/v1/subjects/${cfg.subjectId}/restore`, {
+    method: 'POST',
+    scopes: ['write'],
+  })
+}
+
+/**
  * Hämta användarens SREF v1-doc (portability-export). Content-addressed,
  * ev. HMAC-signerad per SREF_EXPORT_KEY på protokoll-sidan. Bygger hela
  * representationen — kan vara stor.

@@ -149,6 +149,7 @@ export type SrefExportResponse = {
   document: Record<string, unknown> // SREF v1 doc — content-addressed, ev. HMAC-signerad
   signed: boolean
   subject_count: number
+  subject_pending_deletion?: boolean // True om subject är markerad för deletion (inom 30d)
 }
 
 // ─── Events list (för tankar-under-brev, audit, etc.) ─────────────────

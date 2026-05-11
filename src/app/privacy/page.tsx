@@ -140,12 +140,21 @@ export default function PrivacyPage() {
               bakgrunds-observationer).
             </li>
             <li>
-              <strong>Radering</strong>: soft-delete är implementerad — vid
-              radering markeras ditt subject via en append-only deletion-event,
-              och alla läs-paths returnerar 410 Gone. Hard-delete (faktisk
-              event-radering ur DB) sker som batch-job efter 30-dagars fönster
-              för ångerrätt; det batch-jobbet är inte schemalagt än utan körs
-              manuellt på begäran under v1.
+              <strong>Radering + ångerrätt</strong>: soft-delete är
+              implementerad — vid radering markeras ditt subject via en
+              append-only deletion-event, och alla läs- och skrivpaths
+              returnerar 410 Gone. Inom 30 dagar kan du ångra via{' '}
+              <Link
+                href="/account"
+                className="underline underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
+              >
+                /account
+              </Link>{' '}
+              — då skrivs en cancellation-event och kontot återställs.
+              Hard-delete (faktisk event-radering ur DB) sker som batch-job
+              efter 30-dagars-fönstret; under v1 körs det manuellt på
+              begäran. SREF-export är fortfarande tillgänglig under hela
+              fönstret så du hinner ta med dig din data.
             </li>
             <li>
               <strong>Portabilitet</strong>: SREF v1 är öppen specifikation — vilken
