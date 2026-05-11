@@ -4,6 +4,7 @@ import { SignJWT } from 'jose'
 import type {
   CreateEventRequest,
   EventResponse,
+  EventsListResponse,
   IntentionPayload,
   LatestReflection,
   MCPScope,
@@ -188,6 +189,31 @@ export async function getSREFExport(): Promise<SrefExportResponse> {
   })
   return call<SrefExportResponse>(
     `/v1/subjects/${cfg.subjectId}/sref-export?${params.toString()}`,
+    {
+      method: 'GET',
+      scopes: ['read'],
+    },
+  )
+}
+
+/**
+ * Lista events för subject med optional filter på event_type och tidpunkt.
+ * Används för tankar-under-brev (designval 10) och liknande read-access
+ * direkt mot event-loggen utan projection-detour.
+ */
+export async function listEvents(opts: {
+  eventType?: string
+  since?: Date
+  limit?: number
+}): Promise<EventsListResponse> {
+  const cfg = getConfig()
+  const params = new URLSearchParams()
+  if (opts.eventType) params.set('event_type', opts.eventType)
+  if (opts.since) params.set('since', opts.since.toISOString())
+  if (opts.limit) params.set('limit', String(opts.limit))
+  const qs = params.toString() ? `?${params.toString()}` : ''
+  return call<EventsListResponse>(
+    `/v1/subjects/${cfg.subjectId}/events${qs}`,
     {
       method: 'GET',
       scopes: ['read'],

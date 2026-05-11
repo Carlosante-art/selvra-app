@@ -150,3 +150,21 @@ export type SrefExportResponse = {
   signed: boolean
   subject_count: number
 }
+
+// ─── Events list (för tankar-under-brev, audit, etc.) ─────────────────
+
+export type EventListItem = {
+  event_id: string
+  subject_id: string
+  category: string
+  event_type: string
+  payload: Record<string, unknown>
+  created_at: string
+}
+
+export type EventsListResponse = {
+  subject_id: string
+  items: EventListItem[]
+  total: number
+  has_more: boolean
+}

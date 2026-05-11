@@ -1,6 +1,6 @@
 import { submitThought } from '@/lib/actions/thoughts'
-import { getLatestReflection } from '@/lib/protocol/client'
-import type { LatestReflection } from '@/lib/protocol/types'
+import { getLatestReflection, listEvents } from '@/lib/protocol/client'
+import type { EventListItem, LatestReflection } from '@/lib/protocol/types'
 
 type SearchParams = Promise<{ saved?: string }>
 
@@ -43,6 +43,20 @@ async function loadReflection(): Promise<LatestReflection | { error: string } | 
   }
 }
 
+async function loadThoughtsSince(iso: string): Promise<EventListItem[]> {
+  try {
+    const res = await listEvents({
+      eventType: 'selvra.thought.recorded',
+      since: new Date(iso),
+      limit: 50,
+    })
+    // listEvents returnerar nyaste först; vänd för att visa kronologiskt
+    return [...res.items].reverse()
+  } catch {
+    return []
+  }
+}
+
 export default async function BrevPage({
   searchParams,
 }: {
@@ -52,6 +66,13 @@ export default async function BrevPage({
   const flash = formatSavedFlash(params.saved)
   const reflection = await loadReflection()
 
+  // Designval 10: tankar tillkomna efter brevets genereringstid visas under
+  // brevet (associerade med, men inte annoterade i, det frusna dokumentet).
+  const thoughtsSinceLetter =
+    reflection && 'created_at' in reflection
+      ? await loadThoughtsSince(reflection.created_at)
+      : []
+
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-16 sm:py-24">
       <article className="max-w-prose w-full flex flex-col gap-10">
@@ -59,6 +80,10 @@ export default async function BrevPage({
           <LiveReflection reflection={reflection} />
         ) : (
           <EmptyOrError reflection={reflection} />
+        )}
+
+        {thoughtsSinceLetter.length > 0 && (
+          <ThoughtsSinceLetter thoughts={thoughtsSinceLetter} />
         )}
 
         {/* Tankar-yta under brevet — designval 10 */}
@@ -140,6 +165,47 @@ function LiveReflection({ reflection }: { reflection: LatestReflection }) {
       </div>
     </section>
   )
+}
+
+function ThoughtsSinceLetter({ thoughts }: { thoughts: EventListItem[] }) {
+  return (
+    <section
+      aria-label="Tankar tillkomna sedan brevet skrevs"
+      className="flex flex-col gap-4 border-t border-neutral-200 dark:border-neutral-800 pt-8"
+    >
+      <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
+        Tankar sedan brevet
+      </h2>
+      <ul className="flex flex-col gap-3">
+        {thoughts.map((t) => (
+          <li
+            key={t.event_id}
+            className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300"
+          >
+            <time
+              dateTime={t.created_at}
+              className="text-xs text-neutral-500 dark:text-neutral-500 font-mono tabular-nums mr-3"
+            >
+              {formatThoughtTimestamp(t.created_at)}
+            </time>
+            <span>
+              &ldquo;{String((t.payload as { text?: string }).text ?? '')}&rdquo;
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function formatThoughtTimestamp(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  // Format: "tis 14:30" — close-by-time relevant context, not full date
+  const weekday = d.toLocaleDateString('sv-SE', { weekday: 'short' })
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${weekday} ${hh}:${mm}`
 }
 
 function EmptyOrError({
