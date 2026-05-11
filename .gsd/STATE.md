@@ -78,33 +78,48 @@ inför synthesis-arbete.
   `.gsd/decisions/SUBJECT_ALIASING_OPEN_QUESTION_2026-05-11.md`. Blocker
   innan synthesis-pipeline.
 
-## Next up
+## Next up — LÅST 2026-05-11 (Carl)
 
-Tre kandidater:
+**B + C parallellt. A parkerat.**
 
-### A) Open Wearables Fas 2-5 (deployment)
-Per pivot-doc. Clone, deploya på Railway, webhook-receiver i Selvra,
-källtoggling-vy i selvra-app, Carl kopplar Garmin. **Tids-estimat: 3-5
-dagar fokuserat.** Stort men avgränsat. Levererar fullt source-flöde
-för aktivitets-data.
+### B) Dogfood-vecka — Carls del
 
-### B) Dogfood-vecka utan ytterligare bygg
-Carl skriver tankar dagligen, ackumulerar substrat. Kollar /brev-formatet
-i praktiken. När veckan är slut har vi material för synthesis och
-empiriskt-grundad design-iteration. **Tids-estimat: 0 kod-arbete, 7
-dagars data-ackumulering.**
+Carl skriver tankar dagligen via `/thoughts`, lever med deklarerade
+intentioner. Inget kod-arbete. Substrat ackumuleras för synthesis att
+läsa när C är klar. **0 kod, 7 dagar.**
 
-### C) Synthesis-pipeline-skiss
-Med Carls data redan i Selvra + Path C för CGM, kan första riktiga
-synthesis-prototypen byggas. Reads intentions + tankar + senaste 7 dagars
-glukos från Stillra → Anthropic API → reflektions-prosa. Bygger på
-Subject-aliasing-fråga som måste lösas (Alt 4 hardcoded mapping för v0).
-**Tids-estimat: 1-2 dagar för proof-of-loop, mer för polish.**
+### C) Synthesis-pipeline-skiss — Claude Codes del
 
-Min lutning: **B först (parallell med inget annat krävande), sen C när
-substrat finns**. A kan komma efter eller parallellt om Open Wearables-
-self-hosting känns aptitligt. Men inget brådskar — du har redan tre lager
-av input klart (intention + tanke + Dexcom via Path C).
+Bygga första proof-of-loop:
+
+- Reads från Selvra event-log: intentions + tankar för Carl-subject
+- Reads från Stillra-Supabase via Path C: senaste N dagars glucose_readings
+  för Carl (Pattern-1 StillraGlucoseReading-model finns)
+- Subject-aliasing: **Alt 4 hardcoded** för v0 (synthesis-config-rad som
+  säger "selvra-app subject 2bfe0414-... motsvarar Stillra-user 12647887-...").
+  Dokumenterat som teknisk skuld i
+  `decisions/SUBJECT_ALIASING_OPEN_QUESTION_2026-05-11.md` — måste lösas
+  innan publik release.
+- Synthesis-prompt mot Anthropic API (Claude Opus 4.7 default, fallback
+  via befintlig multi-provider-router i Selvra).
+- Output: reflektions-prosa enligt de 10 lock-positionerna (käll-
+  attribuering, brev-metafor, max 1 fråga, observation-not-prescription).
+  Skrivas som `selvra.reflection.generated`-event i event-loggen.
+- Render i `/brev`-route: byt ut hardcoded exempel mot
+  senast-genererade-reflection-event från snapshot eller direct query.
+
+**Tids-estimat: 1-2 dagar för proof-of-loop**, längre för polish.
+
+Synthesis-pipeline-skissen avslöjar empiriskt vilka av designval 1-10
+som håller och vilka som behöver iteration. Det är där reflektions-
+formatet möter verkligheten.
+
+### A) Open Wearables Fas 2-5 — PARKERAT till efter dogfood-vecka
+
+Per pivot-doc Fas 2-5. Garmin/Strava-source via self-hosted Open Wearables.
+Inte i kritisk väg för första brev — Dexcom + intentions + tankar räcker
+för att verifiera om Selvras tes håller för Carl. Återupptas efter
+dogfood-vecka när vi vet om hypotesen håller.
 
 ## Blockers
 

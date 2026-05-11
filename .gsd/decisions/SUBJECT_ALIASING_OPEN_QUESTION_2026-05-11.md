@@ -99,21 +99,34 @@ Stillra-alias `b3a87256-...`". Inget protokoll-arbete.
 
 ---
 
-## Min rekommendation (ej låst)
+## Beslut 2026-05-11 (Carl)
 
-För **synthesis-pipeline v0** (Carl-only-dogfood): Alternativ 4 — hardcoded
-mapping. Räcker för att leverera första riktiga brevet.
+**v0: Alternativ 4 — hardcoded mapping.** Låst som accepterad teknisk
+skuld för Carl-only-dogfood och första synthesis-pipeline-skissen.
 
-För **synthesis-pipeline v1** (multi-user eller publicly-shipped): Beslut
-mellan Alt 1 (alias-tabell) och Alt 2 (SREF-as-input).
+**v1 (innan publik release): Alt 1/2/3 — formell lösning.** Beslutet
+mellan alias-tabell, SREF-as-input, eller external-identity-som-primär
+tas innan publika användare onboardas.
 
-Beslutet tas innan synthesis byggs, inte nu.
+### ⚠️ Explicit teknisk skuld
+
+Hardcoded subject-mapping är **okej för Carl-only-dogfood** (1 användare,
+2 subject_ids, 1 mapping-rad i synthesis-konfiguration). Det är **inte
+okej** för 100 användare där varje ny user kräver:
+
+- Nya hardcoded entries i synthesis-koden
+- Manuell sync mellan selvra-app-onboarding och Stillra-user-mapping
+- Risk för glömda mappings → reflektioner blir tomma utan att fail-loud
+
+**Måste ersättas med Alt 1/2/3 innan första externa användare.** Bevaka
+denna doc — uppdatera när formell lösning väljs och implementeras.
 
 ---
 
 ## Status
 
-- [x] Problemet identifierat
-- [x] Beskrivet i decisions-katalog
-- [ ] Lösning vald
-- [ ] Implementerad
+- [x] Problemet identifierat (2026-05-11)
+- [x] Beskrivet i decisions-katalog (2026-05-11)
+- [x] v0-lösning vald: **Alt 4 hardcoded** (2026-05-11, Carl-beslut)
+- [ ] **v1-lösning vald** (Alt 1/2/3) — INNAN publik release
+- [ ] **Teknisk skuld betald** — Alt 1/2/3 implementerad
