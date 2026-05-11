@@ -67,5 +67,5 @@ export async function submitIntentions(formData: FormData): Promise<void> {
     await declareIntention(payload)
   }
 
-  redirect('/onboarding/intentions/confirm')
+  redirect('/onboarding/sources')
 }

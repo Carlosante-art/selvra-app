@@ -63,6 +63,13 @@ export type ThoughtPayload = {
   captured_at: string // ISO-8601
 }
 
+// ─── Signal-preference-event ────────────────────────────────────────
+
+export type SignalPreferencePayload = {
+  enabled: boolean
+  delivered_at: string // ISO-8601 när preferensen sattes
+}
+
 // ─── Generisk event-request/response ───────────────────────────────
 
 export type CreateEventRequest = {

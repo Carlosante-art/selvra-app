@@ -126,6 +126,15 @@ export default async function SourcesPage({
           Du kan ändra eller koppla bort senare. Selvra läser ingenting du inte
           aktivt sagt ja till.
         </p>
+
+        <div className="pt-2">
+          <Link
+            href="/onboarding/signal"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-8 text-base font-medium hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
+          >
+            Fortsätt
+          </Link>
+        </div>
       </article>
     </main>
   )

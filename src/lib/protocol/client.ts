@@ -7,6 +7,7 @@ import type {
   IntentionPayload,
   LatestReflection,
   MCPScope,
+  SignalPreferencePayload,
   SrefExportResponse,
   SubjectSnapshot,
   ThoughtPayload,
@@ -133,6 +134,23 @@ export async function recordThought(
   const body: CreateEventRequest = {
     category: 'data_ingested',
     event_type: 'selvra.thought.recorded',
+    source_ai_id: cfg.sourceId,
+    payload: payload as unknown as Record<string, unknown>,
+  }
+  return call<EventResponse>(`/v1/subjects/${cfg.subjectId}/events`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    scopes: ['write'],
+  })
+}
+
+export async function recordSignalPreference(
+  payload: SignalPreferencePayload,
+): Promise<EventResponse> {
+  const cfg = getConfig()
+  const body: CreateEventRequest = {
+    category: 'profile_updated',
+    event_type: 'selvra.preference.signal_optin',
     source_ai_id: cfg.sourceId,
     payload: payload as unknown as Record<string, unknown>,
   }
