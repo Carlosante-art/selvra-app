@@ -132,29 +132,40 @@ Beslut C togs i dag — compile-events från Stillra till Selvra. Det är **besl
 
 ## Implementations-plan (om verifieringar landar OK)
 
-### Fas 1: Aktivera Path C för glucose_readings (REVIDERAD 2026-05-11)
+### Fas 1: Aktivera Path C för glucose_readings ✅ DONE 2026-05-11
 
 Ursprungligt antagande ("compile-events från Stillra") visade sig
 empiriskt falskt. Ersatt med Path C (cross-DB readonly).
 
-**Konkret arbete:**
+**Genomfört:**
 
-1. **GRANT SELECT** på `glucose_readings` till `selvra_readonly`-rollen
-   i Stillra-Supabase. Carl admin-job — kör i Stillra-Supabase
-   SQL-editor:
-   ```sql
-   GRANT SELECT ON glucose_readings TO selvra_readonly;
-   ```
-2. **Lägg till `StillraGlucoseReading`-modell** i
-   `~/selvra/src/selvra/db/stillra_models.py` enligt befintligt mönster
-   (StillraUserMemory et al.). Återanvänd `StillraReadonlyBase`.
-3. **Verifiera** med snabb query mot Carls user_id i Stillra-Supabase
-   via `get_stillra_readonly_session_factory()`.
+1. ✅ **K2-bred GRANT** i Stillra-Supabase — 22 nya tabeller
+   (13 K2 + 9 K3) plus de 5 redan-grantade. Carl exekverade SQL:n i
+   Supabase SQL-editor. Verifierat med count-query mot alla 27 tabeller
+   — alla returnerar rader.
+2. ✅ **`StillraGlucoseReading`-modell** i
+   `~/selvra/src/selvra/db/stillra_models.py`. Komposit-PK (user_id, time),
+   value_mmol+value_mgdl+trend. Commit `b0af34b` på `~/selvra/`-main.
+3. ✅ **Verifierat mot Carls riktiga CGM-data**: 5095 readings för
+   stillra-user-id `12647887-c723-4bd0-9196-eedeeab1fbd4`, senaste 5
+   readings hämtade via modellen — bara minuter gamla, värdena varierar
+   8.7–12.6 mmol/L med trend `DoubleDown`. Live-flow från Dexcom-poll
+   bevisat åtkomligt för Selvra.
 
-**Tids-estimat: ~30 minuter** (5 min GRANT + 20 min modell + verify).
+**Faktisk tid: ~25 minuter** (matchar estimat).
 
-Ej blocker för synthesis-pipeline-arkitekturen — det är en grant + model;
-den faktiska användningen sker i synthesis-koden när den byggs.
+Andra K3-tabeller (sleep_guard_events 654 rader, chat_messages 128 rader,
+meals 2 rader, etc.) är grantade men har **inte** Pattern-1-modeller än
+— de byggs on-demand när synthesis-pipelinen faktiskt behöver läsa dem.
+
+**Öppna sub-frågor som Fas 1 INTE löste** (per Carl-notering 2026-05-11):
+
+- *Audit-loggning på cross-DB-reads* — registreras Pattern-1-queries med
+  vem/när/för-vilket-subject? Compliance-relevant. Verifieras innan
+  synthesis börjar läsa K2-data i större skala.
+- *Subject-aliasing* — selvra-app:s Carl (`2bfe0414-...`) ≠ Stillras
+  Carl (`12647887-...` → `b3a87256-...`). Måste lösas innan synthesis.
+  Se `SUBJECT_ALIASING_OPEN_QUESTION_2026-05-11.md` med fyra alternativ.
 
 ### Fas 2: Deploya Open Wearables
 

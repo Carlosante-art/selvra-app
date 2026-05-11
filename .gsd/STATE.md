@@ -2,9 +2,12 @@
 
 ## Where I am
 
-Protokoll-integration **fungerar end-to-end**. JWT-mint signering verifierad,
-första intention-event live i prod-Selvra. selvra-app-sidans UI är inte
-byggt än — det är nästa.
+**Full dogfood-loop levande:** intentions-input, tankar-yta, brev-rendering
+(exempel) byggda och pushade. Carl har 5 intentioner + 1 tanke i prod-Selvra.
+**Source Strategy Pivot Fas 1 klar** — Path C verifierad mot Carls 5095
+glucose_readings via cross-DB readonly. Next-up: Open Wearables Fas 2
+(deployment) för Garmin/Strava, eller dogfood-vecka för att samla substrat
+inför synthesis-arbete.
 
 ## Last session, jag gjorde
 
@@ -45,43 +48,63 @@ byggt än — det är nästa.
 - `256a52f` STATE.md med locked next-session plan
 - `b3a2536` INTENTIONS-PLAN.md från Steg 0 reading
 
-## Next up — selvra-app UI (Steg B-E från INTENTIONS-PLAN.md)
+## Last session — 2026-05-11 (eftermiddag)
 
-Protokoll-sidan är klar. Allt arbete ligger nu i selvra-app-repot.
+- ✅ **Steg B**: `src/lib/protocol/client.ts` + types.ts. jose-JWT-signing,
+  declareIntention() + recordThought() + getSnapshot(). Build + live
+  smoke-test passade.
+- ✅ **Steg C**: `app/onboarding/intentions/page.tsx` Server Action-form
+  med 5 self_directed-rader + 4 delivery_rhythm-radios. Carl deklarerade
+  3 intentions + sunday_morning live → 4 events i prod-Selvra (Moderator
+  accept, trust 0.85→0.87).
+- ✅ **Steg D**: `app/onboarding/intentions/confirm/page.tsx` Server
+  Component som anropar getSnapshot. Snapshot tom p.g.a. projection-saknad
+  — flaggat, defer:at per Carl-beslut.
+- ✅ **Steg E**: Landing `Börja` → `/onboarding/intentions`.
+- ✅ **Tankar-yta (Lager 2)**: `/thoughts`-route med textarea + Server
+  Action. event_type `selvra.thought.recorded`. Carl skrev första tanke:
+  *"Jag vill att det gör jag gör ska ha ett syfte..."* — bekräftad live.
+- ✅ **Brev-rendering**: `/brev`-route med Carl-specifik exempel-brev
+  baserad på hans riktiga intentioner + tanke. Brev-metafor, käll-
+  attribuering, observation-grounded fråga, källor-footer, inbäddad
+  tanke-yta. Designval 1-10 testbara i pixlar.
+- ✅ **Source Strategy Pivot beslutat och Fas 1 genomförd**:
+  - Terra → Open Wearables för Garmin/Strava (self-hosted, MIT, EU)
+  - Path C för Dexcom via cross-DB readonly mot Stillra-Supabase
+  - K2-bred GRANT exekverad — 27 tabeller läsbara
+  - `StillraGlucoseReading` Pattern-1-modell byggd (selvra-repo commit
+    `b0af34b`). Verifierat mot Carls 5095 readings.
+- ✅ **Subject-aliasing-fråga** dokumenterad i
+  `.gsd/decisions/SUBJECT_ALIASING_OPEN_QUESTION_2026-05-11.md`. Blocker
+  innan synthesis-pipeline.
 
-- [ ] **Steg B — `src/lib/protocol/client.ts`** med JWT-signing helper
-      (npm `jsonwebtoken` eller `jose`). Konsumerar `.env`-värden:
-      `SELVRA_PROTOCOL_URL`, `SELVRA_PROTOCOL_JWT_SECRET`,
-      `SELVRA_TENANT_ID`, `SELVRA_APP_SUB_UUID`, `SELVRA_SUBJECT_EXTERNAL_ID`.
-      Exporterar `declareIntention(payload)` + `listIntentions()`.
-- [ ] **Steg C — `app/onboarding/intentions/page.tsx`** (Client
-      Component). Form: 5 textfält för `self_directed` + 4 radio-options
-      för `delivery_rhythm`. Server Action submit.
-- [ ] **Steg D — `app/onboarding/intentions/confirm/page.tsx`**
-      Round-trip vy. *Problem flaggat:* snapshot returnerar tomt eftersom
-      ProjectionEngine inte projicerar `selvra.intention.declared` till
-      ProfileFacts. Två lösningar — se nedan.
-- [ ] **Steg E — Uppdatera landings `Börja`-knapp** att peka till
-      `/onboarding/intentions`.
+## Next up
 
-### Reading-back-problemet
+Tre kandidater:
 
-Snapshot returnerar tomt trots att event är skrivet, eftersom
-ProjectionEngine inte har en projector för `selvra.intention.declared`.
-Två vägar för att stänga loopen:
+### A) Open Wearables Fas 2-5 (deployment)
+Per pivot-doc. Clone, deploya på Railway, webhook-receiver i Selvra,
+källtoggling-vy i selvra-app, Carl kopplar Garmin. **Tids-estimat: 3-5
+dagar fokuserat.** Stort men avgränsat. Levererar fullt source-flöde
+för aktivitets-data.
 
-(a) **Lägg projection-regel i `~/selvra/src/selvra/representation/projections.py`.**
-    `IntentionDeclared` → ProfileFact med `key: "intention.{intent_type}.{ord}"`,
-    `value: text/value`, mutability/persistence per `temporal_validity`. ~1h +
-    PR + redeploy. Doktrinärt rent.
+### B) Dogfood-vecka utan ytterligare bygg
+Carl skriver tankar dagligen, ackumulerar substrat. Kollar /brev-formatet
+i praktiken. När veckan är slut har vi material för synthesis och
+empiriskt-grundad design-iteration. **Tids-estimat: 0 kod-arbete, 7
+dagars data-ackumulering.**
 
-(b) **Lägg `GET /v1/subjects/{id}/events?event_type=...` endpoint** för rå-
-    events-läsning. Mer återanvändbart för framtida queries. ~1–2h + PR.
+### C) Synthesis-pipeline-skiss
+Med Carls data redan i Selvra + Path C för CGM, kan första riktiga
+synthesis-prototypen byggas. Reads intentions + tankar + senaste 7 dagars
+glukos från Stillra → Anthropic API → reflektions-prosa. Bygger på
+Subject-aliasing-fråga som måste lösas (Alt 4 hardcoded mapping för v0).
+**Tids-estimat: 1-2 dagar för proof-of-loop, mer för polish.**
 
-Min lutning (innan god natt): **(c) Defer reading helt i denna slice**.
-Bygga write-flödet i selvra-app först. Carl kan verifiera writes via
-direkt-DB-query eller curl mot events. Reading kommer i nästa parallell
-mini-slice. **Beslutet är inte låst — re-bekräfta när du börjar Steg B.**
+Min lutning: **B först (parallell med inget annat krävande), sen C när
+substrat finns**. A kan komma efter eller parallellt om Open Wearables-
+self-hosting känns aptitligt. Men inget brådskar — du har redan tre lager
+av input klart (intention + tanke + Dexcom via Path C).
 
 ## Blockers
 
