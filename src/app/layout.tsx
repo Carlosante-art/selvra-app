@@ -16,10 +16,35 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://selvra.ai'
+
 export const metadata: Metadata = {
-  title: 'Selvra',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'Selvra',
+    template: '%s · Selvra',
+  },
   description:
     'Ett brev till dig själv, varje vecka, från någon som har observerat den.',
+  openGraph: {
+    type: 'website',
+    locale: 'sv_SE',
+    url: siteUrl,
+    siteName: 'Selvra',
+    title: 'Selvra',
+    description:
+      'Förståelse-lagret för data du redan har. Reflektioner, inte dashboards.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Selvra',
+    description:
+      'Förståelse-lagret för data du redan har. Reflektioner, inte dashboards.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function RootLayout({

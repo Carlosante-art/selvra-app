@@ -16,6 +16,7 @@ const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: '/brev', label: 'Brev' },
   { href: '/thoughts', label: 'Tankar' },
   { href: '/onboarding/intentions', label: 'Intentioner' },
+  { href: '/onboarding/sources', label: 'Källor' },
 ]
 
 export function SiteHeader() {
