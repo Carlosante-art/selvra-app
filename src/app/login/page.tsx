@@ -4,7 +4,20 @@ import { signIn } from '@/lib/auth/config'
  * Magic-link login. Form postar till en Server Action som kallar Auth.js
  * signIn("resend", { email }). Resend-providern skickar mail med länk
  * tillbaka till /api/auth/callback/resend?token=...
+ *
+ * Wiring-status: scaffold klart, väntar på RESEND_API_KEY + DATABASE_URL
+ * + AUTH_SECRET (AB-deferred per APPLICATIONS_PENDING_AB-doc). Tills
+ * dessa env-vars finns visar sidan "inte aktiverad än"-state istället
+ * för formuläret.
  */
+
+function isMagicLinkConfigured(): boolean {
+  return Boolean(
+    process.env.DATABASE_URL &&
+      process.env.RESEND_API_KEY &&
+      process.env.AUTH_SECRET,
+  )
+}
 
 async function startSignIn(formData: FormData) {
   'use server'
@@ -17,6 +30,39 @@ async function startSignIn(formData: FormData) {
 }
 
 export default function LoginPage() {
+  if (!isMagicLinkConfigured()) {
+    return <NotConfiguredView />
+  }
+  return <LoginForm />
+}
+
+function NotConfiguredView() {
+  return (
+    <main className="flex flex-1 flex-col items-center px-6 py-24 sm:py-32">
+      <article className="max-w-prose w-full flex flex-col gap-6">
+        <header>
+          <h1 className="text-3xl font-medium tracking-tight">
+            Inloggning aktiveras snart
+          </h1>
+        </header>
+
+        <p className="text-lg leading-relaxed">
+          Magic-link-inloggning är scaffold:ad men inte aktiverad än.
+          Mail-providern (Resend) registreras under bolagets namn när
+          AB:t är godkänt — cirka 2-3 veckor.
+        </p>
+
+        <p className="leading-relaxed text-neutral-600 dark:text-neutral-400">
+          Under tiden körs Selvra för dogfood-användning av Carl direkt
+          (hardcoded subject). När inloggning aktiveras kan vi bjuda
+          in fler.
+        </p>
+      </article>
+    </main>
+  )
+}
+
+function LoginForm() {
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-24 sm:py-32">
       <article className="max-w-prose w-full flex flex-col gap-8">

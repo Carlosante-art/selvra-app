@@ -136,6 +136,15 @@ function formatFlash(params: {
   athlete?: string
   error?: string
 }): { kind: 'success' | 'error'; message: string } | null {
+  if (params.error === 'strava_not_configured') {
+    return {
+      kind: 'error',
+      message:
+        'Strava är inte aktiverad än. OAuth-app:en registreras under bolagets ' +
+        'namn när AB är godkänt (~2-3 veckor). Tills dess är knappen ett ' +
+        'scaffold-skal.',
+    }
+  }
   if (params.error) {
     return {
       kind: 'error',

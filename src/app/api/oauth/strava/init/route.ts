@@ -19,6 +19,17 @@ const STATE_MAX_AGE_SEC = 600 // 10 min
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
+
+  // Guard: utan creds är OAuth-flöde inte möjligt. Returnera graceful
+  // redirect till sources-sidan med error-flash istället för att throw:a
+  // (vilket skulle returnera 500). Strava-creds är AB-deferred per
+  // .gsd/decisions/APPLICATIONS_PENDING_AB_2026-05-11.md.
+  if (!process.env.STRAVA_CLIENT_ID || !process.env.STRAVA_CLIENT_SECRET) {
+    return NextResponse.redirect(
+      `${url.origin}/onboarding/sources?error=strava_not_configured`,
+    )
+  }
+
   const redirectUri = `${url.origin}/api/oauth/strava/callback`
   const state = randomBytes(24).toString('hex')
 
