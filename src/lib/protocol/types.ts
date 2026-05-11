@@ -135,3 +135,11 @@ export type LatestReflection = {
   source_event_id: string | null
   created_at: string // ISO-8601
 }
+
+// ─── SREF v1 portability export ───────────────────────────────────────
+
+export type SrefExportResponse = {
+  document: Record<string, unknown> // SREF v1 doc — content-addressed, ev. HMAC-signerad
+  signed: boolean
+  subject_count: number
+}

@@ -7,6 +7,7 @@ import type {
   IntentionPayload,
   LatestReflection,
   MCPScope,
+  SrefExportResponse,
   SubjectSnapshot,
   ThoughtPayload,
 } from './types'
@@ -25,6 +26,7 @@ type ProtocolConfig = {
   tenantId: string
   subUuid: string
   subjectId: string
+  externalSubjectId: string
   sourceId: string
 }
 
@@ -45,6 +47,7 @@ function getConfig(): ProtocolConfig {
   const tenantId = get('SELVRA_TENANT_ID')
   const subUuid = get('SELVRA_APP_SUB_UUID')
   const subjectId = get('SELVRA_SUBJECT_ID')
+  const externalSubjectId = get('SELVRA_SUBJECT_EXTERNAL_ID')
   const sourceId = get('SELVRA_SOURCE_ID')
 
   if (missing.length > 0) {
@@ -59,6 +62,7 @@ function getConfig(): ProtocolConfig {
     tenantId,
     subUuid,
     subjectId,
+    externalSubjectId,
     sourceId,
   }
   return _config
@@ -152,6 +156,25 @@ export async function getSnapshot(): Promise<SubjectSnapshot> {
     method: 'GET',
     scopes: ['read'],
   })
+}
+
+/**
+ * Hämta användarens SREF v1-doc (portability-export). Content-addressed,
+ * ev. HMAC-signerad per SREF_EXPORT_KEY på protokoll-sidan. Bygger hela
+ * representationen — kan vara stor.
+ */
+export async function getSREFExport(): Promise<SrefExportResponse> {
+  const cfg = getConfig()
+  const params = new URLSearchParams({
+    external_subject_id: cfg.externalSubjectId,
+  })
+  return call<SrefExportResponse>(
+    `/v1/subjects/${cfg.subjectId}/sref-export?${params.toString()}`,
+    {
+      method: 'GET',
+      scopes: ['read'],
+    },
+  )
 }
 
 /**
