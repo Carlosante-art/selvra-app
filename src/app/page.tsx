@@ -43,7 +43,7 @@ export default function LandingPage() {
 
         <div className="pt-4">
           <Link
-            href="/onboarding"
+            href="/onboarding/intentions"
             className="inline-flex h-12 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-8 text-base font-medium hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
           >
             Börja
