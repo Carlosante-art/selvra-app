@@ -4,6 +4,27 @@
 
 **selvra-app live på prod: https://selvra-app-production.up.railway.app**
 
+**Fyra synliga lager (2026-05-11):** Reflektion (`/brev`) · Tankar
+(`/thoughts` + provenance) · Bakgrund (`/traces`, Dreamer-output) · Agency
+(`/export` + ownership-banner). Empiriskt validerat — Dreamer producerade
+`weekly_letter_redundancy_pattern`-meta-observation autonomt om vår egen
+dogfood-cykel. Se `.gsd/decisions/DREAMER_META_OBSERVATION_2026-05-11.md`.
+
+Dreamer-cron defer:as till efter AB-wiring + brev v0.3-validering per
+Carl-direktiv 2026-05-11. Manuell trigger via:
+```
+cd ~/selvra && railway run -- ./.venv/bin/python -c "
+import asyncio, uuid
+from selvra.jobs.tasks import _run_dreamer_async
+from selvra.representation.dreamer.types import DreamerDepth
+asyncio.run(_run_dreamer_async(
+    uuid.UUID('2bfe0414-56c6-5692-8ef3-9c7d3991fe90'),
+    uuid.UUID('312f157b-0f84-4ea4-a306-ef84640f4357'),
+    DreamerDepth.STANDARD,
+))
+"
+```
+
 Streamlined-v1 efter 2026-05-11-session:
 
 - ✓ **Slice 4** (Subject-aliasing) — full + prod-deploy

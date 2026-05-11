@@ -357,6 +357,37 @@ utan reflektion att svara på).
 
 ---
 
+## 6.5 Fyra synliga lager — konstitutionell visuell arkitektur
+
+Selvra-app i prod-formen 2026-05-11 har fyra distinkta UI-lager som ingen
+annan i kategorin har som första-klass-yta:
+
+| Lager | Yta | Vad det visar |
+|---|---|---|
+| **Reflektion** | `/brev` | Vad systemet observerar om dig |
+| **Tankar** | `/thoughts` + `/brev` (under brev) | Vad du säger, med provenance per event |
+| **Bakgrund** | `/traces` | Vad systemet reasonar om i bakgrunden (Dreamer-output) |
+| **Agency** | `/export` + ownership-banner | Exporterbar SREF, ownership görs synlig |
+
+Konkurrent-position:
+
+- **Rosebud** har journaling. Inte reflection-engine, inte cross-layer-data.
+- **Engramme** har memory. Recall-fokus, inte gap-detektering.
+- **Mem0** har infrastructure. Developer-tool, inte konsument-yta.
+- **Personal AI / PLM-kategorin** har minne-paradigm. Selvra har förståelse-paradigm.
+
+**Ingen av dessa visar background reasoning explicit som första-klass-yta.**
+Process-transparens-by-default (`/traces`) är doktrinärt korrekt och
+arkitektoniskt mångårigt att kopiera — kräver event-sourcing + Dreamer-
+liknande consolidation-process + multi-provider router.
+
+Empirisk validering 2026-05-11: Dreamer producerade `weekly_letter_redundancy_pattern`-
+observation autonomt — såg vår egen dogfood-process som mönster utan
+explicit prompt. Det är gap-detektering applicerad på utvecklingscykeln.
+Se `.gsd/decisions/DREAMER_META_OBSERVATION_2026-05-11.md`.
+
+---
+
 ## 7. Var Selvra-app står ekosystem-mässigt
 
 - **Selvra-protokollet** (`~/selvra/`): event-sourced representation,
