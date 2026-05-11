@@ -2,19 +2,26 @@
 
 ## Where I am
 
-Streamlined-v1 låst per Carl-direktiv 2026-05-11 — 9-punkts-scope, 14–15
-dagar mot AB-tidslinje. Levererat hittills i denna fas:
+**selvra-app live på prod: https://selvra-app-production.up.railway.app**
 
-- **Slice 1 (Magic-link)**: scaffold klar (Auth.js v5 + Drizzle + Resend),
-  väntar på Carls Resend/Postgres/AUTH_SECRET för wiring.
-- **Slice 6 (Visual design grundnivå)**: nav-header + footer + active-state
-  + typography-polish levererad.
-- **Slice 4 (Subject-aliasing Alt 1)**: migration 0009, SubjectAlias-model,
-  subject_aliasing-helpers, reflection_synthesis wired med fallback. Carls
-  alias seedad i prod. Verifierat fungerande end-to-end.
+Streamlined-v1 efter 2026-05-11-session:
 
-Pågående parallellt: Carl-actions (Resend, Postgres, AUTH_SECRET, Open
-Wearables one-click deploy) + AB-registrering.
+- ✓ **Slice 4** (Subject-aliasing) — full + prod-deploy
+- ✓ **Slice 6** (Visual design grundnivå) — nav + footer + typography
+- ✓ **Slice 7** (Signal-opt-in + 5-step onboarding-flow) — full wiring
+- ✓ **Slice 9** (SREF-export UX) — full, verifierad mot prod
+- 🟡 **Slice 1** (Magic-link) — scaffold, väntar Resend/DB/AUTH_SECRET
+- 🟡 **Slice 2** (Google OAuth) — scaffold, väntar GOOGLE_CLIENT_ID/SECRET
+- 🟡 **Slice 3** (Strava OAuth) — scaffold, väntar STRAVA_CLIENT_ID/SECRET
+- ⬜ **Slice 5** (Synthesis v0.3 mot full data) — AB-blocked
+- ⬜ **Slice 8** (Open Wearables deploy) — AB-blocked
+
+Plus public deploy av selvra-app till Railway: ny tjänst i
+distinguished-simplicity-projektet, 9 env-vars satta (alla utom
+AB-deferred), URL genererad. All 9 routes svarar 200 från prod-URL.
+
+AB-registrering startad 2026-05-11. Pending: alla externa OAuth-providers
++ Resend + Postgres-provision (per APPLICATIONS_PENDING_AB-doc).
 
 ## Last session, jag gjorde
 
