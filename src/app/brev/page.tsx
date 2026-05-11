@@ -86,6 +86,8 @@ export default async function BrevPage({
           <ThoughtsSinceLetter thoughts={thoughtsSinceLetter} />
         )}
 
+        <ArchiveLink />
+
         <OwnershipBanner />
 
         {/* Tankar-yta under brevet — designval 10 */}
@@ -165,6 +167,25 @@ function LiveReflection({ reflection }: { reflection: LatestReflection }) {
           </p>
         ))}
       </div>
+    </section>
+  )
+}
+
+function ArchiveLink() {
+  return (
+    <section
+      aria-label="Tidigare brev"
+      className="border-t border-neutral-200 dark:border-neutral-800 pt-6 flex items-center justify-between gap-4 flex-wrap"
+    >
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+        Tidigare brev finns arkiverade — bevarade som de skrevs.
+      </p>
+      <a
+        href="/brev/arkiv"
+        className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors underline underline-offset-2"
+      >
+        Öppna arkivet →
+      </a>
     </section>
   )
 }
