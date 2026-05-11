@@ -34,3 +34,15 @@ body {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* PWA safe-area-padding: respektera iPhone notch / home-indicator i
+   standalone-mode. När appen är installed-to-home (display: standalone),
+   env(safe-area-inset-*) blir non-zero så headers/footers inte krockar
+   med statusbar eller home-indicator. I Safari-browser → 0 → ingen
+   visuell effekt. Aktiveras via viewport-fit=cover i layout.tsx. */
+.pwa-safe-area {
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
