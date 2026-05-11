@@ -86,6 +86,8 @@ export default async function BrevPage({
           <ThoughtsSinceLetter thoughts={thoughtsSinceLetter} />
         )}
 
+        <OwnershipBanner />
+
         {/* Tankar-yta under brevet — designval 10 */}
         <section
           aria-label="Lägg till en tanke om brevet"
@@ -162,6 +164,40 @@ function LiveReflection({ reflection }: { reflection: LatestReflection }) {
             {p}
           </p>
         ))}
+      </div>
+    </section>
+  )
+}
+
+function OwnershipBanner() {
+  return (
+    <section
+      aria-label="Data-ägarskap"
+      className="border-t border-neutral-200 dark:border-neutral-800 pt-8 flex flex-col gap-3"
+    >
+      <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
+        Du äger denna representation
+      </h2>
+      <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+        Allt Selvra vet om dig — intentioner, tankar, reflektioner, källor,
+        provenance — kan exporteras som ett enskilt JSON-dokument (SREF v1).
+        EU-deployed. Kryptografiskt signerbart. Inget tredjepartsföretag har
+        kopia. Du tar med dig din representation om du byter tjänst.
+      </p>
+      <div className="flex flex-wrap gap-3 pt-1">
+        <a
+          href="/api/export/sref"
+          download
+          className="inline-flex h-10 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-5 text-sm font-medium hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
+        >
+          Exportera allt som SREF v1
+        </a>
+        <a
+          href="/export"
+          className="inline-flex h-10 items-center justify-center rounded-full border border-neutral-300 dark:border-neutral-700 px-5 text-sm font-medium hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
+        >
+          Förstå vad SREF är
+        </a>
       </div>
     </section>
   )
