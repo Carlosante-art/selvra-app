@@ -178,6 +178,39 @@ export async function getSnapshot(): Promise<SubjectSnapshot> {
 }
 
 /**
+ * Trigga manuell synthesis (re-generera brev). Sync — tar 30-60s eftersom
+ * Layer-3-LLM-call är synkron i protokollets internal-admin-route.
+ */
+export async function triggerReflectionRun(): Promise<{
+  event_id: string
+  model_used: string
+  chars: number
+  inputs: Record<string, unknown>
+}> {
+  return call('/v1/internal/carl/reflect', {
+    method: 'POST',
+    scopes: ['write'],
+  })
+}
+
+/**
+ * Trigga manuell Dreamer-pass (background reasoning) på Carls subject.
+ * Sync — tar 20-30s.
+ */
+export async function triggerDreamerRun(): Promise<{
+  run_id: string
+  insights_produced: number
+  redundancies_found: number
+  total_tokens: number
+  bail_reason: string
+}> {
+  return call('/v1/internal/carl/dream', {
+    method: 'POST',
+    scopes: ['write'],
+  })
+}
+
+/**
  * Hämta användarens SREF v1-doc (portability-export). Content-addressed,
  * ev. HMAC-signerad per SREF_EXPORT_KEY på protokoll-sidan. Bygger hela
  * representationen — kan vara stor.

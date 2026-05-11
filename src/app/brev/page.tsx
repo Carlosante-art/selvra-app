@@ -1,8 +1,14 @@
+import { regenerateBrev } from '@/lib/actions/triggers'
 import { submitThought } from '@/lib/actions/thoughts'
+import { TriggerButton } from '@/components/trigger-button'
 import { getLatestReflection, listEvents } from '@/lib/protocol/client'
 import type { EventListItem, LatestReflection } from '@/lib/protocol/types'
 
-type SearchParams = Promise<{ saved?: string }>
+type SearchParams = Promise<{
+  saved?: string
+  regenerated?: string
+  regenerate_error?: string
+}>
 
 function formatSavedFlash(savedIso: string | undefined): string | null {
   if (!savedIso) return null
@@ -64,6 +70,8 @@ export default async function BrevPage({
 }) {
   const params = await searchParams
   const flash = formatSavedFlash(params.saved)
+  const regenerated = params.regenerated
+  const regenerateError = params.regenerate_error
   const reflection = await loadReflection()
 
   // Designval 10: tankar tillkomna efter brevets genereringstid visas under
@@ -76,11 +84,24 @@ export default async function BrevPage({
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-16 sm:py-24">
       <article className="max-w-prose w-full flex flex-col gap-10">
+        {regenerated && (
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-relaxed text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+            Nytt brev genererat. Event {regenerated.slice(0, 8)}…
+          </div>
+        )}
+        {regenerateError && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm leading-relaxed text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+            Re-generering misslyckades: {regenerateError}
+          </div>
+        )}
+
         {reflection && 'content' in reflection ? (
           <LiveReflection reflection={reflection} />
         ) : (
           <EmptyOrError reflection={reflection} />
         )}
+
+        <RegenerateSection />
 
         {thoughtsSinceLetter.length > 0 && (
           <ThoughtsSinceLetter thoughts={thoughtsSinceLetter} />
@@ -167,6 +188,30 @@ function LiveReflection({ reflection }: { reflection: LatestReflection }) {
           </p>
         ))}
       </div>
+    </section>
+  )
+}
+
+function RegenerateSection() {
+  return (
+    <section
+      aria-label="Re-generera brev"
+      className="border-t border-neutral-200 dark:border-neutral-800 pt-6 flex flex-col gap-3"
+    >
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+        Vill du se hur brevet skiftar efter att du skrivit nya tankar? Trigga
+        en ny synthesis-körning.
+      </p>
+      <form action={regenerateBrev}>
+        <TriggerButton
+          label="Generera nytt brev"
+          pendingLabel="Genererar… (30–60s)"
+        />
+      </form>
+      <p className="text-xs text-neutral-500 dark:text-neutral-500">
+        Använder samma prompt-version som senaste brev. Nya brevet
+        persisteras som event och visas omedelbart här.
+      </p>
     </section>
   )
 }

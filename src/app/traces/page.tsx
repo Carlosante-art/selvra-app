@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import { regenerateDreamer } from '@/lib/actions/triggers'
+import { TriggerButton } from '@/components/trigger-button'
 import { listEvents } from '@/lib/protocol/client'
 import type { EventListItem } from '@/lib/protocol/types'
 
@@ -64,7 +66,18 @@ function formatTraceTimestamp(iso: string): string {
   })
 }
 
-export default async function TracesPage() {
+type TracesSearchParams = Promise<{
+  dreamer_run?: string
+  insights?: string
+  dreamer_error?: string
+}>
+
+export default async function TracesPage({
+  searchParams,
+}: {
+  searchParams: TracesSearchParams
+}) {
+  const params = await searchParams
   const insights = await loadDreamerInsights()
 
   return (
@@ -78,6 +91,35 @@ export default async function TracesPage() {
             härlett från dina events utan att du frågat.
           </p>
         </header>
+
+        {params.dreamer_run && (
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-relaxed text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+            Dreamer-pass klar. Run {params.dreamer_run.slice(0, 8)}… ·{' '}
+            {params.insights ?? '?'} nya observationer.
+          </div>
+        )}
+        {params.dreamer_error && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm leading-relaxed text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+            Dreamer-trigger misslyckades: {params.dreamer_error}
+          </div>
+        )}
+
+        <section
+          aria-label="Trigga Dreamer-pass"
+          className="rounded-md border border-neutral-200 dark:border-neutral-800 px-5 py-4 flex flex-col gap-3"
+        >
+          <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+            Trigga en ny Dreamer-körning mot din nuvarande event-log. Tar
+            20-30s. Standard depth: random-walk + consolidation över
+            embeddings.
+          </p>
+          <form action={regenerateDreamer}>
+            <TriggerButton
+              label="Kör Dreamer mot nuvarande data"
+              pendingLabel="Tänker… (20–30s)"
+            />
+          </form>
+        </section>
 
         {insights.length === 0 ? (
           <EmptyTracesView />
