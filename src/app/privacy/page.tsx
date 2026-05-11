@@ -140,9 +140,12 @@ export default function PrivacyPage() {
               bakgrunds-observationer).
             </li>
             <li>
-              <strong>Radering</strong>: under utveckling. Soft-delete-pattern
-              (DELETION_EVENT) + 30-dagars hard-delete-batch planeras innan
-              publik release.
+              <strong>Radering</strong>: soft-delete är implementerad — vid
+              radering markeras ditt subject via en append-only deletion-event,
+              och alla läs-paths returnerar 410 Gone. Hard-delete (faktisk
+              event-radering ur DB) sker som batch-job efter 30-dagars fönster
+              för ångerrätt; det batch-jobbet är inte schemalagt än utan körs
+              manuellt på begäran under v1.
             </li>
             <li>
               <strong>Portabilitet</strong>: SREF v1 är öppen specifikation — vilken
