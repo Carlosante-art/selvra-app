@@ -212,24 +212,37 @@ function ThoughtsSinceLetter({ thoughts }: { thoughts: EventListItem[] }) {
       <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
         Tankar sedan brevet
       </h2>
-      <ul className="flex flex-col gap-3">
-        {thoughts.map((t) => (
-          <li
-            key={t.event_id}
-            className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300"
-          >
-            <time
-              dateTime={t.created_at}
-              className="text-xs text-neutral-500 dark:text-neutral-500 font-mono tabular-nums mr-3"
+      <ul className="flex flex-col gap-5">
+        {thoughts.map((t) => {
+          const subjectShort = String(t.subject_id).slice(0, 8)
+          return (
+            <li
+              key={t.event_id}
+              className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300"
             >
-              {formatThoughtTimestamp(t.created_at)}
-            </time>
-            <span>
-              &ldquo;{String((t.payload as { text?: string }).text ?? '')}&rdquo;
-            </span>
-          </li>
-        ))}
+              <div className="flex items-start gap-3">
+                <time
+                  dateTime={t.created_at}
+                  className="text-xs text-neutral-500 dark:text-neutral-500 font-mono tabular-nums whitespace-nowrap pt-0.5"
+                >
+                  {formatThoughtTimestamp(t.created_at)}
+                </time>
+                <span>
+                  &ldquo;{String((t.payload as { text?: string }).text ?? '')}&rdquo;
+                </span>
+              </div>
+              <p className="ml-[5.25rem] mt-1 text-xs text-neutral-500 dark:text-neutral-500 font-mono">
+                Sparad under subject {subjectShort}… · event {t.event_id.slice(0, 8)}…
+              </p>
+            </li>
+          )
+        })}
       </ul>
+      <p className="text-xs text-neutral-500 dark:text-neutral-500 italic">
+        Tankarna är sparade i Selvra-protokollet under ditt subject-id som
+        append-only events. De annoteras inte i brevet ovan — brevet är
+        frusen-dokument; dina tankar är separat tråd som finns parallellt.
+      </p>
     </section>
   )
 }
