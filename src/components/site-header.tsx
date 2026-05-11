@@ -1,10 +1,13 @@
 import Link from 'next/link'
 
+import { NavLink } from './nav-link'
+
 /**
  * Minimal navigation. Selvra-wordmark som hemma-länk + tre primära ytor
  * (Brev / Tankar / Intentioner) + login. Brevs-metaforen styr tonen — tunt,
  * närvarande, ej dashboard-tongue.
  *
+ * Nav-länk får active-state via NavLink (Client Component, läser pathname).
  * Login-state är platshållare tills magic-link är wired. När Auth.js är
  * aktivt: visa "Logga ut" + ev. inställningar; nu: alltid "Logga in".
  */
@@ -27,15 +30,10 @@ export function SiteHeader() {
         </Link>
 
         <nav aria-label="Primär navigation">
-          <ul className="flex items-center gap-1 sm:gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+          <ul className="flex items-center gap-1 sm:gap-3 text-sm">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="rounded-md px-2 py-1 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
-                >
-                  {link.label}
-                </Link>
+                <NavLink href={link.href} label={link.label} />
               </li>
             ))}
           </ul>
