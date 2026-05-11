@@ -49,6 +49,28 @@ export default function ExportPage() {
           </div>
         </section>
 
+        <section className="flex flex-col gap-4 rounded-md border border-neutral-200 dark:border-neutral-800 px-5 py-5">
+          <h2 className="text-base font-medium">Dela med valfri AI</h2>
+          <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+            Strukturerad text-profil du kan klistra in i ChatGPT, Claude,
+            Gemini eller annan AI. När du pratar med en ny AI känner den
+            dig inte — det här är hur du ger den din kontext direkt, utan
+            att vara inlåst i deras minne.
+          </p>
+          <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+            Konfigurerbar: tidsperiod (vecka/månad/allt), lager
+            (intentioner/tankar/mönster). Format: läsbar text, ej JSON.
+          </p>
+          <div>
+            <Link
+              href="/export/ai-context"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-6 text-sm font-medium hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
+            >
+              Skapa AI-context
+            </Link>
+          </div>
+        </section>
+
         <section className="flex flex-col gap-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
           <h2 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
             Vad du kan göra med filen

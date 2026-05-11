@@ -193,6 +193,12 @@ function OwnershipBanner() {
           Exportera allt som SREF v1
         </a>
         <a
+          href="/export/ai-context"
+          className="inline-flex h-10 items-center justify-center rounded-full border border-neutral-300 dark:border-neutral-700 px-5 text-sm font-medium hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
+        >
+          Dela med valfri AI
+        </a>
+        <a
           href="/export"
           className="inline-flex h-10 items-center justify-center rounded-full border border-neutral-300 dark:border-neutral-700 px-5 text-sm font-medium hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
         >
