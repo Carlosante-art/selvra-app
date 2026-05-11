@@ -26,16 +26,11 @@ const SOURCES: Array<{
     href: '/api/oauth/strava/init',
   },
   {
-    id: 'google_calendar',
-    label: 'Google Calendar',
-    description: 'Planerad tid — möten, händelser, åtaganden.',
-    status: 'pending',
-  },
-  {
-    id: 'google_gmail',
-    label: 'Gmail-metadata',
-    description: 'Uppmärksamhet — utan att läsa innehåll.',
-    status: 'pending',
+    id: 'google',
+    label: 'Google (Calendar + Gmail-metadata)',
+    description: 'Planerad tid (möten, händelser) + uppmärksamhet via mail-headers. Aldrig mail-innehåll.',
+    status: 'live',
+    href: '/api/oauth/google/init',
   },
   {
     id: 'spotify',
@@ -152,6 +147,23 @@ function formatFlash(params: {
         'Strava är inte aktiverad än. OAuth-app:en registreras under bolagets ' +
         'namn när AB är godkänt (~2-3 veckor). Tills dess är knappen ett ' +
         'scaffold-skal.',
+    }
+  }
+  if (params.error === 'google_not_configured') {
+    return {
+      kind: 'error',
+      message:
+        'Google är inte aktiverad än. OAuth-app:en registreras under bolagets ' +
+        'namn när AB är godkänt (~2-3 veckor). Tills dess är knappen ett ' +
+        'scaffold-skal.',
+    }
+  }
+  if (params.saved === 'google') {
+    return {
+      kind: 'success',
+      message:
+        'Google kopplad. Tokens loggade till server-konsol — kopiera till .env ' +
+        'manuellt (DB-storage kommer post-AB).',
     }
   }
   if (params.error) {
