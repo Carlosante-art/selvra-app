@@ -1,0 +1,110 @@
+/**
+ * TypeScript-typer som speglar Selvra-protokollets HTTP-fasad.
+ *
+ * Spegling, inte source-of-truth: kanonisk schema lever i
+ * `~/selvra/src/selvra/http/schemas/`. Håll synkat manuellt eller via
+ * OpenAPI-codegen i framtiden.
+ */
+
+export type EventCategory =
+  | 'data_ingested'
+  | 'feature_extracted'
+  | 'insight_derived'
+  | 'synthesis_generated'
+  | 'feedback_received'
+  | 'divergence_detected'
+  | 'profile_updated'
+  | 'source_registered'
+
+export type MCPScope = 'read' | 'write' | 'admin'
+
+// ─── Intention-specifika typer ─────────────────────────────────────
+
+export type IntentType = 'self_directed' | 'delivery_rhythm'
+
+export type DeliveryRhythm =
+  | 'sunday_morning'
+  | 'friday_afternoon'
+  | 'before_events'
+  | 'custom'
+
+export type TemporalValidity = {
+  valid_from: string // ISO-8601
+  valid_until: string | null // null = fortfarande aktiv
+}
+
+export type IntentionSelfDirectedPayload = {
+  intent_type: 'self_directed'
+  text: string
+  value: null
+  temporal_validity: TemporalValidity
+  declared_at: string
+}
+
+export type IntentionDeliveryRhythmPayload = {
+  intent_type: 'delivery_rhythm'
+  text: null
+  value: {
+    rhythm: DeliveryRhythm
+    custom_description: string | null
+  }
+  temporal_validity: TemporalValidity
+  declared_at: string
+}
+
+export type IntentionPayload =
+  | IntentionSelfDirectedPayload
+  | IntentionDeliveryRhythmPayload
+
+// ─── Generisk event-request/response ───────────────────────────────
+
+export type CreateEventRequest = {
+  category: EventCategory
+  event_type: string
+  source_ai_id: string
+  payload: Record<string, unknown>
+  metadata?: Record<string, unknown>
+}
+
+export type ModeratorVerdict = 'accepted' | 'requires_user_review' | 'rejected'
+
+export type ModeratorFinding = {
+  detector: string
+  severity: 'info' | 'warning' | 'critical'
+  description: string
+}
+
+export type ModeratorDecision = {
+  verdict: ModeratorVerdict
+  findings: ModeratorFinding[]
+  trust_score_before: number
+  trust_score_after: number
+}
+
+export type EventResponse = {
+  event_id: string | null // null vid 202 requires_user_review
+  subject_id: string
+  category: EventCategory
+  event_type: string
+  moderator: ModeratorDecision
+  created_at: string | null
+}
+
+// ─── Snapshot (read-side) ──────────────────────────────────────────
+
+export type ProfileFact = {
+  key: string
+  value: unknown
+  // Andra fält finns på protokoll-sidan; selvra-app bryr sig om key+value
+  // för v1. Utvidga vid behov.
+  [extra: string]: unknown
+}
+
+export type SubjectSnapshot = {
+  subject_id: string
+  tenant_id: string
+  items: ProfileFact[]
+  next_cursor: string | null
+  total_count: number
+  limit: number
+}
