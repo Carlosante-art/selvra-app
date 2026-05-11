@@ -6,6 +6,9 @@ import { recordThought } from '@/lib/protocol/client'
 
 const MAX_THOUGHT_CHARS = 4000
 
+// Tillåtna return_to-värden — whitelist mot open-redirect.
+const ALLOWED_RETURNS = new Set(['/thoughts', '/brev'])
+
 export async function submitThought(formData: FormData): Promise<void> {
   const raw = formData.get('text')
   if (typeof raw !== 'string') return
@@ -22,7 +25,13 @@ export async function submitThought(formData: FormData): Promise<void> {
     captured_at: now,
   })
 
+  const returnToRaw = formData.get('return_to')
+  const returnTo =
+    typeof returnToRaw === 'string' && ALLOWED_RETURNS.has(returnToRaw)
+      ? returnToRaw
+      : '/thoughts'
+
   // Subtil bekräftelse via searchParam — sparad-flash + tid.
   const flash = encodeURIComponent(now)
-  redirect(`/thoughts?saved=${flash}`)
+  redirect(`${returnTo}?saved=${flash}`)
 }

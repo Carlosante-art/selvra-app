@@ -67,6 +67,12 @@ export default async function ConfirmPage() {
             Skriv en tanke
           </Link>
           <Link
+            href="/brev"
+            className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-300 dark:border-neutral-700 px-6 text-base font-medium hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
+          >
+            Förhandsvisa brev-formatet
+          </Link>
+          <Link
             href="/onboarding/intentions"
             className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-300 dark:border-neutral-700 px-6 text-base font-medium hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
           >
