@@ -18,24 +18,48 @@ import type {
  * Selvra-protokollets HTTP-klient. Server-only — JWT-secret får aldrig
  * exponeras till klient-bundeln.
  *
- * Status 2026-05-11: hardcoded subject_id för Carl-dogfood. När
- * multi-user kommer: derivera per-request via uuid5(NAMESPACE, tenant:ext_id).
+ * Arkitektur (2026-05-12 refactor — per-user-context):
+ *
+ *   ProtocolInfra (statisk, env-baserad, cachad):
+ *     - baseUrl, secret, sourceId, subUuid
+ *     - Shared per source-app (selvra-app). Aldrig per user.
+ *
+ *   UserCreds (dynamisk, per-request):
+ *     - tenantId, subjectId, externalSubjectId
+ *     - Resolveras i ordning:
+ *       1. Auth.js-session → DB-lookup på users.selvra_tenant_id +
+ *          users.selvra_subject_id (multi-user-mode)
+ *       2. Env-vars SELVRA_TENANT_ID/SELVRA_SUBJECT_ID/
+ *          SELVRA_SUBJECT_EXTERNAL_ID (Carl-dogfood-fallback)
+ *
+ *   Säkerhet: när session finns används ALDRIG Carl-env. Användarens egna
+ *   tenant_id signas in i JWT-tid-claim, subject_id i subjects-claim.
+ *   RLS i Selvra-protokollet isolerar via tid-claim → defense-in-depth.
+ *
+ * Cirkulär-import: protocol/client → auth/config → identity/ensure →
+ * protocol/client. Vi bryter cyklen via dynamic import() av auth lazy-
+ * laddat vid call-time, inte modul-load-time.
  */
 
-type ProtocolConfig = {
+type ProtocolInfra = {
   baseUrl: string
   secret: Uint8Array
-  tenantId: string
-  subUuid: string
-  subjectId: string
-  externalSubjectId: string
   sourceId: string
+  subUuid: string
 }
 
-let _config: ProtocolConfig | null = null
+type UserCreds = {
+  tenantId: string
+  subjectId: string
+  externalSubjectId: string
+}
 
-function getConfig(): ProtocolConfig {
-  if (_config) return _config
+type RequestContext = ProtocolInfra & UserCreds
+
+let _infra: ProtocolInfra | null = null
+
+function getProtocolInfra(): ProtocolInfra {
+  if (_infra) return _infra
 
   const missing: string[] = []
   const get = (k: string): string => {
@@ -46,52 +70,116 @@ function getConfig(): ProtocolConfig {
 
   const baseUrl = get('SELVRA_PROTOCOL_URL')
   const secretStr = get('SELVRA_PROTOCOL_JWT_SECRET')
-  const tenantId = get('SELVRA_TENANT_ID')
   const subUuid = get('SELVRA_APP_SUB_UUID')
-  const subjectId = get('SELVRA_SUBJECT_ID')
-  const externalSubjectId = get('SELVRA_SUBJECT_EXTERNAL_ID')
   const sourceId = get('SELVRA_SOURCE_ID')
 
   if (missing.length > 0) {
     throw new Error(
-      `Missing required env vars for Selvra protocol client: ${missing.join(', ')}`,
+      `Missing required env vars for Selvra protocol infra: ${missing.join(', ')}`,
     )
   }
 
-  _config = {
+  _infra = {
     baseUrl: baseUrl.replace(/\/$/, ''),
     secret: new TextEncoder().encode(secretStr),
-    tenantId,
-    subUuid,
-    subjectId,
-    externalSubjectId,
     sourceId,
+    subUuid,
   }
-  return _config
+  return _infra
 }
 
-async function mintToken(scopes: MCPScope[]): Promise<string> {
-  const cfg = getConfig()
+function getCarlEnvCreds(): UserCreds | null {
+  const tenantId = process.env.SELVRA_TENANT_ID
+  const subjectId = process.env.SELVRA_SUBJECT_ID
+  const externalSubjectId = process.env.SELVRA_SUBJECT_EXTERNAL_ID
+  if (!tenantId || !subjectId || !externalSubjectId) return null
+  return { tenantId, subjectId, externalSubjectId }
+}
+
+/**
+ * Försöker lösa user-creds från Auth.js-session + DB. Returnerar null om:
+ * - Ingen session
+ * - Session existerar men user saknar selvra_tenant_id/selvra_subject_id
+ *   (provisioning-flow inte körd än, eller failade)
+ * - Auth.js/DB inte tillgänglig (DATABASE_URL saknas, etc.)
+ *
+ * Dynamic imports bryter cirkulär-import-kedjan
+ * (protocol/client → auth/config → identity/ensure → protocol/client).
+ */
+async function getUserCredsFromSession(): Promise<UserCreds | null> {
+  try {
+    const { auth } = await import('@/lib/auth/config')
+    const session = await auth()
+    if (!session?.user?.id) return null
+
+    const { db } = await import('@/lib/db')
+    const { users } = await import('@/lib/db/schema')
+    const { eq } = await import('drizzle-orm')
+
+    const rows = await db
+      .select({
+        tenantId: users.selvraTenantId,
+        subjectId: users.selvraSubjectId,
+      })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1)
+
+    const row = rows[0]
+    if (!row?.tenantId || !row?.subjectId) return null
+
+    return {
+      tenantId: row.tenantId,
+      subjectId: row.subjectId,
+      externalSubjectId: session.user.id,
+    }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Effektiv request-context: session-baserade creds om tillgängliga,
+ * annars Carl-env-fallback. Kastar om varken session ELLER env finns.
+ */
+async function getRequestContext(): Promise<RequestContext> {
+  const infra = getProtocolInfra()
+
+  const sessionCreds = await getUserCredsFromSession()
+  if (sessionCreds) return { ...infra, ...sessionCreds }
+
+  const envCreds = getCarlEnvCreds()
+  if (envCreds) return { ...infra, ...envCreds }
+
+  throw new Error(
+    'No Selvra user context: Auth.js session lookup failed AND no Carl-env fallback (SELVRA_TENANT_ID/SUBJECT_ID/SUBJECT_EXTERNAL_ID missing).',
+  )
+}
+
+async function mintToken(
+  ctx: RequestContext,
+  scopes: MCPScope[],
+): Promise<string> {
   return new SignJWT({
-    sub: cfg.subUuid,
-    tid: cfg.tenantId,
-    subjects: [cfg.subjectId],
+    sub: ctx.subUuid,
+    tid: ctx.tenantId,
+    subjects: [ctx.subjectId],
     scopes,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuer('selvra')
     .setExpirationTime('10m')
-    .sign(cfg.secret)
+    .sign(ctx.secret)
 }
 
 async function call<T>(
+  ctx: RequestContext,
   path: string,
   init: RequestInit & { scopes: MCPScope[] },
 ): Promise<T> {
-  const cfg = getConfig()
-  const token = await mintToken(init.scopes)
+  const token = await mintToken(ctx, init.scopes)
 
-  const res = await fetch(`${cfg.baseUrl}${path}`, {
+  const res = await fetch(`${ctx.baseUrl}${path}`, {
     ...init,
     headers: {
       ...(init.headers ?? {}),
@@ -109,106 +197,7 @@ async function call<T>(
   return (await res.json()) as T
 }
 
-// ─── Public API ─────────────────────────────────────────────────────
-
-export async function declareIntention(
-  payload: IntentionPayload,
-): Promise<EventResponse> {
-  const cfg = getConfig()
-  const body: CreateEventRequest = {
-    category: 'data_ingested',
-    event_type: 'selvra.intention.declared',
-    source_ai_id: cfg.sourceId,
-    payload: payload as unknown as Record<string, unknown>,
-  }
-  return call<EventResponse>(`/v1/subjects/${cfg.subjectId}/events`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    scopes: ['write'],
-  })
-}
-
-export async function recordThought(
-  payload: ThoughtPayload,
-): Promise<EventResponse> {
-  const cfg = getConfig()
-  const body: CreateEventRequest = {
-    category: 'data_ingested',
-    event_type: 'selvra.thought.recorded',
-    source_ai_id: cfg.sourceId,
-    payload: payload as unknown as Record<string, unknown>,
-  }
-  return call<EventResponse>(`/v1/subjects/${cfg.subjectId}/events`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    scopes: ['write'],
-  })
-}
-
-export async function recordSignalPreference(
-  payload: SignalPreferencePayload,
-): Promise<EventResponse> {
-  const cfg = getConfig()
-  const body: CreateEventRequest = {
-    category: 'profile_updated',
-    event_type: 'selvra.preference.signal_optin',
-    source_ai_id: cfg.sourceId,
-    payload: payload as unknown as Record<string, unknown>,
-  }
-  return call<EventResponse>(`/v1/subjects/${cfg.subjectId}/events`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    scopes: ['write'],
-  })
-}
-
-/**
- * Hämta nuvarande snapshot. NOTE 2026-05-11: ProjectionEngine projicerar
- * inte `selvra.intention.declared` eller `selvra.thought.recorded` till
- * ProfileFacts än, så detta returnerar tomt även när events finns. Se
- * STATE.md "Reading-back-problemet" för lösningar (a) projection-regel
- * eller (b) GET /events-endpoint.
- */
-export async function getSnapshot(): Promise<SubjectSnapshot> {
-  const cfg = getConfig()
-  return call<SubjectSnapshot>(`/v1/subjects/${cfg.subjectId}/snapshot`, {
-    method: 'GET',
-    scopes: ['read'],
-  })
-}
-
-/**
- * Trigga manuell synthesis (re-generera brev). Sync — tar 30-60s eftersom
- * Layer-3-LLM-call är synkron i protokollets internal-admin-route.
- */
-export async function triggerReflectionRun(): Promise<{
-  event_id: string
-  model_used: string
-  chars: number
-  inputs: Record<string, unknown>
-}> {
-  return call('/v1/internal/carl/reflect', {
-    method: 'POST',
-    scopes: ['write'],
-  })
-}
-
-/**
- * Trigga manuell Dreamer-pass (background reasoning) på Carls subject.
- * Sync — tar 20-30s.
- */
-export async function triggerDreamerRun(): Promise<{
-  run_id: string
-  insights_produced: number
-  redundancies_found: number
-  total_tokens: number
-  bail_reason: string
-}> {
-  return call('/v1/internal/carl/dream', {
-    method: 'POST',
-    scopes: ['write'],
-  })
-}
+/* ─── Admin-API (no user-context — system-source operations) ───────── */
 
 /**
  * Skapa en ny tenant i Selvra-protokollet (admin-scoped).
@@ -217,10 +206,8 @@ export async function triggerDreamerRun(): Promise<{
  * vi provisionerar deras egen tenant och persisterar tenant_id på
  * user-raden i selvra-app:s DB.
  *
- * Mintar JWT med `admin`-scope. Subjects-claim är konfigurerad standard
- * (Carl:s) — admin-routes verifierar inte subject-match, så det är OK.
- * Tid-claim är Carl:s tenant — det är "system source" perspektivet, inte
- * "user" perspektivet. Den nya tenanten skapas separat.
+ * Mintar admin-JWT under Carl-env-tid (selvra-app:s system-perspektiv).
+ * Den nya tenanten skapas oberoende; det är dess tenant_id som returneras.
  */
 export async function createTenant(params: {
   name: string
@@ -231,7 +218,13 @@ export async function createTenant(params: {
   type: string
   created_at: string
 }> {
-  return call('/v1/tenants', {
+  const infra = getProtocolInfra()
+  const carlCreds = getCarlEnvCreds()
+  if (!carlCreds) {
+    throw new Error('createTenant requires SELVRA_TENANT_ID env (admin-source-tid)')
+  }
+  const ctx: RequestContext = { ...infra, ...carlCreds }
+  return call(ctx, '/v1/tenants', {
     method: 'POST',
     body: JSON.stringify({
       name: params.name,
@@ -246,11 +239,8 @@ export async function createTenant(params: {
  * protokollets POST /v1/subjects. Idempotent — samma input ger alltid
  * samma subject_id (UUID5-derivation).
  *
- * Klienten skickar `external_subject_id` (Auth.js user.id) och får
- * tillbaka subject_id som derivats under den NYA tenanten.
- *
- * Kräver att JWT:n mintats med `tid: newTenantId` — inte default Carl-tid —
- * eftersom Selvra-protokollet deriverar under claims.tid.
+ * Mintar JWT med override-tid så subject derivras under den NYA tenanten,
+ * inte Carl-tid. Selvra-protokollet deriverar under claims.tid.
  */
 export async function deriveSubjectIdUnderTenant(params: {
   tenantId: string
@@ -261,10 +251,11 @@ export async function deriveSubjectIdUnderTenant(params: {
   tenant_id: string
   derived_at: string
 }> {
-  const cfg = getConfig()
-  // Mint JWT med override-tid så subject derivras under den nya tenanten.
+  const infra = getProtocolInfra()
+  // Mint JWT directly (custom tid + empty subjects) since this anrop
+  // bootstrappar subject_id — det finns inte än att lägga i subjects-claim.
   const token = await new SignJWT({
-    sub: cfg.subUuid,
+    sub: infra.subUuid,
     tid: params.tenantId,
     subjects: [],
     scopes: ['write'],
@@ -272,9 +263,9 @@ export async function deriveSubjectIdUnderTenant(params: {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuer('selvra')
     .setExpirationTime('1m')
-    .sign(cfg.secret)
+    .sign(infra.secret)
 
-  const res = await fetch(`${cfg.baseUrl}/v1/subjects`, {
+  const res = await fetch(`${infra.baseUrl}/v1/subjects`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -292,10 +283,111 @@ export async function deriveSubjectIdUnderTenant(params: {
   return res.json()
 }
 
+/* ─── User-driven API (per-request-context) ────────────────────────── */
+
+export async function declareIntention(
+  payload: IntentionPayload,
+): Promise<EventResponse> {
+  const ctx = await getRequestContext()
+  const body: CreateEventRequest = {
+    category: 'data_ingested',
+    event_type: 'selvra.intention.declared',
+    source_ai_id: ctx.sourceId,
+    payload: payload as unknown as Record<string, unknown>,
+  }
+  return call<EventResponse>(ctx, `/v1/subjects/${ctx.subjectId}/events`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    scopes: ['write'],
+  })
+}
+
+export async function recordThought(
+  payload: ThoughtPayload,
+): Promise<EventResponse> {
+  const ctx = await getRequestContext()
+  const body: CreateEventRequest = {
+    category: 'data_ingested',
+    event_type: 'selvra.thought.recorded',
+    source_ai_id: ctx.sourceId,
+    payload: payload as unknown as Record<string, unknown>,
+  }
+  return call<EventResponse>(ctx, `/v1/subjects/${ctx.subjectId}/events`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    scopes: ['write'],
+  })
+}
+
+export async function recordSignalPreference(
+  payload: SignalPreferencePayload,
+): Promise<EventResponse> {
+  const ctx = await getRequestContext()
+  const body: CreateEventRequest = {
+    category: 'data_ingested',
+    event_type: 'selvra.signal.preference',
+    source_ai_id: ctx.sourceId,
+    payload: payload as unknown as Record<string, unknown>,
+  }
+  return call<EventResponse>(ctx, `/v1/subjects/${ctx.subjectId}/events`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    scopes: ['write'],
+  })
+}
+
+export async function getSnapshot(): Promise<SubjectSnapshot> {
+  const ctx = await getRequestContext()
+  return call<SubjectSnapshot>(ctx, `/v1/subjects/${ctx.subjectId}/snapshot`, {
+    method: 'GET',
+    scopes: ['read'],
+  })
+}
+
 /**
- * Hämta lifecycle-status för subject. Returnerar INTE 410 om deleted —
- * UI:n behöver kunna fråga "är jag deleted?" utan att gå runt deletion-
- * gate.
+ * Trigga manuell synthesis (re-generera brev). Sync — tar 30-60s eftersom
+ * Layer-3-LLM-call är synkron i protokollets internal-admin-route.
+ *
+ * NOTERA: Detta är Carl-only internal-admin-endpoint (`/v1/internal/carl/reflect`).
+ * Den hard-checkar Carl-tenant i selvra-protokollet och fungerar inte för
+ * andra users. När multi-user kommer behövs en publik endpoint eller
+ * subject-scoped-version. Detta är medvetet kvar som Carl-bara just nu.
+ */
+export async function triggerReflectionRun(): Promise<{
+  event_id: string
+  model_used: string
+  chars: number
+  inputs: Record<string, unknown>
+}> {
+  const ctx = await getRequestContext()
+  return call(ctx, '/v1/internal/carl/reflect', {
+    method: 'POST',
+    scopes: ['write'],
+  })
+}
+
+/**
+ * Trigga manuell Dreamer-pass (background reasoning). Carl-only — se
+ * triggerReflectionRun.
+ */
+export async function triggerDreamerRun(): Promise<{
+  run_id: string
+  insights_produced: number
+  redundancies_found: number
+  total_tokens: number
+  bail_reason: string
+}> {
+  const ctx = await getRequestContext()
+  return call(ctx, '/v1/internal/carl/dream', {
+    method: 'POST',
+    scopes: ['write'],
+  })
+}
+
+/**
+ * Hämta lifecycle-status för current user:s subject. Returnerar INTE 410
+ * om deleted — UI:n behöver kunna fråga "är jag deleted?" utan att gå
+ * runt deletion-gate.
  */
 export type SubjectLifecycle =
   | {
@@ -311,23 +403,15 @@ export type SubjectLifecycle =
     }
 
 export async function getSubjectLifecycle(): Promise<SubjectLifecycle> {
-  const cfg = getConfig()
-  return call<SubjectLifecycle>(`/v1/subjects/${cfg.subjectId}/lifecycle`, {
+  const ctx = await getRequestContext()
+  return call<SubjectLifecycle>(ctx, `/v1/subjects/${ctx.subjectId}/lifecycle`, {
     method: 'GET',
     scopes: ['read'],
   })
 }
 
 /**
- * Markera subject för soft-deletion (GDPR right-to-deletion).
- *
- * Returnerar:
- * - status="deletion_requested" + 202 — ny deletion-event skapad
- * - status="already_deleted" + 200 — idempotent re-call
- *
- * Efter call:n returnerar alla read/write-paths 410 Gone. Användaren
- * kan ångra inom 30 dagar via `restoreSubject()`. Hard-delete sker
- * via manuellt batch-job efter 30-dagars-fönstret.
+ * Markera current user:s subject för soft-deletion (GDPR right-to-deletion).
  */
 export async function deleteSubject(): Promise<{
   subject_id: string
@@ -336,8 +420,8 @@ export async function deleteSubject(): Promise<{
   hard_delete_eligible_after_days?: number
   message: string
 }> {
-  const cfg = getConfig()
-  return call(`/v1/subjects/${cfg.subjectId}`, {
+  const ctx = await getRequestContext()
+  return call(ctx, `/v1/subjects/${ctx.subjectId}`, {
     method: 'DELETE',
     scopes: ['write'],
   })
@@ -346,9 +430,6 @@ export async function deleteSubject(): Promise<{
 /**
  * Ångra pending soft-deletion. Måste anropas innan hard-delete-batchen
  * har körts (inom 30-dagars-fönstret).
- *
- * Returnerar 200 om subject var deleted (cancellation skapad), 409 om
- * subject inte var markerad för deletion.
  */
 export async function restoreSubject(): Promise<{
   subject_id: string
@@ -356,25 +437,24 @@ export async function restoreSubject(): Promise<{
   status: 'restored'
   message: string
 }> {
-  const cfg = getConfig()
-  return call(`/v1/subjects/${cfg.subjectId}/restore`, {
+  const ctx = await getRequestContext()
+  return call(ctx, `/v1/subjects/${ctx.subjectId}/restore`, {
     method: 'POST',
     scopes: ['write'],
   })
 }
 
 /**
- * Hämta användarens SREF v1-doc (portability-export). Content-addressed,
- * ev. HMAC-signerad per SREF_EXPORT_KEY på protokoll-sidan. Bygger hela
- * representationen — kan vara stor.
+ * Hämta current user:s SREF v1-doc (portability-export).
  */
 export async function getSREFExport(): Promise<SrefExportResponse> {
-  const cfg = getConfig()
+  const ctx = await getRequestContext()
   const params = new URLSearchParams({
-    external_subject_id: cfg.externalSubjectId,
+    external_subject_id: ctx.externalSubjectId,
   })
   return call<SrefExportResponse>(
-    `/v1/subjects/${cfg.subjectId}/sref-export?${params.toString()}`,
+    ctx,
+    `/v1/subjects/${ctx.subjectId}/sref-export?${params.toString()}`,
     {
       method: 'GET',
       scopes: ['read'],
@@ -383,23 +463,23 @@ export async function getSREFExport(): Promise<SrefExportResponse> {
 }
 
 /**
- * Lista events för subject med optional filter på event_type och tidpunkt.
- * Används för tankar-under-brev (designval 10) och liknande read-access
- * direkt mot event-loggen utan projection-detour.
+ * Lista events för current user:s subject med optional filter på
+ * event_type och tidpunkt.
  */
 export async function listEvents(opts: {
   eventType?: string
   since?: Date
   limit?: number
 }): Promise<EventsListResponse> {
-  const cfg = getConfig()
+  const ctx = await getRequestContext()
   const params = new URLSearchParams()
   if (opts.eventType) params.set('event_type', opts.eventType)
   if (opts.since) params.set('since', opts.since.toISOString())
   if (opts.limit) params.set('limit', String(opts.limit))
   const qs = params.toString() ? `?${params.toString()}` : ''
   return call<EventsListResponse>(
-    `/v1/subjects/${cfg.subjectId}/events${qs}`,
+    ctx,
+    `/v1/subjects/${ctx.subjectId}/events${qs}`,
     {
       method: 'GET',
       scopes: ['read'],
@@ -408,20 +488,20 @@ export async function listEvents(opts: {
 }
 
 /**
- * Hämta senaste reflektion (projicerad SynthesisSnapshot från
- * `selvra.reflection.generated`-events). Returns null om ingen finns
+ * Hämta senaste reflektion för current user (projicerad SynthesisSnapshot
+ * från `selvra.reflection.generated`-events). Returns null om ingen finns
  * (404 från protokollet).
  */
 export async function getLatestReflection(
   synthesisType?: string,
 ): Promise<LatestReflection | null> {
-  const cfg = getConfig()
-  const token = await mintToken(['read'])
+  const ctx = await getRequestContext()
+  const token = await mintToken(ctx, ['read'])
   const qs = synthesisType
     ? `?synthesis_type=${encodeURIComponent(synthesisType)}`
     : ''
   const res = await fetch(
-    `${cfg.baseUrl}/v1/subjects/${cfg.subjectId}/reflections/latest${qs}`,
+    `${ctx.baseUrl}/v1/subjects/${ctx.subjectId}/reflections/latest${qs}`,
     {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
