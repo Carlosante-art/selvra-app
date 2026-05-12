@@ -1,30 +1,35 @@
 import Link from 'next/link'
 
 /**
- * Landing-rewrite v1 — test-iteration 2026-05-12.
+ * Landing iteration 2 — 2026-05-12.
  *
- * Skrota tidigare landing. Bygg från grunden mot:
- * - 10 lock-positioner för reflektions-format
- * - 8 canonical positionerings-fraser
- * - Source Strategy v2 (Fas 1-3 + Domain-modell)
- * - Design-doktrin (Kinfolk/Craig Mod/Are.na — dokument, inte SaaS)
- * - Konkurrent-position vs AI-memory-portability
- * - Pris-modell 99-149 kr/månad
+ * Itererad mot konkret feedback från iteration 1:
+ *  1. Brev-exempel matchar nu brev v0.2-register (riktig prosa, multi-
+ *     source, specifika datapunkter, observation utan judgment).
+ *  2. Konsistent röst: lugn-direkt, specifik, no exclamation, no
+ *     marketing-words. Inga växlingar mellan poetisk/teknisk/säljande.
+ *  3. "Andra säger / Selvra säger" flyttad till egen sektion direkt
+ *     efter hero — det är pitchen mot AI-memory-portability.
+ *  4. Insider-språk ("tio låsta reflektions-positioner") borttaget;
+ *     ersatt med konkret "aldrig coacha, aldrig predicera, alltid
+ *     observera".
+ *  5. EU-sovereignty omformulerad offensivt — beslutsregel, inte fotnot.
+ *  6. Känslo-ord injicerade: spegling, sedd, närvaro, tystnad, klarhet.
+ *  7. CTA: skrivning är direktvärdet; brev kommer veckovis som
+ *     biprodukt. Cold-start adresserat.
  *
- * Provisoriska visuella val för denna iteration (mood-board ej låst än):
- * - Paper-bg #FAF8F3, ink-text #2A2826 (doktrin-låsta)
- * - Accent oxblood #6E2F2A (swappable när mood-board lockar accent)
- * - Geist Sans för body, Tailwind font-serif (system fallback Georgia/Times)
- *   för hero/h1 — sann serif-import väntar mood-board
- * - Raka knappar, border-t-sektion-rules, max-w-prose ~650px, py-multiplar
- *
- * INTE slutgiltig produktion. Test-iteration för Carl att se och iterera mot.
+ * Provisoriska visuella val (mood-board ej låst):
+ *  - Paper #FAF8F3, ink #2A2826 (doktrin-låsta)
+ *  - Accent oxblood #6E2F2A (swappable när mood-board landar)
+ *  - Tailwind font-serif för hero (system fallback)
+ *  - Raka kanter, border-t-rules, max-w-prose ~650px
  */
 
 const ACCENT = '#6E2F2A'
 const INK = '#2A2826'
 const INK_SOFT = '#5C4A3E'
 const PAPER = '#FAF8F3'
+const RULE = '#D9D2C4'
 
 export default function LandingPage() {
   return (
@@ -48,9 +53,9 @@ export default function LandingPage() {
           observerat den.
         </h1>
         <p className="text-lg leading-relaxed" style={{ color: INK_SOFT }}>
-          Selvra läser källor du redan använder och speglar mönster mellan
-          vad du säger att du vill, vad du säger att du gör, och vad datan
-          visar att du faktiskt gör.
+          Selvra läser källor du redan har och skriver tillbaka. En
+          spegling i veckan av vad mönstren visar — utan tolkning, utan
+          råd, utan dom.
         </p>
         <div className="pt-2">
           <Link
@@ -63,36 +68,105 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Sektion 2 — Vad Selvra gör konkret */}
+      {/* Sektion 2 — Pitch mot AI-memory-portability */}
       <Divider />
       <section className="w-full max-w-prose flex flex-col gap-10 py-24">
-        <SectionLabel>Vad Selvra gör</SectionLabel>
-        <div className="flex flex-col gap-8 text-lg leading-relaxed">
-          <p>
-            Selvra läser passivt. Du fortsätter göra det du gör — kalendern,
-            mailen, Spotify, träningen, kroppen. Selvra lägger sig som ett
-            lager ovanpå och observerar.
+        <SectionLabel>Vad det här är, vad det inte är</SectionLabel>
+        <div className="flex flex-col gap-6">
+          <p
+            className="text-sm uppercase tracking-[0.12em]"
+            style={{ color: INK_SOFT }}
+          >
+            Andra säger
           </p>
-          <p>
-            Selvra söker gapet. Mellan vad du sagt att du vill, vad du sagt
-            att du gör, och vad källorna visar. Det är där rörelsen finns —
-            inte i siffrorna själva.
+          <p className="text-lg leading-relaxed" style={{ color: INK_SOFT }}>
+            att din ChatGPT-memory kan flyttas.
           </p>
-          <p>
-            Selvra skriver tillbaka. Varje vecka, ett brev. Inte en
-            dashboard. Inte en coach. Ett dokument du läser, sparar, går
-            tillbaka till.
+          <p
+            className="text-sm uppercase tracking-[0.12em] pt-4"
+            style={{ color: ACCENT }}
+          >
+            Selvra säger
+          </p>
+          <p
+            className="font-serif text-2xl leading-snug"
+            style={{ color: INK }}
+          >
+            att din ChatGPT-memory är fattig representation av dig.
+          </p>
+          <p className="text-lg leading-relaxed">
+            Den vet vad du sagt till ChatGPT. Inte vad ditt liv visar.
+          </p>
+          <p className="text-lg leading-relaxed pt-2">
+            Selvra läser kropp, tid, uppmärksamhet, emotion, intention.
+            Den följer med dig till varje AI-konversation. Den växer med
+            dig.
           </p>
         </div>
       </section>
 
-      {/* Sektion 3 — Vad du redan har */}
+      {/* Sektion 3 — Brev visualiserat (brev v0.2-register) */}
+      <Divider />
+      <section className="w-full max-w-prose flex flex-col gap-10 py-24">
+        <SectionLabel>Så här kan ett brev läsa</SectionLabel>
+        <figure
+          className="border-l-2 pl-7 py-3 flex flex-col gap-6"
+          style={{ borderColor: ACCENT }}
+        >
+          <p
+            className="text-xs uppercase tracking-[0.18em] not-italic"
+            style={{ color: INK_SOFT }}
+          >
+            Vecka 19 · söndag morgon
+          </p>
+
+          <div className="flex flex-col gap-5 text-base leading-relaxed">
+            <p>
+              Du skrev på lördagen att du vill att allt du gör ska ha ett
+              syfte. På söndag-kvällen var schemat på Calendar tomt efter
+              18:00 och spellistan &ldquo;kvälls-flow&rdquo; fick samma
+              fyra timmar igen.
+            </p>
+            <p>
+              Kropp som arbetade hårt mitt i veckan. Från måndag till
+              onsdag sjönk tiden över 10 mmol/L från 82% till 58%, för att
+              sedan stiga till 95% på fredag-lördag. Garmin loggade ett
+              pass — tisdag morgon, 47 minuter, måttlig puls. Din
+              intention från mars säger fyra pass i veckan.
+            </p>
+            <p>
+              På torsdag-kvällen skrev du att veckan varit avvikande. Du
+              angav inget skäl. Sömn-snitt: 6h 12min — under din egen
+              markering på 7h. Två nätter under 6.
+            </p>
+          </div>
+
+          <figcaption
+            className="text-xs not-italic"
+            style={{ color: INK_SOFT }}
+          >
+            Källor: Dexcom · Garmin · Spotify · Calendar · dina tankar ·
+            dina intentioner
+          </figcaption>
+        </figure>
+        <p
+          className="text-base leading-relaxed"
+          style={{ color: INK_SOFT }}
+        >
+          Inga råd. Inga slutsatser. Bara det som var där, sett från flera
+          håll samtidigt. Det som var högt och det som var tyst, sida vid
+          sida.
+        </p>
+      </section>
+
+      {/* Sektion 4 — Vad du redan har */}
       <Divider />
       <section className="w-full max-w-prose flex flex-col gap-10 py-24">
         <SectionLabel>Vad du redan har</SectionLabel>
         <p className="text-lg leading-relaxed">
-          Selvras tes är enkel: de flesta människor har redan källor som
-          beskriver dem. Selvra läser de du explicit kopplar — inget annat.
+          Selvra är ingenting utan dig. Den läser bara det du explicit
+          kopplar — och de flesta människor har redan källor som beskriver
+          dem.
         </p>
         <ul className="flex flex-col gap-5 text-base leading-relaxed">
           <SourceLine
@@ -121,85 +195,34 @@ export default function LandingPage() {
           />
         </ul>
         <p
-          className="text-sm leading-relaxed italic pt-2"
+          className="text-base leading-relaxed pt-2"
           style={{ color: INK_SOFT }}
         >
-          Selvra fungerar med en domän. Den blir rikare när du kopplar fler.
-          Den kräver aldrig att du börjar göra något nytt.
+          En domän räcker. Selvra blir rikare med flera. Den kräver aldrig
+          att du börjar göra något nytt — bara att du låter den läsa det
+          du redan gör.
         </p>
       </section>
 
-      {/* Sektion 4 — Brev-metaforen visualiserad */}
+      {/* Sektion 5 — Du äger / agency */}
       <Divider />
       <section className="w-full max-w-prose flex flex-col gap-10 py-24">
-        <SectionLabel>Så här kan ett brev se ut</SectionLabel>
-        <figure
-          className="border-l-2 pl-7 py-3 flex flex-col gap-5"
-          style={{ borderColor: ACCENT }}
-        >
-          <p
-            className="text-xs uppercase tracking-[0.18em] not-italic"
-            style={{ color: INK_SOFT }}
-          >
-            Vecka 19 · söndag morgon
-          </p>
-          <p className="text-base leading-relaxed italic">
-            &ldquo;Garmin visade ett träningspass förra veckan. Din intention
-            från mars säger fyra. På torsdagen skrev du att veckan varit
-            avvikande.
-          </p>
-          <p className="text-base leading-relaxed italic">
-            Sömn-snitt: 6h 12min — under din egen markering på 7h. Spotify-
-            spellistan &lsquo;kvälls-flow&rsquo; fick 4h igen, samma som
-            föregående vecka. Kalendern visade inget efter 18:00 på söndag-
-            kvällen.
-          </p>
-          <p className="text-base leading-relaxed italic">
-            Du sa att du ville röra dig mer. Datan säger att rörelsen har
-            tystnat. Tankarna du skrev säger att veckan kändes
-            avvikande.&rdquo;
-          </p>
-          <figcaption
-            className="text-xs not-italic pt-2"
-            style={{ color: INK_SOFT }}
-          >
-            Källor: Garmin · Strava · Spotify · Calendar · dina tankar ·
-            dina intentioner
-          </figcaption>
-        </figure>
-        <p className="text-base leading-relaxed" style={{ color: INK_SOFT }}>
-          Brevet är spegling, inte rekommendation. Det säger inte vad du
-          bör göra. Det visar vad som finns där.
-        </p>
-      </section>
-
-      {/* Sektion 5 — Agency-position */}
-      <Divider />
-      <section className="w-full max-w-prose flex flex-col gap-10 py-24">
-        <SectionLabel>Du äger representationen</SectionLabel>
-        <div className="flex flex-col gap-8 text-lg leading-relaxed">
+        <SectionLabel>Det är ditt</SectionLabel>
+        <div className="flex flex-col gap-7 text-lg leading-relaxed">
           <p>
-            Allt Selvra vet om dig — intentioner, tankar, reflektioner,
-            källor, observationer — kan exporteras som ett enskilt dokument
-            (SREF v1). Kryptografiskt signerat. Portabelt. Standard.
+            Det Selvra skriver om dig är ditt. Inte upplåst. Inte hyrt.
+            Inte beroende av att vi finns kvar om fem år.
           </p>
           <p>
-            Det betyder du kan ta det med dig. Du kan dela det med en annan
-            AI — ChatGPT, Claude, Gemini — så att den AI:n förstår dig
-            bättre. Selvra blir lagret över alla AI-konversationer du har.
+            Hela representationen — intentioner, tankar, brev, källor,
+            observerade mönster — kan exporteras som ett enskilt dokument.
+            Du kan ge det till en annan AI så att den AI:n läser dig som
+            Selvra läser dig. Du kan radera det. Du kan gå.
           </p>
           <p style={{ color: INK_SOFT }}>
-            <em>
-              Andra säger att din ChatGPT-memory kan flyttas. Selvra säger
-              att din ChatGPT-memory är fattig representation av dig — den
-              vet vad du sagt till ChatGPT, inte vad ditt liv visar. Selvra
-              är riktig representation. Den följer med dig.
-            </em>
-          </p>
-          <p>
-            Och om du vill bort — markera kontot för radering. Inom 30 dagar
-            kan du ångra. Efter 30 dagar är all event-historik borta.
-            Slutgiltigt.
+            Det här är inte feature-lista. Det är arkitektur. Selvra är
+            byggt runt principen att representation av dig själv inte ska
+            vara något du måste be om tillgång till.
           </p>
         </div>
       </section>
@@ -209,13 +232,13 @@ export default function LandingPage() {
       <section className="w-full max-w-prose flex flex-col gap-10 py-24">
         <SectionLabel>Selvra är protokoll-lager</SectionLabel>
         <p className="text-lg leading-relaxed">
-          Selvra-appen du läser om är en av flera vertikaler ovanpå samma
-          protokoll. Var och en testar idén i en specifik domän.
+          Selvra-appen du läser om nu är en av flera vertikaler ovanpå
+          samma protokoll. Var och en prövar idén i en specifik domän.
         </p>
         <dl className="flex flex-col gap-7">
           <VerticalLine
             name="Stillra"
-            description="CGM-app som översätter glukos-siffror till sammanhang för T1-diabetiker. Det vi lär oss om kropp och tystnad."
+            description="Förståelse-lager för T1-diabetiker. Det vi lär oss om kropp och tystnad i kronisk sjukdom."
           />
           <VerticalLine
             name="Motiq"
@@ -223,11 +246,11 @@ export default function LandingPage() {
           />
           <VerticalLine
             name="Forsyne"
-            description="Förståelse-lager för svenska uthållighetsatleter. Det vi lär oss om träning, återhämtning och rörelse mot mål."
+            description="Förståelse-lager för uthållighets-atleter. Det vi lär oss om träning och rörelse mot mål."
           />
           <VerticalLine
             name="Elefant"
-            description="Yta som mäter gapet mellan intention och faktisk handling i digital aktivitet. Det vi lär oss om uppmärksamhet."
+            description="Spegling av digital närvaro. Det vi lär oss om gapet mellan intention och faktisk handling."
           />
         </dl>
         <p
@@ -235,49 +258,64 @@ export default function LandingPage() {
           style={{ color: INK_SOFT }}
         >
           Selvras värde sitter inte i en av dem. Det sitter i att de delar
-          samma protokoll. Det du sparar i en följer med till nästa.
+          samma protokoll. Det du skrev i en följer med till nästa.
         </p>
       </section>
 
-      {/* Sektion 7 — EU-sovereignty + constitutional reasoning */}
+      {/* Sektion 7 — Beslutsregeln */}
       <Divider />
       <section className="w-full max-w-prose flex flex-col gap-10 py-24">
-        <SectionLabel>Var datan ligger</SectionLabel>
-        <div className="flex flex-col gap-8 text-lg leading-relaxed">
+        <SectionLabel>Hur Selvra är byggd</SectionLabel>
+        <div className="flex flex-col gap-7 text-lg leading-relaxed">
           <p>
-            Selvra körs i Frankfurt. EU. Inget tredjepartsföretag utanför EU
-            har permanent kopia av dina events. CLOUD Act-exponering är inte
-            tillämplig. EU AI Act-kompatibel sedan grundläggning.
+            Selvra körs på europeisk infrastruktur. Inte för att
+            regleringen kräver det — utan för att representation av
+            människor inte ska routas genom amerikansk molnlagring. Det är
+            beslutsregeln som styrde allt annat.
           </p>
           <p>
-            Det är inte marknadsföring. Det är arkitektoniskt beslut som
-            påverkar vilka konkurrenter som finns kvar 2027-2028 när
-            regleringen är hård.
+            Av samma skäl är brevet bundet till regler det aldrig får
+            bryta. Det får aldrig coacha. Aldrig predicera. Aldrig
+            motivera. Aldrig döma. Det får bara observera, namnge källan,
+            och låta dig dra slutsatserna själv.
           </p>
-          <p>
-            Selvra har också tio låsta reflektions-positioner som styr vad
-            brevet får och inte får göra. Aldrig coach-språk. Aldrig
-            prediktion. Aldrig motivation. Alltid käll-attribuerat. Alltid
-            observation. Det är systemets <em>karaktär</em>, inte stil-val.
+          <p style={{ color: INK_SOFT }}>
+            Det är gränsen som gör spegeln användbar. Utan den blir Selvra
+            ännu en röst som tycker något om dig. Med den blir den en yta
+            där du kan se dig själv klarare.
           </p>
         </div>
       </section>
 
-      {/* Sektion 8 — CTA */}
+      {/* Sektion 8 — CTA: skrivningen är direktvärdet */}
       <Divider />
       <section className="w-full max-w-prose flex flex-col gap-10 py-24 pb-32">
         <SectionLabel>Börja</SectionLabel>
-        <p className="text-xl leading-relaxed">
-          Skriv din första intention. Koppla en källa du redan använder.
-          Vänta en vecka. Läs brevet. Iterera.
-        </p>
+        <div className="flex flex-col gap-6 text-lg leading-relaxed">
+          <p>
+            Det första du gör i Selvra är att skriva. En intention — vad
+            du vill att veckan ska handla om. En tanke — vad som rör sig
+            nu, oavsett om det är klart eller inte.
+          </p>
+          <p>
+            Det är inte förarbete inför brevet. Det är värdet i sig. Att
+            artikulera vad man vill, och att skriva ner det som rör sig,
+            är handlingar som klarnar tänkandet — innan Selvra hunnit göra
+            något.
+          </p>
+          <p>
+            Brevet kommer enligt rytmen du väljer. Tills dess har du en
+            yta att skriva i som inte är journaling-app och inte är
+            todo-lista. Det är substrat för spegeln.
+          </p>
+        </div>
         <div className="flex flex-wrap items-center gap-6 pt-2">
           <Link
             href="/onboarding/intentions"
             className="inline-flex h-12 items-center justify-center px-7 text-sm tracking-wide transition-colors"
             style={{ background: INK, color: PAPER }}
           >
-            Börja nu
+            Skriv din första intention
           </Link>
           <Link
             href="/privacy"
@@ -289,7 +327,7 @@ export default function LandingPage() {
         </div>
         <p className="text-sm pt-4" style={{ color: INK_SOFT }}>
           Pre-launch. Pris vid publik release: 99–149 kr/månad. Tills dess
-          gratis dogfood.
+          gratis.
         </p>
       </section>
     </main>
@@ -302,7 +340,7 @@ function Divider() {
   return (
     <div
       className="w-full max-w-prose border-t"
-      style={{ borderColor: '#D9D2C4' }}
+      style={{ borderColor: RULE }}
     />
   )
 }
