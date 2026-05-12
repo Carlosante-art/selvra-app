@@ -32,63 +32,80 @@ const PAPER = '#FAF8F3'
 const RULE = '#D9D2C4'
 
 type SourceStatus = 'live' | 'snart' | 'senare'
-type Source = { name: string; status: SourceStatus; label: string }
+type Source = {
+  name: string
+  status: SourceStatus
+  label: string
+  /**
+   * Simple Icons-slug för monokrom logo via CDN. `null` = ingen tillgänglig
+   * (interna källor som Intentioner/Tankar, eller brand utan SI-coverage).
+   * Då faller vi tillbaka till ren typografi-rendering.
+   *
+   * Trade-off: extern CDN-dependency (cdn.simpleicons.org loggar requests).
+   * För landing-marknadssida acceptabelt — ingen user-personal-data leaks,
+   * och faktiska monokroma brand-marks ger desktop-grid editorial-vikt
+   * som ren typografi inte når.
+   */
+  iconSlug: string | null
+}
 type Category = { name: string; sources: readonly Source[] }
 
 const CATEGORIES: readonly Category[] = [
   {
     name: 'Kropp',
     sources: [
-      { name: 'Dexcom', status: 'snart', label: 'glukos och kroppens rytm' },
-      { name: 'Apple Health', status: 'snart', label: 'kroppens samlade signal' },
-      { name: 'Garmin', status: 'snart', label: 'puls, sömn, träning' },
-      { name: 'Oura', status: 'snart', label: 'sömn och återhämtning' },
-      { name: 'Polar', status: 'snart', label: 'träning och hjärtrytm' },
-      { name: 'Whoop', status: 'snart', label: 'stress och belastning' },
-      { name: 'Withings', status: 'snart', label: 'vikt, sömn, puls' },
+      { name: 'Dexcom', status: 'snart', label: 'glukos och kroppens rytm', iconSlug: 'dexcom' },
+      { name: 'Apple Health', status: 'snart', label: 'kroppens samlade signal', iconSlug: 'apple' },
+      { name: 'Garmin', status: 'snart', label: 'puls, sömn, träning', iconSlug: 'garmin' },
+      { name: 'Oura', status: 'snart', label: 'sömn och återhämtning', iconSlug: 'ouraring' },
+      { name: 'Polar', status: 'snart', label: 'träning och hjärtrytm', iconSlug: 'polar' },
+      { name: 'Whoop', status: 'snart', label: 'stress och belastning', iconSlug: 'whoop' },
+      { name: 'Withings', status: 'snart', label: 'vikt, sömn, puls', iconSlug: 'withings' },
     ],
   },
   {
     name: 'Tid',
     sources: [
-      { name: 'Google Calendar', status: 'snart', label: 'vad du planerat göra' },
-      { name: 'Apple Calendar', status: 'snart', label: 'vad du planerat göra' },
+      { name: 'Google Calendar', status: 'snart', label: 'vad du planerat göra', iconSlug: 'googlecalendar' },
+      { name: 'Apple Calendar', status: 'snart', label: 'vad du planerat göra', iconSlug: 'apple' },
     ],
   },
   {
     name: 'Uppmärksamhet',
     sources: [
-      { name: 'Gmail', status: 'snart', label: 'vart uppmärksamheten går' },
-      { name: 'Outlook', status: 'snart', label: 'vart uppmärksamheten går' },
+      { name: 'Gmail', status: 'snart', label: 'vart uppmärksamheten går', iconSlug: 'gmail' },
+      { name: 'Outlook', status: 'snart', label: 'vart uppmärksamheten går', iconSlug: 'microsoftoutlook' },
     ],
   },
   {
     name: 'Emotion',
     sources: [
-      { name: 'Spotify', status: 'snart', label: 'vad du lyssnar på' },
-      { name: 'Apple Music', status: 'snart', label: 'vad du lyssnar på' },
-      { name: 'Readwise', status: 'snart', label: 'vad du markerar i läsning' },
-      { name: 'Kindle', status: 'senare', label: 'vad du läser' },
+      { name: 'Spotify', status: 'snart', label: 'vad du lyssnar på', iconSlug: 'spotify' },
+      { name: 'Apple Music', status: 'snart', label: 'vad du lyssnar på', iconSlug: 'applemusic' },
+      { name: 'Readwise', status: 'snart', label: 'vad du markerar i läsning', iconSlug: 'readwise' },
+      { name: 'Kindle', status: 'senare', label: 'vad du läser', iconSlug: 'amazonkindle' },
     ],
   },
   {
     name: 'Aktivitet',
     sources: [
-      { name: 'Strava', status: 'snart', label: 'vad kroppen gjorde' },
-      { name: 'Garmin Connect', status: 'snart', label: 'vad kroppen gjorde' },
+      { name: 'Strava', status: 'snart', label: 'vad kroppen gjorde', iconSlug: 'strava' },
+      { name: 'Garmin Connect', status: 'snart', label: 'vad kroppen gjorde', iconSlug: 'garmin' },
     ],
   },
   {
     name: 'Inre dialog',
     sources: [
-      { name: 'Intentioner', status: 'live', label: 'vad du sagt att du vill' },
-      { name: 'Tankar', status: 'live', label: 'vad du formulerat i Selvra' },
-      { name: 'Notion', status: 'snart', label: 'vad du skrivit utanför Selvra' },
-      { name: 'ChatGPT-export', status: 'snart', label: 'vad du tänkt med AI' },
-      { name: 'Claude-export', status: 'snart', label: 'vad du tänkt med AI' },
+      { name: 'Intentioner', status: 'live', label: 'vad du sagt att du vill', iconSlug: null },
+      { name: 'Tankar', status: 'live', label: 'vad du formulerat i Selvra', iconSlug: null },
+      { name: 'Notion', status: 'snart', label: 'vad du skrivit utanför Selvra', iconSlug: 'notion' },
+      { name: 'ChatGPT-export', status: 'snart', label: 'vad du tänkt med AI', iconSlug: 'openai' },
+      { name: 'Claude-export', status: 'snart', label: 'vad du tänkt med AI', iconSlug: 'anthropic' },
     ],
   },
 ] as const
+
+const INK_HEX_NO_HASH = INK.replace('#', '')
 
 export default function LandingPage() {
   return (
@@ -276,8 +293,25 @@ export default function LandingPage() {
               </h3>
               <ul className="flex flex-col gap-4">
                 {cat.sources.map((src) => (
-                  <li key={src.name} className="flex flex-col gap-1">
-                    <div className="flex items-baseline gap-2.5">
+                  <li key={src.name} className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-3">
+                      {src.iconSlug ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={`https://cdn.simpleicons.org/${src.iconSlug}/${INK_HEX_NO_HASH}`}
+                          alt=""
+                          aria-hidden="true"
+                          width={18}
+                          height={18}
+                          className="opacity-80 shrink-0"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span
+                          aria-hidden="true"
+                          className="inline-block w-[18px] h-[18px] shrink-0"
+                        />
+                      )}
                       <span
                         className="font-serif text-lg leading-tight"
                         style={{ color: INK }}
@@ -294,7 +328,7 @@ export default function LandingPage() {
                       )}
                     </div>
                     <p
-                      className="text-sm leading-relaxed"
+                      className="text-sm leading-relaxed pl-[30px]"
                       style={{ color: INK_SOFT }}
                     >
                       {src.label}
