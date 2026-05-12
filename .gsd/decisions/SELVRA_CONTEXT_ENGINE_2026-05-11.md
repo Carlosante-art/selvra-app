@@ -141,6 +141,31 @@ KÄLLOR ATT NÄMNA OM RELEVANT:
 
 ---
 
+### Nivå 1.5: Browser extension för automatisk context-injection
+
+**Vad:** Chrome/Firefox/Safari extension som injicerar Selvra-context i prompten *innan* användaren skickar i webb-baserade LLM:s (chatgpt.com, claude.ai, gemini.google.com, perplexity.ai).
+
+**Värde:** Löser friktion-problemet med manuell copy-paste. Selvra blir **"osynligt lager"** i AI-konversationer istället för separat verktyg. Täcker mainstream-användare som inte har MCP-kompatibla klienter.
+
+**Arkitektur:** Extension läser samma Selvra-protokoll som Nivå 1-3. Användaren väljer kontext (träning, musik, sömn, vecka) i extension-popup, kontexten injiceras i prompt-fältet. **Inget MCP krävs. Inget API-stöd från LLM-leverantörer krävs.**
+
+**Konkurrent-referens:** Luna Labs och AI Context Flow visar att kategori-pattern är validerat. Selvras edge är **source-djupet** (multi-source livs-observation vs Lunas manuella text-input).
+
+**Trigger för bygge:** Efter Nivå 1 har validerats med 5-10 dogfood-användare. *Inte före* — annars bygger ni mot ofullständig validering.
+
+**Estimat:** 1-2 veckor för Chrome MV3 extension med grundläggande context-injection. Längre för cross-browser-support (Firefox, Safari).
+
+**Status:** konstitutionellt godkänt, väntar på Nivå 1-validering.
+
+**Positionering i nivå-sekvensen:** Nivå 1.5 sitter konceptuellt mellan Nivå 1 (manuell copy-paste från /context-sidan) och Nivå 2 (dynamisk context via intent-input). Den är *complement*, inte *replacement* — vissa users föredrar fortfarande copy-paste, andra vill ha extension-friktion-fri injection. Trigger-mässigt aktiveras 1.5 direkt efter 1; trigger-mässigt parallelliseras 1.5 och 2 efter Nivå 1-validering.
+
+**Lock-position-överensstämmelse:**
+- Lock 5 (käll-attribuering): extension-injicerad context har samma käll-headers som Nivå 1
+- Agency-position: användaren väljer aktivt vilken kontext som injiceras, kan revoke extension-access
+- Brev-metaforen: extension är *transparent infrastruktur*, inte chat-yta — den lägger bara substrat innan AI:n läser
+
+---
+
 ### Nivå 3: MCP-yta för externa AI-klienter (v1.2-implementation)
 
 **Vad:** Selvra-protokollets befintliga MCP-server exponeras för externa AI-klienter som stöder MCP (Claude Desktop, ChatGPT Pro med MCP). Användaren konfigurerar sin AI-klient en gång — sedan läser den Selvra direkt under konversationer **utan att användaren behöver kopiera/klistra**.
