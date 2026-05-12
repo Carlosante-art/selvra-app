@@ -1,6 +1,10 @@
 import 'server-only'
 
+import { logger } from '@/lib/logging'
+
 import type { AdapterTokenSet } from '../types'
+
+const log = logger.child({ module: 'adapters/google/storage' })
 
 /**
  * Token-storage för Google — STUB (samma mönster som strava/storage.ts).
@@ -38,11 +42,14 @@ export async function saveTokens(
   tokens: AdapterTokenSet,
 ): Promise<void> {
   if (provider !== 'google') return
-  console.warn(
-    `[google/storage.saveTokens] ${STORAGE_NOTE}\n` +
-      `Got tokens, expires=${tokens.expiresAt?.toISOString()}, ` +
-      `scope=${tokens.scope}. ` +
-      `Set GOOGLE_ACCESS_TOKEN + GOOGLE_REFRESH_TOKEN + GOOGLE_EXPIRES_AT ` +
-      `i .env för att aktivera.`,
-  )
+  log.warn('saveTokens stub-fallback — manual .env copy required', {
+    note: STORAGE_NOTE,
+    expiresAt: tokens.expiresAt?.toISOString(),
+    scope: tokens.scope,
+    envVarsRequired: [
+      'GOOGLE_ACCESS_TOKEN',
+      'GOOGLE_REFRESH_TOKEN',
+      'GOOGLE_EXPIRES_AT',
+    ],
+  })
 }

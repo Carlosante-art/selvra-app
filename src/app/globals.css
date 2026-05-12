@@ -18,7 +18,7 @@
   --color-ink-soft: #6B6660;        /* text sekundär, käll-attribuering */
   --color-ink-tertiary: #A39E96;    /* text tertiär, datum + footer-info */
   --color-oxblod: #722F37;          /* accent, sparsamt */
-  --color-hairline: #E8E2D9;        /* subtila avdelare */
+  --color-hairline: #D6CFC2;        /* subtila avdelare (v9 2026-05-12: höjt från #E8E2D9 för synlighet på paper) */
   --color-hover-bg: #F2EEE8;        /* hover-state */
 
   /* Typografi (Avsnitt 3.1) */

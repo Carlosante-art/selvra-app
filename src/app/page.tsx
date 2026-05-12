@@ -10,13 +10,20 @@ import Link from 'next/link'
  *
  * Validerings-checklist (Avsnitt 12.4) följs:
  * - Färg-hex: paper #FAF8F5, ink #1A1814, ink-soft #6B6660, ink-tertiary
- *   #A39E96, oxblod #722F37, hairline #E8E2D9
+ *   #A39E96, oxblod #722F37, hairline #D6CFC2 (v9: höjt från #E8E2D9 för WCAG-läsbarhet)
  * - Inga ikoner utöver CTA-pil (→)
  * - Ingen sekundär CTA, en enda knapp-stil
  * - Inga bilder/illustrationer
  * - Inga box-shadows, ingen scroll-animation
  * - Källor i tre tidsgrupper (Live nu / Kopplas dag 1 / Senare)
  * - Brev-exempel exakt enligt Avsnitt 10.3
+ *
+ * v9 (2026-05-12) — post-feedback iteration. Förändringar mot v8:
+ * - Hairline-kontrast höjd (#E8E2D9 → #D6CFC2): syntes inte på paper-bakgrund
+ * - Section-spacing minskat (clamp(160px,12vw,200px) → clamp(96px,8vw,128px))
+ * - hr-elementen reducerade från 15 → 7: interna hr i LetterExample,
+ *   Sources och Verticals borttagna (gap-spacing räcker som visuell
+ *   separator inom en section)
  */
 
 const SECTION_RULE_STYLE = {
@@ -58,7 +65,7 @@ function SectionDivider() {
   return (
     <div className="w-full flex justify-center" aria-hidden="true">
       <hr
-        className="w-full max-w-[640px] my-[clamp(160px,12vw,200px)]"
+        className="w-full max-w-[640px] my-[clamp(96px,8vw,128px)]"
         style={SECTION_RULE_STYLE}
       />
     </div>
@@ -210,13 +217,8 @@ function LetterExample() {
         Så här kan ett brev läsa
       </h2>
 
-      <hr
-        className="mt-[clamp(48px,6vw,72px)] mb-[clamp(48px,6vw,72px)]"
-        style={SECTION_RULE_STYLE}
-      />
-
       <p
-        className="font-sans"
+        className="font-sans mt-[clamp(48px,6vw,72px)]"
         style={{
           fontSize: '15px',
           lineHeight: 1.4,
@@ -266,13 +268,8 @@ function LetterExample() {
         intentioner
       </p>
 
-      <hr
-        className="mt-[clamp(48px,6vw,72px)] mb-[clamp(48px,6vw,72px)]"
-        style={SECTION_RULE_STYLE}
-      />
-
       <p
-        className="font-serif font-normal"
+        className="font-serif font-normal mt-[clamp(48px,6vw,72px)]"
         style={{
           fontSize: 'clamp(19px, 1.2vw + 0.5rem, 20px)',
           lineHeight: 1.6,
@@ -315,11 +312,7 @@ function Sources() {
         har redan källor som beskriver dem.
       </p>
 
-      <hr
-        className="mt-[clamp(48px,6vw,72px)] mb-[clamp(48px,6vw,72px)]"
-        style={SECTION_RULE_STYLE}
-      />
-
+      <div className="mt-[clamp(64px,7vw,96px)] flex flex-col gap-[clamp(48px,6vw,72px)]">
       <SourceGroup heading="Live nu">
         <SourceLine
           name="Intentioner"
@@ -335,11 +328,6 @@ function Sources() {
         />
       </SourceGroup>
 
-      <hr
-        className="mt-[clamp(48px,6vw,72px)] mb-[clamp(48px,6vw,72px)]"
-        style={SECTION_RULE_STYLE}
-      />
-
       <SourceGroup heading="Kopplas dag 1">
         <SourceCategory label="Kropp" items="Garmin · Apple Health" />
         <SourceCategory label="Tid" items="Google Calendar" />
@@ -347,11 +335,6 @@ function Sources() {
         <SourceCategory label="Emotion" items="Spotify · Readwise" />
         <SourceCategory label="Aktivitet" items="Strava" />
       </SourceGroup>
-
-      <hr
-        className="mt-[clamp(48px,6vw,72px)] mb-[clamp(48px,6vw,72px)]"
-        style={SECTION_RULE_STYLE}
-      />
 
       <SourceGroup heading="Senare">
         <p
@@ -366,14 +349,10 @@ function Sources() {
           Calendar · Notion · Kindle · ChatGPT-export · Claude-export
         </p>
       </SourceGroup>
-
-      <hr
-        className="mt-[clamp(48px,6vw,72px)] mb-[clamp(48px,6vw,72px)]"
-        style={SECTION_RULE_STYLE}
-      />
+      </div>
 
       <p
-        className="font-serif font-normal"
+        className="font-serif font-normal mt-[clamp(64px,7vw,96px)]"
         style={{
           fontSize: 'clamp(19px, 1.2vw + 0.5rem, 20px)',
           lineHeight: 1.6,
@@ -526,12 +505,7 @@ function Verticals() {
         samma protokoll. Var och en prövar idén i en specifik domän.
       </p>
 
-      <hr
-        className="mt-[clamp(48px,6vw,72px)] mb-[clamp(48px,6vw,72px)]"
-        style={SECTION_RULE_STYLE}
-      />
-
-      <div className="flex flex-col gap-[1.8em]">
+      <div className="mt-[clamp(48px,6vw,72px)] flex flex-col gap-[1.8em]">
         <VerticalEntry
           name="Stillra"
           description="för T1-diabetiker. Det vi lär oss om kropp och tystnad i kronisk sjukdom."
@@ -550,13 +524,8 @@ function Verticals() {
         />
       </div>
 
-      <hr
-        className="mt-[clamp(48px,6vw,72px)] mb-[clamp(48px,6vw,72px)]"
-        style={SECTION_RULE_STYLE}
-      />
-
       <p
-        className="font-serif font-normal text-center"
+        className="font-serif font-normal text-center mt-[clamp(48px,6vw,72px)]"
         style={{
           fontSize: 'clamp(19px, 1.2vw + 0.5rem, 20px)',
           lineHeight: 1.6,
@@ -694,7 +663,7 @@ function BeginCTA() {
 function LandingFooter() {
   return (
     <footer
-      className="w-full max-w-[640px] px-6 mt-[clamp(160px,12vw,200px)] mb-[clamp(64px,6vw,96px)]"
+      className="w-full max-w-[640px] px-6 mt-[clamp(96px,8vw,128px)] mb-[clamp(64px,6vw,96px)]"
       aria-label="Site footer"
     >
       <p

@@ -1,6 +1,10 @@
 import 'server-only'
 
+import { logger } from '@/lib/logging'
+
 import type { AdapterTokenSet } from '../types'
+
+const log = logger.child({ module: 'adapters/strava/storage' })
 
 /**
  * Token-storage för Strava — STUB.
@@ -46,12 +50,16 @@ export async function saveTokens(
   if (provider !== 'strava') return
   // STUB: under v0 förlitar vi oss på att Carl manuellt kopierar
   // callback-output till sin .env. Programmatisk persist kommer med DB.
-  console.warn(
-    `[strava/storage.saveTokens] ${STORAGE_NOTE}\n` +
-      `Got tokens for athlete=${tokens.providerAccountId}, ` +
-      `expires=${tokens.expiresAt?.toISOString()}, ` +
-      `scope=${tokens.scope}. ` +
-      `Set STRAVA_ACCESS_TOKEN + STRAVA_REFRESH_TOKEN + STRAVA_EXPIRES_AT ` +
-      `+ STRAVA_ATHLETE_ID i .env för att aktivera.`,
-  )
+  log.warn('saveTokens stub-fallback — manual .env copy required', {
+    note: STORAGE_NOTE,
+    athleteId: tokens.providerAccountId,
+    expiresAt: tokens.expiresAt?.toISOString(),
+    scope: tokens.scope,
+    envVarsRequired: [
+      'STRAVA_ACCESS_TOKEN',
+      'STRAVA_REFRESH_TOKEN',
+      'STRAVA_EXPIRES_AT',
+      'STRAVA_ATHLETE_ID',
+    ],
+  })
 }

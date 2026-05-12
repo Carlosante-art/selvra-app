@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import { ErrorNotice } from '@/components/error-notice'
+
 type SearchParams = Promise<{ saved?: string; athlete?: string; error?: string }>
 
 /**
@@ -72,15 +74,9 @@ export default async function SourcesPage({
         </header>
 
         {flash && (
-          <div
-            className={
-              flash.kind === 'success'
-                ? 'rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-relaxed text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200'
-                : 'rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm leading-relaxed text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200'
-            }
-          >
+          <ErrorNotice variant={flash.kind === 'success' ? 'ok' : 'error'}>
             {flash.message}
-          </div>
+          </ErrorNotice>
         )}
 
         <ul className="flex flex-col gap-3">

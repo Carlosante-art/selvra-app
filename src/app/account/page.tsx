@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { DeleteSubmit } from '@/components/delete-submit'
+import { ErrorNotice } from '@/components/error-notice'
 import { TriggerButton } from '@/components/trigger-button'
 import { deleteAccount, restoreAccount } from '@/lib/actions/account'
 import { getSubjectLifecycle } from '@/lib/protocol/client'
@@ -40,7 +41,7 @@ export default async function AccountPage({
         </header>
 
         {params.deleted ? (
-          <Notice variant="ok">
+          <ErrorNotice variant="ok">
             {params.deleted === 'deletion_requested' ? (
               <>
                 Kontot är markerat för deletion. Alla läs- och skrivpaths
@@ -50,22 +51,22 @@ export default async function AccountPage({
             ) : (
               <>Kontot var redan markerat för deletion.</>
             )}
-          </Notice>
+          </ErrorNotice>
         ) : null}
         {params.restored ? (
-          <Notice variant="ok">
+          <ErrorNotice variant="ok">
             Deletion ångrad. Read/write-paths fungerar igen direkt.
-          </Notice>
+          </ErrorNotice>
         ) : null}
         {params.delete_error ? (
-          <Notice variant="error">
+          <ErrorNotice variant="error">
             <strong>Deletion misslyckades:</strong> {params.delete_error}
-          </Notice>
+          </ErrorNotice>
         ) : null}
         {params.restore_error ? (
-          <Notice variant="error">
+          <ErrorNotice variant="error">
             <strong>Restore misslyckades:</strong> {params.restore_error}
-          </Notice>
+          </ErrorNotice>
         ) : null}
 
         <Section title="Exportera din representation">
@@ -163,20 +164,3 @@ function Section({
   )
 }
 
-function Notice({
-  variant,
-  children,
-}: {
-  variant: 'ok' | 'error'
-  children: React.ReactNode
-}) {
-  const styles =
-    variant === 'ok'
-      ? 'bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-900'
-      : 'bg-red-50 text-red-900 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900'
-  return (
-    <div className={`rounded-md border px-4 py-3 text-sm ${styles}`}>
-      {children}
-    </div>
-  )
-}
