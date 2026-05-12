@@ -164,9 +164,9 @@ export default function LandingPage() {
             Den vet vad du sagt till ChatGPT. Inte vad ditt liv visar.
           </p>
           <p className="text-lg leading-relaxed pt-2">
-            Selvra läser kropp, tid, uppmärksamhet, emotion, intention.
-            Den följer med dig till varje AI-konversation. Den växer med
-            dig.
+            Selvra läser det du redan lämnar efter dig: din kalender,
+            din kropp, din sömn, din musik, dina ord. Den följer med dig
+            till varje AI-konversation. Den växer med dig.
           </p>
         </div>
       </section>
