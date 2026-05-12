@@ -242,3 +242,19 @@ Selvras tre canonical positionerings-poäng efter denna strategi:
 Det är tre lager position. Var och en distinkt mot konkurrenter. Tillsammans **strukturellt försvarbar mot stora aktörer 2027-2028** (Google Personal Intelligence, Apple Personal Intelligence) och **bättre än AI-memory-portability-konkurrenter** (Plurality, AI Context Flow, Migrator).
 
 Det är vad denna strategi cementerar.
+
+---
+
+## Revisit-not (kort hållbarhets-spec)
+
+Konkurrent-tabellen i denna doc daterar sig snabbt — **AI-memory-portability-
+kategorin är i tidig fas (2026)**. Aktörer kommer komma och gå.
+
+**Revisit och uppdatera tabellen var 6:e månad** eller när Selvra närmar sig
+publik launch. Senaste-uppdatering-stämpel: 2026-05-12.
+
+De **arkitektoniska principerna (1, 2, 3)** är stabila och åldras bra —
+det är bara den **konkreta konkurrens-bilden** som behöver refresh.
+Pitch-formuleringen kvarstår oavsett vilka aktörer som råkar finnas i
+kategorin vid revisit — den fångar arkitektonisk distinktion, inte feature-
+jämförelse mot specifika namn.
