@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { regenerateDreamer } from '@/lib/actions/triggers'
+import { ErrorNotice } from '@/components/error-notice'
 import { TriggerButton } from '@/components/trigger-button'
 import { listEvents } from '@/lib/protocol/client'
 import type { EventListItem } from '@/lib/protocol/types'
@@ -93,15 +94,15 @@ export default async function TracesPage({
         </header>
 
         {params.dreamer_run && (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-relaxed text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+          <ErrorNotice variant="ok">
             Dreamer-pass klar. Run {params.dreamer_run.slice(0, 8)}… ·{' '}
             {params.insights ?? '?'} nya observationer.
-          </div>
+          </ErrorNotice>
         )}
         {params.dreamer_error && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm leading-relaxed text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+          <ErrorNotice variant="error">
             Dreamer-trigger misslyckades: {params.dreamer_error}
-          </div>
+          </ErrorNotice>
         )}
 
         <section

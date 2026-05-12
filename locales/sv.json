@@ -1,0 +1,27 @@
+{
+  "common": {
+    "start": "Börja",
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "loading": "Laddar…",
+    "back": "Tillbaka",
+    "continue": "Fortsätt",
+    "error_generic": "Något gick fel.",
+    "error_connect": "Kunde inte nå Selvra — försök igen om en stund.",
+    "try_again": "Försök igen"
+  },
+  "footer": {
+    "tagline": "Selvra — ett brev till dig själv, varje vecka.",
+    "export": "Exportera",
+    "account": "Konto",
+    "privacy": "Integritet"
+  },
+  "nav": {
+    "brev": "Brev",
+    "thoughts": "Tankar",
+    "traces": "Bakgrund",
+    "intentions": "Intentioner",
+    "sources": "Källor",
+    "login": "Logga in"
+  }
+}

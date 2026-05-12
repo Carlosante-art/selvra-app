@@ -1,5 +1,6 @@
 import { regenerateBrev } from '@/lib/actions/triggers'
 import { submitThought } from '@/lib/actions/thoughts'
+import { ErrorNotice } from '@/components/error-notice'
 import { TriggerButton } from '@/components/trigger-button'
 import { getLatestReflection, listEvents } from '@/lib/protocol/client'
 import type { EventListItem, LatestReflection } from '@/lib/protocol/types'
@@ -85,14 +86,14 @@ export default async function BrevPage({
     <main className="flex flex-1 flex-col items-center px-6 py-16 sm:py-24">
       <article className="max-w-prose w-full flex flex-col gap-10">
         {regenerated && (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-relaxed text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+          <ErrorNotice variant="ok">
             Nytt brev genererat. Event {regenerated.slice(0, 8)}…
-          </div>
+          </ErrorNotice>
         )}
         {regenerateError && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm leading-relaxed text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+          <ErrorNotice variant="error">
             Re-generering misslyckades: {regenerateError}
-          </div>
+          </ErrorNotice>
         )}
 
         {reflection && 'content' in reflection ? (
@@ -336,13 +337,9 @@ function EmptyOrError({
 }) {
   if (reflection && 'error' in reflection) {
     return (
-      <section
-        aria-label="Fel vid hämtning av reflektion"
-        className="rounded-md border border-red-200 bg-red-50 px-4 py-4 text-sm leading-relaxed text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200"
-      >
-        <p className="font-medium mb-1">Kunde inte hämta brevet</p>
+      <ErrorNotice variant="error" title="Kunde inte hämta brevet">
         <p className="font-mono text-xs">{reflection.error}</p>
-      </section>
+      </ErrorNotice>
     )
   }
 

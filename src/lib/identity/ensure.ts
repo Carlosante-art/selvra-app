@@ -4,7 +4,10 @@ import { eq } from 'drizzle-orm'
 
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
+import { logger } from '@/lib/logging'
 import { createTenant, deriveSubjectIdUnderTenant } from '@/lib/protocol/client'
+
+const log = logger.child({ module: 'identity/ensure' })
 
 /**
  * Ensure-Selvra-identity-flöde. Idempotent.
@@ -33,7 +36,7 @@ export async function ensureSelvraIdentity(userId: string): Promise<void> {
 
   const user = userRows[0]
   if (!user) {
-    console.warn(`[ensureSelvraIdentity] User ${userId} not found in DB`)
+    log.warn('User not found in DB', { userId })
     return
   }
 
@@ -61,13 +64,15 @@ export async function ensureSelvraIdentity(userId: string): Promise<void> {
       })
       .where(eq(users.id, userId))
 
-    console.log(
-      `[ensureSelvraIdentity] user=${userId} tenant=${tenant.tenant_id} subject=${subject.subject_id}`,
-    )
+    log.info('Provisioned selvra-identity', {
+      userId,
+      tenantId: tenant.tenant_id,
+      subjectId: subject.subject_id,
+    })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error(
-      `[ensureSelvraIdentity] failed for user=${userId}: ${msg}`,
-    )
+    log.error('Provisioning failed', {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    })
   }
 }

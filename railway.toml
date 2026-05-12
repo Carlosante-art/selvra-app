@@ -1,0 +1,20 @@
+# Railway-config för selvra-app.
+#
+# Railpack detekterar Next.js automatiskt via package.json — vi behöver
+# inte explicit Dockerfile. Vi specificerar bara healthcheck + restart-
+# policy + start-command så deploys är förutsägbara.
+#
+# Auto-deploy från GitHub-push måste aktiveras via Railway Dashboard:
+#   Service → Settings → Deployments → "Auto Deploy" toggle.
+# Detta är inte konfigurerbart via fil (Railway-quirk per 2026).
+#
+# Manuell deploy via CLI fortsätter fungera oavsett:
+#   railway up --service selvra-app --detach
+
+[build]
+builder = "RAILPACK"
+
+[deploy]
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

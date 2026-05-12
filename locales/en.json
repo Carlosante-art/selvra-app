@@ -1,0 +1,27 @@
+{
+  "common": {
+    "start": "Begin",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "back": "Back",
+    "continue": "Continue",
+    "error_generic": "Something went wrong.",
+    "error_connect": "Couldn't reach Selvra — try again in a moment.",
+    "try_again": "Try again"
+  },
+  "footer": {
+    "tagline": "Selvra — a letter to yourself, every week.",
+    "export": "Export",
+    "account": "Account",
+    "privacy": "Privacy"
+  },
+  "nav": {
+    "brev": "Letter",
+    "thoughts": "Thoughts",
+    "traces": "Background",
+    "intentions": "Intentions",
+    "sources": "Sources",
+    "login": "Sign in"
+  }
+}
