@@ -15,6 +15,30 @@ AI-feedback (Perplexity, GPT × 2) + mega-review om unicorn-aspiration.
 > inte alla, inte unicorn, inte massmarknad. Värdighet är inbyggd. Den
 > kompromissas inte för snabb tillväxt."*
 
+### Operativa definitioner av laddade ord
+
+För att framtida sessions inte ska misstolka:
+
+**"Heligt"** — behandlas med integritet, kompromissas inte för snabb
+tillväxt, säljs inte ut för kommersiella incitament som motverkar
+användarens värdighet. **Inte religiös konnotation.** Konst-och-
+hantverk-konnotation — som när en hantverkare säger "mitt yrke är
+heligt", forskare säger "vetenskapen är helig", konstnär säger
+"konsten är helig". Det betyder *icke-kompromissbart*, *hedras*,
+*behandlas värdigt*. Inte *över kritik* eller *immun mot granskning*.
+Svenskt språkbruk som inte överlappar fullt med engelska "sacred".
+
+**"Intellektuellt"** — för dem som tänker om sina egna mönster och
+vill ha verktyg som matchar dispositionen. **Inte IQ-claim.**
+Disposition-claim. Self-observation som disciplin är inte funktion av
+intelligens — det är funktion av *vana* och *intresse*. Specifika
+synonyma uttryck: medvetna självobservatörer, reflekterande
+typer, människor som vill tänka om sina mönster.
+
+**"Förenat med vad utvecklingen går mot"** — positionerad för var AI
+går, inte var den är nu. Cold-start-problemet blir akut. Personal-
+context-portability blir krav. Mindre profetiskt, lika klart.
+
 ---
 
 ## Tre laddade dimensioner
@@ -215,20 +239,40 @@ Exempel på drag som behöver flaggas:
 
 ---
 
+## Distinktion: intern north star vs extern positionering
+
+Spänning med canonical 10 (pre-kategorisk) är skenbar, inte reell.
+Olika lager.
+
+- **Canonical 10:** *produktens marknads-kategori* byggs av användare
+  över tid, inte av grundare i förväg. Handlar om hur Selvra
+  positioneras mot extern marknad. Inte App Store-kategori, inte
+  journal-app-kategori, inte AI-coach-kategori.
+
+- **North star:** *producenten har klar relation till sitt eget
+  projekt*. Handlar om internt arbete och värdesystem hos Carl-som-
+  grundare.
+
+Båda gäller samtidigt på olika lager. Inte motsägelse.
+
+Stripe-parallell: Patrick och John Collison har klar intern north star
+("increase the GDP of the internet"). Det betyder inte att Stripe är
+extern-pre-kategoriserat — marknaden får kalla det vad den vill
+(payment infrastructure, fintech, developer-tool). Intern conviction
++ extern emergence är två olika lager.
+
 ## Vad detta inte är
 
 - **Inte canonical-fras 13/14/15.** Canonical-fraser är operativa
   positionerings-uttalanden. North star är överliggande princip.
 - **Inte tagline.** North star är aldrig extern marknadsföring.
-- **Inte religiöst.** "Heligt" är värdesvokabulär från europeisk
-  institutionstradition (akademi, klosterväsen, vetenskap), inte
-  spirituell claim.
+- **Inte religiöst.** Per operativ definition av "heligt" ovan — konst-
+  och-hantverk-konnotation, inte spirituell claim.
 - **Inte rebellisk position.** Selvra är inte mot startup-kultur. Den
   är i annan kategori — institutions-i-vardande, inte business-i-
   vardande.
-- **Inte ändringsbar utan ny mega-review.** North star är resultat av
-  djupt arbete + extern feedback + mega-review-disciplin. Den får inte
-  drift:as ändras av impuls. Re-locking kräver samma kvalitet av process.
+- **Inte motsägelsefull med canonical 10.** Intern north star vs extern
+  positionering är olika lager — se distinktion ovan.
 
 ---
 
@@ -254,8 +298,39 @@ Allt annat följer av detta.
 
 ---
 
-**Lockad:** 2026-05-12.
-**Får inte ändras utan:** ny mega-review-process av samma kvalitet.
-**Nästa revisits-rytm:** årlig (2027-05, 2028-05, etc.) — kontrollera
-att north star fortfarande beskriver vad Selvra är. Inte iteration.
-Kontroll.
+**Lockad:** 2026-05-12 (22:30 CEST, efter 12+ timmars deep work).
+
+## Revisions-disciplin
+
+North star revideras **när fakta som motiverat den ändras** — inte
+impulsivt, inte religiöst-skyddat.
+
+**Sour grapes-risk-anteckning:** yttrandet skrevs sent post-mega-
+review om unicorn-osannolikhet. Tre observationer som motverkar
+sour-grapes-tolkning:
+1. Hela sessionen pekade åt anti-unicorn — subtraktiv värde, pre-
+   kategorisk position, EU-sovereign, constitutional reasoning. Du
+   designade strukturellt anti-unicorn långt innan mega-reviewen
+   artikulerade det.
+2. Du försvarade Selvras integritet flera gånger under sessionen
+   (pappans reaktion, Shifted-drift, journal-position). Varje gång:
+   integritet före tillväxt.
+3. Formuleringen är affirmativ ("intellektuellt och heligt"), inte
+   negation av unicorn ("eftersom unicorn är onåbart").
+
+Mega-reviewen *upptäckte* vad du redan byggt. North star formaliserade
+upptäckten. Inte tvärtom.
+
+**Re-läs-triggers:**
+
+- **Imorgon vilad** (2026-05-13). Första filtret. Om något känns fel
+  vilad: revidera medvetet utan att förkasta hela.
+- **1-årsmark** (2027-05). Kontrollera att north star fortfarande
+  beskriver vad Selvra är.
+- **När fakta-shift sker:** Anthropic/OpenAI/Apple släpper personal-
+  context-portability + EU-compliance, Selvras unique-position-claim
+  testas empiriskt, eller annan utveckling testar arkitekturen.
+
+Re-läsning är *kontroll*, inte iteration. North star ska inte
+mikro-iteras. Den ska antingen stå eller revideras vid stora
+fakta-shifts.
