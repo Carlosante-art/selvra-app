@@ -1,4 +1,14 @@
-# Selvra-app — fortsatt arbete
+# Selvra-app — fortsatt arbete (Open Wearables Fas 2-5)
+
+> **⚠️ SUPERSEDED 2026-05-12 för prioritering.**
+>
+> Se `SOURCE_STRATEGY_V2_2026-05-11.md` (canonical). Open Wearables är
+> flyttat från "nästa konkret steg" till **Fas 3 (post-v1-validering,
+> månader)** — väntar Garmin Developer Program-approval och inte
+> critical-path för brev v0.3.
+>
+> Deploy-stegen (Fas 2-5) i detta dokument kvarstår som **teknisk
+> referens** för när Fas 3-aktivering blir aktuell. Använd då.
 
 **Kontext: var vi är, vad som händer härnäst**
 

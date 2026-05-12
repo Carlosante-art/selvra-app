@@ -1,5 +1,16 @@
 # Source-strategi-pivot: Terra → Open Wearables + Path C
 
+> **⚠️ SUPERSEDED 2026-05-12 för prioritering.**
+>
+> Se `SOURCE_STRATEGY_V2_2026-05-11.md` (canonical) för aktuell
+> integration-prioritering. Den nya strategin flyttar Open Wearables
+> från Fas 2 till Fas 3 och introducerar Notion/Readwise som Fas 2.
+>
+> **Detta dokument kvarstår som referens** för de **arkitektur-beslut**
+> som inte ändrats: Terra→Open Wearables-pivot, EU-sovereignty-rationale,
+> Path C-cross-DB-read mot Stillra. Använd det här när du behöver veta
+> *varför* dessa beslut togs, inte *när* de exekveras.
+
 **Beslut taget 2026-05-11 efter dogfood-loop validerad i prod.**
 **Empiriskt verifierat och låst 2026-05-11 (Path C-tillägg).**
 
