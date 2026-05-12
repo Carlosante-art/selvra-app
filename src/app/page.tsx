@@ -31,6 +31,65 @@ const INK_SOFT = '#5C4A3E'
 const PAPER = '#FAF8F3'
 const RULE = '#D9D2C4'
 
+type SourceStatus = 'live' | 'snart' | 'senare'
+type Source = { name: string; status: SourceStatus; label: string }
+type Category = { name: string; sources: readonly Source[] }
+
+const CATEGORIES: readonly Category[] = [
+  {
+    name: 'Kropp',
+    sources: [
+      { name: 'Dexcom', status: 'snart', label: 'glukos och kroppens rytm' },
+      { name: 'Apple Health', status: 'snart', label: 'kroppens samlade signal' },
+      { name: 'Garmin', status: 'snart', label: 'puls, sömn, träning' },
+      { name: 'Oura', status: 'snart', label: 'sömn och återhämtning' },
+      { name: 'Polar', status: 'snart', label: 'träning och hjärtrytm' },
+      { name: 'Whoop', status: 'snart', label: 'stress och belastning' },
+      { name: 'Withings', status: 'snart', label: 'vikt, sömn, puls' },
+    ],
+  },
+  {
+    name: 'Tid',
+    sources: [
+      { name: 'Google Calendar', status: 'snart', label: 'vad du planerat göra' },
+      { name: 'Apple Calendar', status: 'snart', label: 'vad du planerat göra' },
+    ],
+  },
+  {
+    name: 'Uppmärksamhet',
+    sources: [
+      { name: 'Gmail', status: 'snart', label: 'vart uppmärksamheten går' },
+      { name: 'Outlook', status: 'snart', label: 'vart uppmärksamheten går' },
+    ],
+  },
+  {
+    name: 'Emotion',
+    sources: [
+      { name: 'Spotify', status: 'snart', label: 'vad du lyssnar på' },
+      { name: 'Apple Music', status: 'snart', label: 'vad du lyssnar på' },
+      { name: 'Readwise', status: 'snart', label: 'vad du markerar i läsning' },
+      { name: 'Kindle', status: 'senare', label: 'vad du läser' },
+    ],
+  },
+  {
+    name: 'Aktivitet',
+    sources: [
+      { name: 'Strava', status: 'snart', label: 'vad kroppen gjorde' },
+      { name: 'Garmin Connect', status: 'snart', label: 'vad kroppen gjorde' },
+    ],
+  },
+  {
+    name: 'Inre dialog',
+    sources: [
+      { name: 'Intentioner', status: 'live', label: 'vad du sagt att du vill' },
+      { name: 'Tankar', status: 'live', label: 'vad du formulerat i Selvra' },
+      { name: 'Notion', status: 'snart', label: 'vad du skrivit utanför Selvra' },
+      { name: 'ChatGPT-export', status: 'snart', label: 'vad du tänkt med AI' },
+      { name: 'Claude-export', status: 'snart', label: 'vad du tänkt med AI' },
+    ],
+  },
+] as const
+
 export default function LandingPage() {
   return (
     <main
@@ -159,49 +218,104 @@ export default function LandingPage() {
         </p>
       </section>
 
-      {/* Sektion 4 — Vad du redan har */}
+      {/* Sektion 4 — Vad du redan har (responsive: text-lista mobil, typografi-grid desktop) */}
       <Divider />
-      <section className="w-full max-w-prose flex flex-col gap-10 py-24">
-        <SectionLabel>Vad du redan har</SectionLabel>
-        <p className="text-lg leading-relaxed">
-          Selvra är ingenting utan dig. Den läser bara det du explicit
-          kopplar — och de flesta människor har redan källor som beskriver
-          dem.
-        </p>
-        <ul className="flex flex-col gap-5 text-base leading-relaxed">
-          <SourceLine
-            domain="Kropp"
-            sources="Dexcom (via Stillra), Apple Health, Garmin"
-          />
-          <SourceLine
-            domain="Tid"
-            sources="Google Calendar, Apple Calendar"
-          />
-          <SourceLine
-            domain="Uppmärksamhet"
-            sources="Gmail-metadata (frekvens och avsändare, aldrig innehåll)"
-          />
-          <SourceLine
-            domain="Emotion"
-            sources="Spotify, Apple Music, Readwise"
-          />
-          <SourceLine
-            domain="Aktivitet"
-            sources="Strava, Garmin Connect"
-          />
-          <SourceLine
-            domain="Inre dialog"
-            sources="Din intention, dina tankar, Notion, AI-konversation-import"
-          />
+      <section className="w-full flex flex-col items-center gap-10 py-24">
+        <div className="w-full max-w-prose">
+          <SectionLabel>Vad du redan har</SectionLabel>
+        </div>
+        <div className="w-full max-w-prose">
+          <p className="text-lg leading-relaxed">
+            Selvra är ingenting utan dig. Den läser bara det du explicit
+            kopplar — och de flesta människor har redan källor som beskriver
+            dem.
+          </p>
+        </div>
+
+        {/*
+          Mobil (< md): Alt 2 — text-only kategori-lista, ingen logos.
+          Kinfolk-dokument-tradition. Stilla. Kategori → källornas namn
+          som flytande text. Samma editorial-rhythm som övriga listor
+          på sidan.
+        */}
+        <ul className="md:hidden w-full max-w-prose flex flex-col gap-5 text-base leading-relaxed">
+          {CATEGORIES.map((cat) => (
+            <li
+              key={cat.name}
+              className="grid grid-cols-[7rem_1fr] gap-x-6 gap-y-1"
+            >
+              <span
+                className="text-sm uppercase tracking-[0.12em] pt-0.5"
+                style={{ color: ACCENT }}
+              >
+                {cat.name}
+              </span>
+              <span className="text-base leading-relaxed">
+                {cat.sources.map((s) => s.name).join(', ')}
+              </span>
+            </li>
+          ))}
         </ul>
-        <p
-          className="text-base leading-relaxed pt-2"
-          style={{ color: INK_SOFT }}
-        >
-          En domän räcker. Selvra blir rikare med flera. Den kräver aldrig
-          att du börjar göra något nytt — bara att du låter den läsa det
-          du redan gör.
-        </p>
+
+        {/*
+          Desktop (md+): 2-kolumns × 3-rader typografi-grid. Per source
+          renderas brand-namnet som typografisk "logo" i serif — inte
+          extern CDN-logo, eftersom Kinfolk-editorial-tradition behandlar
+          brand-omnämnanden som typografi, inte grafiska markörer.
+          Status (snart/senare) som tiny italic eyebrow. Live = ingen
+          markör (mest framträdande).
+        */}
+        <div className="hidden md:grid w-full max-w-3xl grid-cols-2 gap-x-14 gap-y-14">
+          {CATEGORIES.map((cat) => (
+            <div key={cat.name} className="flex flex-col gap-5">
+              <h3
+                className="text-xs uppercase tracking-[0.18em]"
+                style={{ color: ACCENT }}
+              >
+                {cat.name}
+              </h3>
+              <ul className="flex flex-col gap-4">
+                {cat.sources.map((src) => (
+                  <li key={src.name} className="flex flex-col gap-1">
+                    <div className="flex items-baseline gap-2.5">
+                      <span
+                        className="font-serif text-lg leading-tight"
+                        style={{ color: INK }}
+                      >
+                        {src.name}
+                      </span>
+                      {src.status !== 'live' && (
+                        <span
+                          className="text-[10px] italic tracking-wide"
+                          style={{ color: INK_SOFT }}
+                        >
+                          {src.status}
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className="text-sm leading-relaxed"
+                      style={{ color: INK_SOFT }}
+                    >
+                      {src.label}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="w-full max-w-prose">
+          <p
+            className="text-base leading-relaxed pt-2"
+            style={{ color: INK_SOFT }}
+          >
+            En domän räcker. Selvra blir rikare med flera. Den kräver aldrig
+            att du börjar göra något nytt — bara att du låter den läsa det
+            du redan gör.
+          </p>
+        </div>
       </section>
 
       {/* Sektion 5 — Du äger / agency */}
