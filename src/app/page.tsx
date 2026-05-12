@@ -116,6 +116,13 @@ export default function LandingPage() {
           spegling i veckan av vad mönstren visar — utan tolkning, utan
           råd, utan dom.
         </p>
+        <p
+          className="font-serif text-xl leading-snug"
+          style={{ color: INK }}
+        >
+          Efter en vecka ser du skillnaden mellan vad du säger att du
+          vill och vad veckan visade.
+        </p>
         <div className="pt-2">
           <Link
             href="/onboarding/intentions"
