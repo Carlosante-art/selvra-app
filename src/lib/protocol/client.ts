@@ -98,15 +98,30 @@ function getCarlEnvCreds(): UserCreds | null {
 
 /**
  * Försöker lösa user-creds från Auth.js-session + DB. Returnerar null om:
+ * - AUTH_SECRET saknas (Auth.js inte aktiverad — AB-deferred under dogfood)
+ * - DATABASE_URL saknas (DB inte konfigurerad än)
  * - Ingen session
  * - Session existerar men user saknar selvra_tenant_id/selvra_subject_id
  *   (provisioning-flow inte körd än, eller failade)
- * - Auth.js/DB inte tillgänglig (DATABASE_URL saknas, etc.)
+ * - Auth.js/DB throw vid runtime
  *
  * Dynamic imports bryter cirkulär-import-kedjan
  * (protocol/client → auth/config → identity/ensure → protocol/client).
+ *
+ * Guard-check INNAN dynamic import: Auth.js `assertConfig` kastar
+ * MissingSecret-error asynkront via processTicksAndRejections, vilket
+ * inte fångas av try/catch på callsite i alla Next.js Server Component-
+ * paths. Short-circuit innan auth() ens aktiveras = säkert fallback till
+ * Carl-env även när Auth.js-stacken är ofullständigt konfigurerad.
  */
 async function getUserCredsFromSession(): Promise<UserCreds | null> {
+  // Hård guard: utan AUTH_SECRET kan Auth.js inte initieras. Skip helt
+  // istället för att låta assertConfig kasta. Returnera null → caller
+  // faller tillbaka till Carl-env-creds via getCarlEnvCreds.
+  if (!process.env.AUTH_SECRET || !process.env.DATABASE_URL) {
+    return null
+  }
+
   try {
     const { auth } = await import('@/lib/auth/config')
     const session = await auth()
