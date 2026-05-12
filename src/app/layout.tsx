@@ -1,19 +1,33 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter, Source_Serif_4 } from 'next/font/google'
 
 import { SiteFooter } from '@/components/site-footer'
 import { SiteHeader } from '@/components/site-header'
 
 import './globals.css'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+/**
+ * Typografi-stack per SELVRA_LANDING_DESIGN_SPEC_2026-05-12.md Avsnitt 3.
+ *
+ * - Source Serif 4 (variabel): brödtext, rubriker, hero. Optical-size-axis
+ *   adjusts mellan text och display automatiskt. Open source.
+ * - Inter (variabel): meta, käll-attribuering, footer, navigation.
+ *   Aldrig brödtext. Max 5% av sidans typografi.
+ *
+ * Geist är borttaget. Spec:et tillåter inga tech-sans.
+ */
+const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-serif',
+  display: 'swap',
 })
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const inter = Inter({
   subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-sans',
+  display: 'swap',
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://selvra.ai'
@@ -30,8 +44,6 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: 'Selvra',
-    // "default" = standard-iOS-statusbar (mörk text på ljus bg). Matchar
-    // paper-doktrinen. Byt till "black-translucent" om vi går dark senare.
     statusBarStyle: 'default',
   },
   formatDetection: {
@@ -46,13 +58,13 @@ export const metadata: Metadata = {
     siteName: 'Selvra',
     title: 'Selvra',
     description:
-      'Förståelse-lagret för data du redan har. Reflektioner, inte dashboards.',
+      'Ett brev till dig själv, varje vecka, från någon som har observerat den.',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Selvra',
     description:
-      'Förståelse-lagret för data du redan har. Reflektioner, inte dashboards.',
+      'Ett brev till dig själv, varje vecka, från någon som har observerat den.',
   },
   robots: {
     index: true,
@@ -61,20 +73,14 @@ export const metadata: Metadata = {
 }
 
 /**
- * PWA viewport-config. `viewportFit: 'cover'` är nödvändig för att
- * safe-area-inset-* ska fungera på iPhone med notch / dynamic island —
- * utan den klipps content till "safe" zone automatiskt och dyker inte
- * upp under statusbaren även när vi vill ha edge-to-edge bg.
- *
- * themeColor sätter iOS statusbar-bakgrund i standalone-mode och
- * Android Chrome:s adress-fält. Paper-färg per doktrin.
+ * Theme-color matchar spec:s paper-bg #FAF8F5. PWA-statusbar bibehåller
+ * editorial-känsla.
  */
 export const viewport: Viewport = {
-  themeColor: '#FAF8F3',
+  themeColor: '#FAF8F5',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  // Användare kan zooma — accessibility. Vi sätter inte maximumScale=1.
 }
 
 export default function RootLayout({
@@ -83,9 +89,9 @@ export default function RootLayout({
   return (
     <html
       lang="sv"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${sourceSerif.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 font-sans pwa-safe-area">
+      <body className="min-h-full flex flex-col bg-paper text-ink font-serif pwa-safe-area">
         <SiteHeader />
         {children}
         <SiteFooter />
