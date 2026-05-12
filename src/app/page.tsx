@@ -54,13 +54,13 @@ const CATEGORIES: readonly Category[] = [
   {
     name: 'Kropp',
     sources: [
-      { name: 'Dexcom', status: 'snart', label: 'glukos och kroppens rytm', iconSlug: 'dexcom' },
+      { name: 'Dexcom', status: 'snart', label: 'glukos och kroppens rytm', iconSlug: null },
       { name: 'Apple Health', status: 'snart', label: 'kroppens samlade signal', iconSlug: 'apple' },
       { name: 'Garmin', status: 'snart', label: 'puls, sömn, träning', iconSlug: 'garmin' },
-      { name: 'Oura', status: 'snart', label: 'sömn och återhämtning', iconSlug: 'ouraring' },
-      { name: 'Polar', status: 'snart', label: 'träning och hjärtrytm', iconSlug: 'polar' },
-      { name: 'Whoop', status: 'snart', label: 'stress och belastning', iconSlug: 'whoop' },
-      { name: 'Withings', status: 'snart', label: 'vikt, sömn, puls', iconSlug: 'withings' },
+      { name: 'Oura', status: 'snart', label: 'sömn och återhämtning', iconSlug: null },
+      { name: 'Polar', status: 'snart', label: 'träning och hjärtrytm', iconSlug: null },
+      { name: 'Whoop', status: 'snart', label: 'stress och belastning', iconSlug: null },
+      { name: 'Withings', status: 'snart', label: 'vikt, sömn, puls', iconSlug: null },
     ],
   },
   {
@@ -74,7 +74,7 @@ const CATEGORIES: readonly Category[] = [
     name: 'Uppmärksamhet',
     sources: [
       { name: 'Gmail', status: 'snart', label: 'vart uppmärksamheten går', iconSlug: 'gmail' },
-      { name: 'Outlook', status: 'snart', label: 'vart uppmärksamheten går', iconSlug: 'microsoftoutlook' },
+      { name: 'Outlook', status: 'snart', label: 'vart uppmärksamheten går', iconSlug: null },
     ],
   },
   {
@@ -82,8 +82,8 @@ const CATEGORIES: readonly Category[] = [
     sources: [
       { name: 'Spotify', status: 'snart', label: 'vad du lyssnar på', iconSlug: 'spotify' },
       { name: 'Apple Music', status: 'snart', label: 'vad du lyssnar på', iconSlug: 'applemusic' },
-      { name: 'Readwise', status: 'snart', label: 'vad du markerar i läsning', iconSlug: 'readwise' },
-      { name: 'Kindle', status: 'senare', label: 'vad du läser', iconSlug: 'amazonkindle' },
+      { name: 'Readwise', status: 'snart', label: 'vad du markerar i läsning', iconSlug: null },
+      { name: 'Kindle', status: 'senare', label: 'vad du läser', iconSlug: null },
     ],
   },
   {
@@ -99,7 +99,7 @@ const CATEGORIES: readonly Category[] = [
       { name: 'Intentioner', status: 'live', label: 'vad du sagt att du vill', iconSlug: null },
       { name: 'Tankar', status: 'live', label: 'vad du formulerat i Selvra', iconSlug: null },
       { name: 'Notion', status: 'snart', label: 'vad du skrivit utanför Selvra', iconSlug: 'notion' },
-      { name: 'ChatGPT-export', status: 'snart', label: 'vad du tänkt med AI', iconSlug: 'openai' },
+      { name: 'ChatGPT-export', status: 'snart', label: 'vad du tänkt med AI', iconSlug: null },
       { name: 'Claude-export', status: 'snart', label: 'vad du tänkt med AI', iconSlug: 'anthropic' },
     ],
   },
