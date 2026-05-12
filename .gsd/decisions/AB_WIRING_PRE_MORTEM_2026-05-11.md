@@ -79,28 +79,37 @@ registrator (eller Cloudflare om Carl använder det). Utan korrekt setup:
 - Verifiera deliverability mot 3 olika mail-providers (Gmail, Outlook,
   Apple Mail) innan publik release
 
-**R3. Per-user tenant-provisioning saknas.**
+**R3. Per-user tenant-provisioning — LÖST 2026-05-12.**
 
-Nuvarande arkitektur: `seed_vertical_tenant.py` är admin-script. När en
-ny user signar upp via Magic-link finns ingen automation som skapar
-Selvra-tenant + genererar per-user JWT-secret + lägger till i
-MCP_JWT_SECRETS-array.
+~~Nuvarande arkitektur: `seed_vertical_tenant.py` är admin-script.~~
+Implementerat 2026-05-12:
 
-**Mitigation (måste byggas innan publik release):**
-- Antingen: programmatisk endpoint `POST /v1/tenants` som admin-API kallar
-  vid user-onboarding
-- Eller: signIn-callback i Auth.js triggar tenant-creation-job
-- Beslut: en JWT-secret som **alla users delar** (selvra-app-as-source) +
-  per-user `subject_id` via Magic-link-user-id som external_subject_id
+- Backend: `POST /v1/tenants` (admin-scope-gated) provisionerar ny tenant
+- selvra-app: `events.signIn` callback → `ensureSelvraIdentity(userId)`
+  → POST /v1/tenants → POST /v1/subjects → persistera
+  `selvraTenantId` + `selvraSubjectId` på users-raden
+- Verify-script: `scripts/verify_tenant_provisioning.py` (prod-testad,
+  alla 4 steg gröna)
 
-  Det är enklare och säkert (subject_id derivation är kryptografiskt
-  isolerande), undviker att blåsa upp MCP_JWT_SECRETS-arrayen till N+1
-  per user.
+**Arkitektur-uppdatering (ersätter ursprungligt pre-loadat beslut):**
 
-**Pre-loadad beslut för wiring:** *one shared JWT-secret per source-app
-(selvra-app), per-user subject_id via UUID5(tenant, user_id). Existing
-Carl-tenant kan kvarstå som "selvra-app-tenant" där alla users blir
-subjects.*
+Per-user-tenant (NOT shared-tenant). Varje user äger sin egen tenant så
+RLS isolerar defense-in-depth utöver `require_subject_access`-claim-check.
+JWT-secret är fortfarande shared per source-app (selvra-app) — det är
+*claims* (tid) som varierar per user, inte secret.
+
+Skälen för ändringen från shared till per-user:
+1. Defense-in-depth via RLS — shared-tenant försvinner det skyddet
+2. Audit-distinktion — per-user-tenant ger ren trail per user
+3. Future-proof — cross-tenant features (team-konto, kliniker-share)
+   trivialt mer komplexa med shared-model
+4. Försumbar kostnad — en INSERT/tenant vid signup
+
+Originalt pre-loadat beslut hade fel premiss: argumentet "blow up
+MCP_JWT_SECRETS to N+1" är orelaterat till tenant-model — secret är
+shared oavsett, det är claims som varierar.
+
+**Status:** ✅ Implementerat. Inga creds krävs. Live i prod-verify.
 
 ### 🟡 Medel sannolikhet, hög påverkan
 

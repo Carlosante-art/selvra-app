@@ -211,6 +211,88 @@ export async function triggerDreamerRun(): Promise<{
 }
 
 /**
+ * Skapa en ny tenant i Selvra-protokollet (admin-scoped).
+ *
+ * Används av Auth.js signIn-callback första gången en user signar in:
+ * vi provisionerar deras egen tenant och persisterar tenant_id på
+ * user-raden i selvra-app:s DB.
+ *
+ * Mintar JWT med `admin`-scope. Subjects-claim är konfigurerad standard
+ * (Carl:s) — admin-routes verifierar inte subject-match, så det är OK.
+ * Tid-claim är Carl:s tenant — det är "system source" perspektivet, inte
+ * "user" perspektivet. Den nya tenanten skapas separat.
+ */
+export async function createTenant(params: {
+  name: string
+  type?: 'individual' | 'organization'
+}): Promise<{
+  tenant_id: string
+  name: string
+  type: string
+  created_at: string
+}> {
+  return call('/v1/tenants', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: params.name,
+      type: params.type ?? 'individual',
+    }),
+    scopes: ['admin'],
+  })
+}
+
+/**
+ * Derivera subject_id för (tenant, external_id)-parning via Selvra-
+ * protokollets POST /v1/subjects. Idempotent — samma input ger alltid
+ * samma subject_id (UUID5-derivation).
+ *
+ * Klienten skickar `external_subject_id` (Auth.js user.id) och får
+ * tillbaka subject_id som derivats under den NYA tenanten.
+ *
+ * Kräver att JWT:n mintats med `tid: newTenantId` — inte default Carl-tid —
+ * eftersom Selvra-protokollet deriverar under claims.tid.
+ */
+export async function deriveSubjectIdUnderTenant(params: {
+  tenantId: string
+  externalSubjectId: string
+}): Promise<{
+  subject_id: string
+  external_subject_id: string
+  tenant_id: string
+  derived_at: string
+}> {
+  const cfg = getConfig()
+  // Mint JWT med override-tid så subject derivras under den nya tenanten.
+  const token = await new SignJWT({
+    sub: cfg.subUuid,
+    tid: params.tenantId,
+    subjects: [],
+    scopes: ['write'],
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuer('selvra')
+    .setExpirationTime('1m')
+    .sign(cfg.secret)
+
+  const res = await fetch(`${cfg.baseUrl}/v1/subjects`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ external_subject_id: params.externalSubjectId }),
+    cache: 'no-store',
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Selvra POST /v1/subjects → ${res.status}: ${body}`)
+  }
+
+  return res.json()
+}
+
+/**
  * Hämta lifecycle-status för subject. Returnerar INTE 410 om deleted —
  * UI:n behöver kunna fråga "är jag deleted?" utan att gå runt deletion-
  * gate.
