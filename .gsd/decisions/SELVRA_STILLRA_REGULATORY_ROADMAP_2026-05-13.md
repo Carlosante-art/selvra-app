@@ -467,6 +467,121 @@ företag.
 
 **Lead:** AI compliance-specialist (uppstår som ny roll 2026-2028).
 
+### Cluster D: State-of-the-art Standards Alignment (Stadium 1-3)
+
+Selvra som personal-representation-protokoll måste alignment-mappa till
+internationella standards för att vara state-of-the-art istället för
+proprietär lösning. Per gap-analys 2026-05-13.
+
+**Top 5 standards-gaps (solo-fyllbara under Stadium 1-2):**
+
+| # | Standard | Beskrivning | Solo-tid | Stadium |
+|---|---|---|---|---|
+| 1 | **W3C PROV-O** | Standardized provenance vocabulary. Mappa Selvras provenance-fält → PROV-O. | 2-3 v | Stadium 1 |
+| 2 | **W3C DIDs (did:web)** | Decentralized identifiers. Skapa `https://selvra.ai/.well-known/did.json`. Mappa subject_id → DID. | 2-3 v | Stadium 1 |
+| 3 | **W3C Verifiable Credentials Data Model 2.0** | SREF v1 → VC. Selvra blir VC-issuer + verifier. | 3-4 v | Stadium 1-2 |
+| 4 | **Tamper-evident event-log (Merkle hash-chain)** | `event_hash` + `previous_event_hash`-kolumner. Merkle root per checkpoint. | 3-5 v | Stadium 2 |
+| 5 | **IETF SCITT mapping** | Expose event-store som SCITT transparency service. Microsoft `ccf-scitt` reference. | 4-6 v | Stadium 2 |
+
+**Tier 2 (solo-doable, lägre prio):**
+
+- **SD-JWT selective disclosure** (4-6 v) — alternativ till BBS+ med 80%
+  av värdet, 30% av komplexiteten. JWT-baserat, RFC 8725-aligned.
+- **CBOR/COSE encoding** (2-3 v) — compact binary alternative till JSON
+  för SREF cross-platform.
+- **W3C Activity Streams 2.0** (2-3 v) — event-format-standardisering.
+
+**Tier 3 (joint venture eller Stadium 4+):**
+
+- **BBS+ signatures (full)** — pairing-crypto, risk solo. Kader Cadre
+  eller crypto-specialist.
+- **ActivityPub federation** (12-16 v) — Stadium 5 eller joint venture.
+- **Solid Pod compatibility** (6-8 v) — Tim Berners-Lee:s standard.
+- **XACML / OPA policy engine** (6-8 v) — Stadium 3+.
+- **Content-addressed storage (IPFS-style)** (8-12 v) — Stadium 4.
+- **SCIM enterprise identity provisioning** — Stadium 3-4.
+
+**Forskningsfront (Stadium 5+, kräver kryptografisk PhD-grade):**
+
+- Zero-knowledge proofs (ZK-SNARKs/STARKs)
+- Homomorphic encryption
+- Secure Multi-Party Computation (SMPC)
+- Differential privacy mechanisms
+- Federated learning (Stadium 4-roadmap)
+
+**Lead:** Carl solo för Tier 1-2 (6-månaders timeline). Kader Cadre-
+alliance eller crypto-specialist för Tier 3.
+
+### Solo-timeline för Cluster D (6 månader, Stadium 1-2 parallellt)
+
+| Månad | Arbete | Output |
+|---|---|---|
+| 1 | PROV-O + did:web | Selvra standards-aligned identity + provenance |
+| 2 | W3C VC Data Model | SREF v1 mappable till VC issuer/verifier |
+| 3 | Merkle hash-chain | Tamper-evident event-log |
+| 4 | IETF SCITT mapping | Events exposed som transparency service |
+| 5-6 | SD-JWT selective disclosure | Patient-side selective sharing |
+
+**Resultat:** 5 av top-5 standards-gaps fyllda + PROV-O bonus =
+**state-of-the-art-aligned position uppnådd Stadium 2-end.**
+
+### Kader Cadre × Selvra: möjlig strategic alliance
+
+**Kontext:** Kader Cadre AB (grundad 2026-04, Rättvik) bygger
+"trust infrastructure, cryptographic attestation, agent governance,
+security-by-design" för AI-agenter. Carl-svågers företag.
+
+**Mission-overlapp:** Selvra (personal representation trust-layer) +
+Kader Cadre (AI-agent trust-layer) bygger adjacent infrastructure.
+Olika domäner, samma underliggande problem ("trust + verifiability
+built into infrastructure, not bolted on").
+
+**Vad Kader Cadre kan bidra till Selvra:**
+
+- **BBS+ proper implementation** (Tier 3-gap) — pairing-based crypto-
+  expertise.
+- **Federation-arkitektur** (ActivityPub eller equivalent) —
+  enterprise-pattern-experience.
+- **Audit + ISO 27001/13485 prep** — Volvo-erfarenhet (BISO/CISO 3+
+  år).
+- **Threat modeling + pen-test-coordination** — STRIDE/PASTA expertise.
+- **Standards-body-engagement** (W3C, IETF participation) — om intresse.
+
+**Vad Selvra kan bidra till Kader Cadre:**
+
+- **Personal representation use-case** — bevis att deras trust-layer
+  funkar för specifik domän.
+- **Healthcare-vertikal traction** — Stillra B2B-pipeline ger Kader
+  Cadre healthcare-referenser.
+- **Source Expert Architecture** — pattern för AI-agent-governance som
+  Kader Cadre kan adoptera.
+- **EU-sovereign positioning** — gemensam GTM mot EU AI Act-driven
+  market.
+
+**Alliance-scenarier:**
+
+| Scenario | Beskrivning | Tids-fönster |
+|---|---|---|
+| A | Tight strategic alliance (delade advisors, co-marketing, kund-referenser) | Stadium 1-3 |
+| B | Korsförsäljning (Kader Cadre använder Selvra för personal-context, Selvra använder Kader Cadre för trust-layer) | Stadium 2-4 |
+| C | Soft merger-konversation (om missions konvergerar starkare) | Stadium 3+ |
+| D | Selvra advisor-role för Kader Cadre-grundare (founder-to-founder, equity-baserad) | Stadium 1-2 |
+
+**Med Kader Cadre-alliance:**
+- Selvra-tids-till-state-of-the-art-leader: 3-4 månader (istället för
+  6 månader solo-aligned)
+- Tier 3-gaps (BBS+, federation) blir doable utan Stadium 4-väntan
+- B2B-credibility för healthcare-pilot (Volvo CISO-bakgrund)
+
+**Utan Kader Cadre-alliance:**
+- Selvra-tids-till-state-of-the-art-aligned: 6 månader solo
+- Tier 3-gaps defer:as till Stadium 3-4 med extern crypto-specialist
+- Standalone path möjlig men långsammare
+
+**Beslut:** Carl bokar founder-to-founder-samtal med svågern denna
+vecka. Inte pitch — peer-konversation om adjacent missions. Per
+outreach-template i `STILLRA_V2_ENDOKRINOLOG_OUTREACH.md`-stil.
+
 ---
 
 ## Vad Carl gör NU (vecka 1-2)
@@ -556,5 +671,9 @@ landscape-shifts, EU AI Act-evolution). Inte gissning.
 ---
 
 **Lockad:** 2026-05-13.
+**Uppdaterad:** 2026-05-13 (eftermiddag) — tillägg av Cluster D
+(state-of-the-art standards alignment) med 5 top-prio gaps,
+solo-timeline 6 månader, och Kader Cadre × Selvra strategic alliance-
+scenarier.
 **Får inte ändras utan:** ny regulatorisk gap-analys + Carl-godkännande.
 **Nästa revision:** vecka 6 av Stillra v2 build-plan (mid-juni 2026).
