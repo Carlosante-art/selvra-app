@@ -38,7 +38,20 @@ MISTRAL_API_KEY=...
 
 # Valbar — override default-modell
 MISTRAL_MODEL=mistral-large-latest
+
+# Sentry (observability — valfri men rekommenderas för dogfood)
+SENTRY_DSN=https://...@.../...
+NEXT_PUBLIC_SENTRY_DSN=https://...@.../...
+
+# För source-map-upload (valfri)
+SENTRY_ORG=...
+SENTRY_PROJECT=...
+SENTRY_AUTH_TOKEN=...
 ```
+
+Sentry: skapa konto på <https://sentry.io>. Välj **EU storage region** vid
+org-skapande (uppfyller konsument-track §2). DSN i project-settings →
+Client Keys.
 
 Hämta `MISTRAL_API_KEY`: <https://console.mistral.ai/>. EU-baserat företag
 med EU-region per default — uppfyller konsument-track §2.
