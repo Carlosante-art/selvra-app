@@ -39,6 +39,12 @@ MISTRAL_API_KEY=...
 # Valbar — override default-modell
 MISTRAL_MODEL=mistral-large-latest
 
+# Valbar — aktivera tool-call event-fetch (smartare källval, dubbel latens)
+# När =1 hoppar sendMessage över naivt 7-dagars-pre-fetch och låter LLM:n
+# anropa search_events on-demand. Streaming-pipen (/api/chat/stream)
+# använder fortfarande naivt pre-fetch oavsett flagga.
+SELVRA_USE_TOOL_CALL=0
+
 # Sentry (observability — valfri men rekommenderas för dogfood)
 SENTRY_DSN=https://...@.../...
 NEXT_PUBLIC_SENTRY_DSN=https://...@.../...

@@ -20,10 +20,43 @@ import { Mistral } from '@mistralai/mistralai'
 
 import { logger } from '@/lib/logging'
 
-export type ChatMessage = {
-  role: 'system' | 'user' | 'assistant'
-  content: string
+/**
+ * Tool-aware message-type. Används av callMistralWithTools där LLM:n
+ * kan begära tool-anrop och vi skickar tillbaka tool-result. Bakåt-
+ * kompatibel: enkla {role, content}-messages är en delmängd där tool-
+ * fälten är undefined.
+ */
+export type ChatMessage =
+  | {
+      role: 'system' | 'user'
+      content: string
+    }
+  | {
+      role: 'assistant'
+      content: string | null
+      /** Set när LLM:n begärt tool-anrop. Annars undefined. */
+      toolCalls?: ReadonlyArray<{
+        id: string
+        function: { name: string; arguments: string }
+      }>
+    }
+  | {
+      role: 'tool'
+      toolCallId: string
+      name: string
+      content: string
+    }
+
+export type ToolCallRequest = {
+  id: string
+  name: string
+  /** Argumenten är JSON-string per Mistral spec; orchestratorn parsar. */
+  arguments: string
 }
+
+export type ToolAwareResponse =
+  | { kind: 'message'; text: string }
+  | { kind: 'tool_calls'; calls: readonly ToolCallRequest[]; assistantText: string | null }
 
 let client: Mistral | null = null
 
@@ -70,7 +103,10 @@ export async function callMistral(
   try {
     const response = await getClient().chat.complete({
       model,
-      messages: finalMessages,
+      // Mistral SDK accepterar tool/assistant-tool-call-messages som vår
+      // ChatMessage-union representerar 1:1. Cast så TS accepterar.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      messages: finalMessages as any,
       temperature: 0.7,
       maxTokens: 2000,
     })
@@ -90,6 +126,91 @@ export async function callMistral(
     return content
   } catch (err) {
     log.error('mistral_call_failed', {
+      model,
+      durationMs: Date.now() - t0,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    throw err
+  }
+}
+
+/**
+ * Tool-aware chat-anrop. Skickar `tools` till Mistral. LLM:n får välja
+ * mellan att svara med text eller anropa ett verktyg.
+ *
+ * Returnerar diskriminerad union:
+ *   - { kind: 'message', text } — direkt svar, ingen tool-call
+ *   - { kind: 'tool_calls', calls, assistantText } — LLM ber om tool-anrop
+ *
+ * Orchestratorn (process-user-turn-with-tools.ts) ansvarar för att
+ * exekvera tool-anropen och göra ev. andra anrop. Wrappern är en-shot.
+ */
+export async function callMistralWithTools(
+  messages: ReadonlyArray<ChatMessage>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tools: ReadonlyArray<{ type: 'function'; function: any }>,
+  opts: { toolChoice?: 'auto' | 'none' | 'any' } = {},
+): Promise<ToolAwareResponse> {
+  const log = logger.child({ module: 'llm/mistral/with-tools' })
+  const model = process.env.MISTRAL_MODEL ?? 'mistral-large-latest'
+
+  const t0 = Date.now()
+  try {
+    const response = await getClient().chat.complete({
+      model,
+      // SDK-types accepterar union — vi castar för att inkludera tool/
+      // assistant-tool-call-messages som vår union representerar 1:1.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      messages: messages as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tools: tools as any,
+      toolChoice: opts.toolChoice ?? 'auto',
+      temperature: 0.7,
+      maxTokens: 2000,
+    })
+
+    const choice = response.choices?.[0]
+    if (!choice) {
+      throw new Error('Mistral returned no choices')
+    }
+
+    const message = choice.message
+    const toolCalls = message?.toolCalls ?? []
+
+    if (toolCalls.length > 0) {
+      const calls: ToolCallRequest[] = toolCalls.map((tc) => ({
+        id: tc.id ?? '',
+        name: tc.function.name,
+        arguments:
+          typeof tc.function.arguments === 'string'
+            ? tc.function.arguments
+            : JSON.stringify(tc.function.arguments),
+      }))
+      const assistantText =
+        typeof message?.content === 'string' && message.content.length > 0
+          ? message.content
+          : null
+      log.info('mistral_tool_calls', {
+        model,
+        durationMs: Date.now() - t0,
+        toolNames: calls.map((c) => c.name),
+        hadAssistantText: assistantText !== null,
+      })
+      return { kind: 'tool_calls', calls, assistantText }
+    }
+
+    const content = message?.content
+    if (typeof content !== 'string' || content.length === 0) {
+      throw new Error('Mistral returned non-string or empty content')
+    }
+    log.info('mistral_with_tools_message', {
+      model,
+      durationMs: Date.now() - t0,
+      responseLength: content.length,
+    })
+    return { kind: 'message', text: content }
+  } catch (err) {
+    log.error('mistral_with_tools_failed', {
       model,
       durationMs: Date.now() - t0,
       error: err instanceof Error ? err.message : String(err),
@@ -127,7 +248,10 @@ export async function* streamMistral(
   try {
     const stream = await getClient().chat.stream({
       model,
-      messages: finalMessages,
+      // Samma cast som callMistral — SDK accepterar tool/assistant-tool-call
+      // varianter som vår ChatMessage-union representerar.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      messages: finalMessages as any,
       temperature: 0.7,
       maxTokens: 2000,
     })
