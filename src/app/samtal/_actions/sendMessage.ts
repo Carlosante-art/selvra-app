@@ -24,10 +24,15 @@ import {
   updateConversationTitle,
 } from '@/lib/db/conversation-queries'
 import { generateThreadTitle } from '@/lib/llm/generate-title'
-import { callMistral } from '@/lib/llm/mistral'
+import { callMistral, callMistralWithTools } from '@/lib/llm/mistral'
+import {
+  executeSearchEvents,
+  searchEventsTool,
+} from '@/lib/llm/tools/search-events'
 import { logger } from '@/lib/logging'
 import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import { processUserTurn } from '@/lib/observability/process-user-turn'
+import { processUserTurnWithTools } from '@/lib/observability/process-user-turn-with-tools'
 
 // Fallback om DB-fetch fail:ar. Identisk text som migrations-seed:en.
 // När fetchActiveSystemPrompt returnerar något använder vi det istället —
@@ -39,6 +44,37 @@ const SYSTEM_PROMPT_FALLBACK = `Du är Selvra. Spegel, inte coach. All observati
 // fetch-kvot. För Carl-personal-tool: generöst men ändå begränsande.
 const RATE_LIMIT_TURNS = 15
 const RATE_LIMIT_WINDOW_SECONDS = 60
+
+/**
+ * Mappa tool-call-resultat till non-tool diskriminerad union så call-sites
+ * kan dela persist-logik. Tappar bort `toolCallCount` (loggas separat).
+ */
+function mapToolResultToNonToolShape(
+  result: Awaited<ReturnType<typeof processUserTurnWithTools>>,
+): Awaited<ReturnType<typeof processUserTurn>> {
+  switch (result.kind) {
+    case 'memory_request':
+      return {
+        kind: 'memory_request',
+        factText: result.factText,
+        acknowledgement: result.acknowledgement,
+      }
+    case 'llm_response':
+      return {
+        kind: 'llm_response',
+        selvraText: result.selvraText,
+        attempts: result.attempts,
+        sourcesConsulted: result.sourcesConsulted,
+      }
+    case 'fallback':
+      return {
+        kind: 'fallback',
+        selvraText: result.selvraText,
+        lastViolations: result.lastViolations,
+        attempts: result.attempts,
+      }
+  }
+}
 
 type SendMessageInput = {
   conversationId: string | null
@@ -78,16 +114,22 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
     )
   }
 
+  // Tool-call-flagga: när aktiv hoppar vi över naivt 7-dagars-pre-fetch
+  // och låter LLM:n tool-call:a search_events on-demand. Två LLM-anrop
+  // per tur (dubbel latens) men bättre källval.
+  const useToolCall = process.env.SELVRA_USE_TOOL_CALL === '1'
+
   // Fetch context parallellt: DB (turns + memory-facts + system-prompt) +
   // Selvra-protokoll (events). Defensiv: system-prompt-fetch får aldrig
-  // ta ner pipelinen — fallback till hardcoded vid fel.
+  // ta ner pipelinen — fallback till hardcoded vid fel. Vid tool-call
+  // skippas pre-fetch (LLM:n äger event-fetch via search_events).
   const [recentTurns, activeMemoryFacts, relevantEvents, activePrompt] =
     await Promise.all([
       input.conversationId
         ? fetchRecentTurns(input.conversationId, 5)
         : Promise.resolve([]),
       fetchActiveMemoryFacts(userId),
-      fetchRelevantEvents(input.text),
+      useToolCall ? Promise.resolve([]) : fetchRelevantEvents(input.text),
       fetchActiveSystemPrompt().catch(() => null),
     ])
 
@@ -95,15 +137,31 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
   if (activePrompt) {
     log.info('using_db_prompt', { version: activePrompt.version })
   }
+  if (useToolCall) {
+    log.info('using_tool_call_pathway')
+  }
 
-  const result = await processUserTurn({
-    systemPrompt,
-    currentUserText: input.text,
-    recentTurns,
-    activeMemoryFacts,
-    relevantEvents,
-    llmCall: callMistral,
-  })
+  const result = useToolCall
+    ? mapToolResultToNonToolShape(
+        await processUserTurnWithTools({
+          systemPrompt,
+          currentUserText: input.text,
+          recentTurns,
+          activeMemoryFacts,
+          llmCallWithTools: callMistralWithTools,
+          llmFinalCall: callMistral,
+          searchEventsTool,
+          executeSearchEvents,
+        }),
+      )
+    : await processUserTurn({
+        systemPrompt,
+        currentUserText: input.text,
+        recentTurns,
+        activeMemoryFacts,
+        relevantEvents,
+        llmCall: callMistral,
+      })
 
   switch (result.kind) {
     case 'memory_request': {
