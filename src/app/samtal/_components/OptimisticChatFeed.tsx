@@ -51,17 +51,26 @@ export function OptimisticChatFeed({ initialTurns, conversationId }: Props) {
   ])
 
   const [text, setText] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const message = text.trim()
     if (!message || isPending) return
+    setError(null)
     setText('')
 
     startTransition(async () => {
       addOptimisticTurn(message)
-      await sendMessage({ conversationId, text: message })
+      try {
+        await sendMessage({ conversationId, text: message })
+      } catch (err) {
+        // Rate-limit, auth, eller annat fel. Visa inline + lämna texten
+        // tillbaka i inputen så user inte tappar sin formulering.
+        setError(err instanceof Error ? err.message : 'Något gick fel.')
+        setText(message)
+      }
     })
   }
 
@@ -87,6 +96,14 @@ export function OptimisticChatFeed({ initialTurns, conversationId }: Props) {
           disabled={isPending}
           className="w-full resize-y rounded-md border border-neutral-300 bg-white px-4 py-3 text-base leading-relaxed text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-600 dark:focus:border-neutral-300"
         />
+        {error && (
+          <p
+            role="alert"
+            className="text-sm text-red-600 dark:text-red-400 leading-relaxed"
+          >
+            {error}
+          </p>
+        )}
         <button
           type="submit"
           disabled={isPending || !text.trim()}
