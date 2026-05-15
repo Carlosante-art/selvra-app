@@ -10,6 +10,7 @@
  * Auth-gate: session.user.id krävs. Anonyma anrop kastar.
  */
 
+import * as Sentry from '@sentry/nextjs'
 import { revalidatePath } from 'next/cache'
 
 import { auth } from '@/lib/auth/config'
@@ -53,6 +54,10 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
     throw new Error('Inloggning krävs.')
   }
   const userId = session.user.id
+
+  // Sentry user-context för grouping. sendDefaultPii: false hindrar
+  // email/ip från att samlas; vi sätter bara id explicit för aggregat.
+  Sentry.setUser({ id: userId })
 
   // Rate-limit-check. Räkna user:s turer senaste 60s. Över limit → kasta
   // tydligt fel som UI fångar och visar inline. Mätningen är conservative
@@ -140,6 +145,17 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
         attempts: result.attempts,
       })
 
+      // Sentry: warning om LLM behövde retries (löstes via lock-validate).
+      // Synligt i Sentry-dashen för system-prompt-iterations utan att gräva
+      // i Vercel-logs.
+      if (result.attempts > 1) {
+        Sentry.captureMessage('llm_retry_needed', {
+          level: 'warning',
+          tags: { attempts: String(result.attempts) },
+          extra: { conversationId },
+        })
+      }
+
       // Auto-generera tråd-titel på första turn-paret. Synkron — Carl-
       // personal-tool tolererar extra ~1s latens; Vercel serverless kan
       // inte fire-and-forget tillförlitligt.
@@ -169,6 +185,26 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
         attempts: result.attempts,
         violations: result.lastViolations.map((v) => v.rule),
       })
+
+      // Sentry: error om user fick fallback istället för LLM-svar. Kritiskt
+      // för system-prompt-iterations — Carl vill se 'love_bombing: 4 events
+      // denna vecka' utan logs-grävande. primary_rule som tag (single-value),
+      // resten i extra för full audit.
+      Sentry.captureMessage('llm_fallback_after_retries', {
+        level: 'error',
+        tags: {
+          attempts: String(result.attempts),
+          primary_rule: result.lastViolations[0]?.rule ?? 'unknown',
+        },
+        extra: {
+          conversationId,
+          allViolations: result.lastViolations.map((v) => ({
+            rule: v.rule,
+            match: v.match,
+          })),
+        },
+      })
+
       revalidatePath(`/samtal/thread/${conversationId}`)
       revalidatePath('/samtal')
       break
