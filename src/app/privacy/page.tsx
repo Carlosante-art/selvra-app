@@ -112,7 +112,7 @@ export default function PrivacyPage() {
             </li>
             <li>
               Dreamer-pass: random-walk över dina events för att hitta mönster.
-              Output är bakgrunds-observationer du ser på /traces.
+              Output visas som bakgrunds-observationer i /minne.
             </li>
             <li>
               Cross-subject-aggregation: ej aktiverad i v1. Om aktiverad senare

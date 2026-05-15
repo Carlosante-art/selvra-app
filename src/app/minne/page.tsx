@@ -85,36 +85,29 @@ export default async function MinnePage() {
           )}
         </section>
 
-        {/* 3. Bakgrund (Dreamer) */}
+        {/* 2. Bakgrund (Dreamer-insights) */}
+        {/* /traces-länkar borttagna 2026-05-15 (v1-refaktor Steg 3: Dreamer-
+            paradigm rivs). Hela detta block konsolideras i Steg 6 till
+            "Vad dina källor visat" (källa-attribuerad observation). */}
         <section aria-label="Bakgrund" className="flex flex-col gap-3">
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
             Bakgrund (Selvras observationer)
           </h2>
           {recentInsights.length === 0 ? (
             <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
-              Inga bakgrunds-observationer än.{' '}
-              <Link href="/traces" className="underline underline-offset-2">
-                Mer i /traces.
-              </Link>
+              Inga bakgrunds-observationer än.
             </p>
           ) : (
-            <>
-              <ul className="flex flex-col gap-2">
-                {recentInsights.slice(0, 5).map((event) => (
-                  <li
-                    key={event.event_id}
-                    className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
-                  >
-                    {extractInsightDescription(event.payload)}
-                  </li>
-                ))}
-              </ul>
-              <p className="text-sm text-neutral-500 dark:text-neutral-500 mt-2">
-                <Link href="/traces" className="underline underline-offset-2">
-                  Alla i /traces →
-                </Link>
-              </p>
-            </>
+            <ul className="flex flex-col gap-2">
+              {recentInsights.slice(0, 5).map((event) => (
+                <li
+                  key={event.event_id}
+                  className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
+                >
+                  {extractInsightDescription(event.payload)}
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 

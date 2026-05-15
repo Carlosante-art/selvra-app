@@ -360,27 +360,13 @@ export async function getSnapshot(): Promise<SubjectSnapshot> {
 }
 
 /**
- * triggerReflectionRun raderad 2026-05-15 (v1-refaktor: brev-paradigmen
- * rivs). Endpoint `/v1/internal/carl/reflect` lever kvar i Selvra-protokollet
- * (Carl-only internal-admin) men exponeras inte längre från konsument-appen.
- *
- * Trigga manuell Dreamer-pass (background reasoning). Carl-only.
- * NOTERA: Detta är Carl-only internal-admin-endpoint (`/v1/internal/carl/dream`).
- * Rivs i Steg 3 (Dreamer-paradigm).
+ * triggerReflectionRun + triggerDreamerRun raderade 2026-05-15 (v1-refaktor
+ * Steg 2-3: brev- och Dreamer-paradigm rivs). Endpoints
+ * `/v1/internal/carl/reflect` och `/v1/internal/carl/dream` lever kvar i
+ * Selvra-protokollet (Carl-only internal-admin) men exponeras inte längre
+ * från konsument-appen. Dreamer-output ligger fortfarande som
+ * `insight.derived`-events och läses via listEvents i /minne.
  */
-export async function triggerDreamerRun(): Promise<{
-  run_id: string
-  insights_produced: number
-  redundancies_found: number
-  total_tokens: number
-  bail_reason: string
-}> {
-  const ctx = await getRequestContext()
-  return call(ctx, '/v1/internal/carl/dream', {
-    method: 'POST',
-    scopes: ['write'],
-  })
-}
 
 /**
  * Hämta lifecycle-status för current user:s subject. Returnerar INTE 410
