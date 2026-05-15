@@ -23,6 +23,7 @@ import { listMemoryFactsForUi } from '@/lib/db/conversation-queries'
 import { listEvents } from '@/lib/protocol/client'
 import type { EventListItem } from '@/lib/protocol/types'
 
+import { DangerZone } from './_components/DangerZone'
 import { MemoryFactRow } from './_components/MemoryFactRow'
 
 export default async function MinnePage() {
@@ -164,16 +165,14 @@ export default async function MinnePage() {
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
             Din data är din
           </h2>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4">
             <Link
               href="/export/sref"
-              className="text-sm text-neutral-600 dark:text-neutral-400 underline underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
+              className="text-sm text-neutral-600 dark:text-neutral-400 underline underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors w-fit"
             >
               Exportera allt (SREF v1) →
             </Link>
-            <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
-              Radera allt och avregistrera — kommer i Fas 1.
-            </p>
+            <DangerZone />
           </div>
         </section>
       </article>
