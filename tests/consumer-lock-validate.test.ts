@@ -154,6 +154,70 @@ describe('Källa-attribuering — observationer kräver källor', () => {
   })
 })
 
+describe('Fabricated source — LLM nämner källa som inte konsulterades', () => {
+  it('"Dexcom visade X" utan Dexcom i sources → flagga', () => {
+    const result = validateConsumerOutput(
+      'Dexcom visade 7,4 mmol/L i måndags.',
+      [{ source_ai_id: 'garmin' }],
+    )
+    expect(result.valid).toBe(false)
+    if (!result.valid) {
+      expect(result.violations.some((v) => v.rule === 'fabricated_source')).toBe(true)
+    }
+  })
+
+  it('"Garmin visade X" MED Garmin i sources → passerar', () => {
+    const result = validateConsumerOutput(
+      'Garmin visade 6 timmar sömn.',
+      [{ source_ai_id: 'garmin' }],
+    )
+    expect(result.valid).toBe(true)
+  })
+
+  it('Apple Health-mention (sammansatt namn) utan i sources → flagga', () => {
+    const result = validateConsumerOutput(
+      'Apple Health registrerade 8000 steg.',
+      [{ source_ai_id: 'dexcom' }],
+    )
+    expect(result.valid).toBe(false)
+    if (!result.valid) {
+      expect(result.violations.some((v) => v.rule === 'fabricated_source')).toBe(true)
+    }
+  })
+
+  it('case-insensitive matchning', () => {
+    const result = validateConsumerOutput(
+      'DEXCOM visade en topp.',
+      [],
+    )
+    expect(result.valid).toBe(false)
+    if (!result.valid) {
+      expect(result.violations.some((v) => v.rule === 'fabricated_source')).toBe(true)
+    }
+  })
+
+  it('okänt namn (inte i KNOWN_SOURCE_NAMES) flaggas inte', () => {
+    // 'blod' är inte ett känt source-namn — ska inte flaggas
+    const result = validateConsumerOutput(
+      'Blod visade en förändring.',
+      [{ source_ai_id: 'dexcom' }],
+    )
+    expect(result.valid).toBe(true)
+  })
+
+  it('flera fabricated sources flaggas alla', () => {
+    const result = validateConsumerOutput(
+      'Dexcom och Garmin visade liknande mönster, Apple Health backade det.',
+      [{ source_ai_id: 'spotify' }],
+    )
+    expect(result.valid).toBe(false)
+    if (!result.valid) {
+      const fabricated = result.violations.filter((v) => v.rule === 'fabricated_source')
+      expect(fabricated.length).toBeGreaterThanOrEqual(2)
+    }
+  })
+})
+
 describe('Korrekt Selvra-output passerar', () => {
   it.each([
     [
