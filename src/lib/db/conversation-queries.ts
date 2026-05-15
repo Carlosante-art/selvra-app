@@ -347,6 +347,34 @@ export async function redactMemoryFact(input: {
     )
 }
 
+// ─── Rate-limiting ───────────────────────────────────────────────────────
+
+/**
+ * Räkna turer skapade av en user inom senaste N sekunder. Används för
+ * rate-limit-check i sendMessage så en bot eller stuck-loop inte spammar
+ * Selvra-protokoll-fetches + LLM-anrop.
+ */
+export async function countRecentTurnsForUser(input: {
+  userId: string
+  sinceSeconds: number
+}): Promise<number> {
+  const since = new Date(Date.now() - input.sinceSeconds * 1000)
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(conversationTurns)
+    .innerJoin(
+      consumerConversations,
+      eq(conversationTurns.conversationId, consumerConversations.id),
+    )
+    .where(
+      and(
+        eq(consumerConversations.userId, input.userId),
+        sql`${conversationTurns.createdAt} >= ${since}`,
+      ),
+    )
+  return row?.count ?? 0
+}
+
 // ─── GDPR / patient-ägd portabilitet ─────────────────────────────────────
 
 /**
