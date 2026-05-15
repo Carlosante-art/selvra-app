@@ -3,6 +3,7 @@
 /**
  * sendMessage — Server Action.
  *
+<<<<<<< HEAD
  * Pipeline mot Mistral via processUserTurn-orchestratorn. LLM-call:en
  * är nu live (`callMistral`); DB-fetcher och persistens är fortfarande
  * stubbar tills migration körs.
@@ -23,10 +24,37 @@ import type {
   MemoryFact,
   RelevantEvent,
 } from '@/lib/observability/conversation-context'
+=======
+ * Pipeline mot DB via processUserTurn-orchestratorn. DB-fetcher och
+ * persistens är nu live (Drizzle-queries i conversation-queries.ts).
+ * LLM-call är fortfarande stub här — riktig Mistral-call kommer från
+ * sammanflätning med consumer/mistral-llm-PR:n.
+ *
+ * Auth-gate: session.user.id krävs. Anonyma anrop kastar.
+ *
+ * Återstående pre-Fas-1 stub:
+ *   - stubFetchRelevantEvents: returnerar [] (event-fetch mot
+ *     Selvra-protokollet är separat task)
+ *   - stubLlmCall: ersätts av callMistral vid merge av mistral-PR
+ */
 
-// System-prompten lever just nu som markdown i .gsd/. När Fas 1 aktiveras
-// portas v0 till en versionerad ts-konstant (eller laddas från en tabell
-// så Carl kan ändra utan deploy).
+import { revalidatePath } from 'next/cache'
+
+import { auth } from '@/lib/auth/config'
+import {
+  fetchActiveMemoryFacts,
+  fetchRecentTurns,
+  persistMemoryFact,
+  persistTurn,
+} from '@/lib/db/conversation-queries'
+import { logger } from '@/lib/logging'
+import {
+  processUserTurn,
+  type LlmCallFn,
+} from '@/lib/observability/process-user-turn'
+import type { RelevantEvent } from '@/lib/observability/conversation-context'
+>>>>>>> consumer/db-wiring
+
 const SYSTEM_PROMPT_V0 = `Du är Selvra. Spegel, inte coach. All observation källa-attribuerad. Inga manipulations-mönster, ingen prescription. Säg "jag vet inte" när data saknas.`
 
 type SendMessageInput = {
@@ -37,13 +65,24 @@ type SendMessageInput = {
 export async function sendMessage(input: SendMessageInput): Promise<void> {
   const log = logger.child({ module: 'samtal/sendMessage' })
 
-  // STUB: faktiska implementeringar bygger när Fas 1-besluten är fattade.
-  // Skeleton wire:ar bara pipelinen så orchestratorn körs end-to-end utan
-  // sida-effekter — testning och kod-review kan ske utan DB/LLM.
+  // Auth-gate
+  const session = await auth()
+  if (!session?.user?.id) {
+    log.warn('sendMessage_unauthorized')
+    throw new Error('Inloggning krävs.')
+  }
+  const userId = session.user.id
 
-  const recentTurns = await stubFetchRecentTurns(input.conversationId)
-  const activeMemoryFacts = await stubFetchMemoryFacts()
-  const relevantEvents = await stubFetchRelevantEvents(input.text)
+  // Fetch context från DB (recent turns + active memory facts) parallellt
+  // med relevant-events-fetch. Sista är stub tills Selvra-protokoll-fetcher
+  // är wirad.
+  const [recentTurns, activeMemoryFacts, relevantEvents] = await Promise.all([
+    input.conversationId
+      ? fetchRecentTurns(input.conversationId, 5)
+      : Promise.resolve([]),
+    fetchActiveMemoryFacts(userId),
+    stubFetchRelevantEvents(input.text),
+  ])
 
   const result = await processUserTurn({
     systemPrompt: SYSTEM_PROMPT_V0,
@@ -54,67 +93,79 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
     llmCall: callMistral,
   })
 
+  // Persist baserat på result.kind. Varje gren leder till en row i
+  // conversation_turns; memory_request lägger även en rad i
+  // conversation_memory_facts.
   switch (result.kind) {
-    case 'memory_request':
-      log.info('memory_request detected', { factLength: result.factText.length })
-      await stubPersistMemoryFact(result.factText)
-      await stubPersistTurn({
+    case 'memory_request': {
+      const { conversationId, turnId } = await persistTurn({
         conversationId: input.conversationId,
+        userId,
         userText: input.text,
         selvraText: result.acknowledgement,
-        sourcesConsulted: [],
+        sourcesConsulted: null,
+        llmProvider: null,
       })
+      await persistMemoryFact({
+        userId,
+        factText: result.factText,
+        sourceTurnId: turnId,
+      })
+      log.info('memory_request_persisted', {
+        conversationId,
+        factLength: result.factText.length,
+      })
+      revalidatePath(`/samtal/thread/${conversationId}`)
       break
-    case 'llm_response':
-      log.info('llm_response valid', { attempts: result.attempts })
-      await stubPersistTurn({
+    }
+    case 'llm_response': {
+      const { conversationId } = await persistTurn({
         conversationId: input.conversationId,
+        userId,
         userText: input.text,
         selvraText: result.selvraText,
-        sourcesConsulted: result.sourcesConsulted,
+        sourcesConsulted: result.sourcesConsulted.map((e) => ({
+          sourceAiId: e.sourceAiId,
+        })),
+        llmProvider: 'mistral', // hardcoded tills multi-provider-router byggs
       })
+      log.info('llm_response_persisted', {
+        conversationId,
+        attempts: result.attempts,
+      })
+      revalidatePath(`/samtal/thread/${conversationId}`)
       break
-    case 'fallback':
-      log.warn('fallback after retries', {
+    }
+    case 'fallback': {
+      const { conversationId } = await persistTurn({
+        conversationId: input.conversationId,
+        userId,
+        userText: input.text,
+        selvraText: result.selvraText,
+        sourcesConsulted: null,
+        llmProvider: 'mistral',
+      })
+      log.warn('fallback_persisted', {
+        conversationId,
         attempts: result.attempts,
         violations: result.lastViolations.map((v) => v.rule),
       })
-      await stubPersistTurn({
-        conversationId: input.conversationId,
-        userText: input.text,
-        selvraText: result.selvraText,
-        sourcesConsulted: [],
-      })
+      revalidatePath(`/samtal/thread/${conversationId}`)
       break
+    }
   }
-
-  // Fas 1: revalidatePath('/samtal') eller redirect(`/samtal/thread/${id}`)
 }
 
-// ─── Stubbar — ersätts vid Fas 1-aktivering ──────────────────────────────
-
-async function stubFetchRecentTurns(
-  _conversationId: string | null,
-): Promise<ConversationTurn[]> {
-  // Fas 1: SELECT från conversation_turns where conversation_id = $1
-  //        ORDER BY turn_index DESC LIMIT 5 → reverse för kronologi
-  return []
-}
-
-async function stubFetchMemoryFacts(): Promise<MemoryFact[]> {
-  // Fas 1: SELECT från conversation_memory_facts where user_id = session.user.id
-  //        AND redacted_at IS NULL AND valid_from <= NOW()
-  //        AND (valid_until IS NULL OR valid_until > NOW())
-  return []
-}
+// ─── Stubbar som kvarstår ────────────────────────────────────────────────
 
 async function stubFetchRelevantEvents(_userText: string): Promise<RelevantEvent[]> {
-  // Fas 1: heuristik eller LLM-tool-call för att avgöra vilka events från
-  // Selvra-protokollet (via stillra-vard/selvra-server) som är relevanta.
-  // Returnera fetched events i RelevantEvent-form.
+  // Fas 1 nästa steg: heuristik eller LLM-tool-call för att avgöra vilka
+  // events från Selvra-protokollet (via stillra-vard/selvra-server) som är
+  // relevanta. Returnera fetched events i RelevantEvent-form.
   return []
 }
 
+<<<<<<< HEAD
 async function stubPersistTurn(_turn: {
   conversationId: string | null
   userText: string
@@ -128,4 +179,10 @@ async function stubPersistTurn(_turn: {
 async function stubPersistMemoryFact(_factText: string): Promise<void> {
   // Fas 1: db.insert(conversationMemoryFacts).values({...}). Validera att
   // användaren inte spammar (rate-limit per user).
+=======
+const stubLlmCall: LlmCallFn = async (_messages, _retryHint) => {
+  // Ersätts av callMistral när consumer/mistral-llm-PR mergeas.
+  // Tills dess: konstruerad fallback-text.
+  return 'Jag har ingen data att referera till just nu. Vill du koppla källor först?'
+>>>>>>> consumer/db-wiring
 }
