@@ -18,6 +18,7 @@ import {
   getConversationOwned,
 } from '@/lib/db/conversation-queries'
 
+import { ArchiveButton } from '../../_components/ArchiveButton'
 import { OptimisticChatFeed } from '../../_components/OptimisticChatFeed'
 
 type Props = {
@@ -63,7 +64,16 @@ export default async function ThreadPage({ params }: Props) {
               day: 'numeric',
               month: 'long',
             })}
+            {conversation.archivedAt && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 text-xs">
+                arkiverad
+              </span>
+            )}
           </p>
+          <ArchiveButton
+            conversationId={thread_id}
+            isArchived={conversation.archivedAt !== null}
+          />
         </header>
 
         <OptimisticChatFeed initialTurns={turns} conversationId={thread_id} />
