@@ -70,10 +70,18 @@ export default async function ThreadPage({ params }: Props) {
               </span>
             )}
           </p>
-          <ArchiveButton
-            conversationId={thread_id}
-            isArchived={conversation.archivedAt !== null}
-          />
+          <div className="flex items-center gap-4 text-sm">
+            <ArchiveButton
+              conversationId={thread_id}
+              isArchived={conversation.archivedAt !== null}
+            />
+            <Link
+              href={`/samtal/thread/${thread_id}/export`}
+              className="text-neutral-500 dark:text-neutral-500 underline underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
+            >
+              Exportera som markdown
+            </Link>
+          </div>
         </header>
 
         <OptimisticChatFeed initialTurns={turns} conversationId={thread_id} />
