@@ -1,19 +1,36 @@
 /**
  * /minne — transparens-yta. Här ser användaren exakt vad Selvra "minns"
- * om henne. Per konsument-track §2 patient-ägd portabilitet: detta är
- * konstitutionellt krav, inte feature.
+ * om henne.
  *
- * Status 2026-05-15: v1-refaktor Steg 2 raderade brev-blocket. Återstående
- * tre block kvar tills Steg 6 konsoliderar till två-kategori-modellen
- * ("Vad du sagt" / "Vad dina källor visat" + "Explicita minnen"):
- *   1. Tankar (självrapport) — från Selvra-protokollet listEvents
- *   2. Bakgrunds-observationer (Dreamer) — rivs i Steg 3
- *   3. Explicit minnes-fakta — från conversation_memory_facts
+ * v1 två-kategori-modell (per .gsd/SELVRA_CONSUMER_V1_BUILD_2026-05-15.md §5):
+ *
+ *   1. Vad du sagt
+ *      Allt användaren sagt — extraherade user-stated facts från samtal.
+ *      Data-källa just nu: legacy selvra.thought.recorded-events från
+ *      Selvra-protokollet. När conversation_facts-tabellen skapas i Steg 8
+ *      kommer denna kategori byta data-källa till
+ *      conversation_facts(fact_type=user_stated) + ev. legacy-merge.
+ *
+ *   2. Vad dina källor visat
+ *      Observationer från kopplade källor (Garmin/Strava/Calendar/Gmail/
+ *      Dexcom). Källa-attribuerade. Data-källa just nu: legacy
+ *      insight.derived-events från Selvra-protokollet (Dreamer-output).
+ *      När conversation_facts-tabellen skapas i Steg 8 kommer denna
+ *      kategori byta till conversation_facts(fact_type=source_observed).
+ *
+ *   3. Explicita minnen
+ *      User-skrivna explicita minnen ("jag är T1-diabetiker") från
+ *      conversation_memory_facts. Användaren skapar dessa genom att
+ *      säga "Kom ihåg X" i ett samtal. Selvra kan inte skapa dem utan
+ *      användarens bekräftelse.
  *
  * Plus globala actions:
  *   - Exportera allt (SREF v1) → befintlig /api/export/sref
  *   - Radera enskilt fakta via MemoryFactRow
  *   - DangerZone — purge alla conversations / delete-account
+ *
+ * Konstitutionellt krav (IF1 + EU Data Act): användaren kan radera,
+ * exportera, och se exakt vad som finns. Inget är dolt.
  */
 
 import Link from 'next/link'
@@ -33,8 +50,9 @@ export default async function MinnePage() {
     redirect('/login')
   }
 
-  // Parallella fetches — om någon faller, sektionen visar empty-state
-  const [memoryFacts, recentThoughts, recentInsights] = await Promise.all([
+  // Parallella fetches. Sektionen renderar empty-state om respektive
+  // källa fall:ar — vi tar inte ner hela vyn för en enskild fail.
+  const [memoryFacts, userStatedLegacy, sourceObservedLegacy] = await Promise.all([
     listMemoryFactsForUi(session.user.id),
     safeListEvents({ eventType: 'selvra.thought.recorded', limit: 30 }),
     safeListEvents({ eventType: 'insight.derived', limit: 20 }),
@@ -57,20 +75,21 @@ export default async function MinnePage() {
           </p>
         </header>
 
-        {/* Block 1 (Senaste reflektion / brev) raderad 2026-05-15 — v1-refaktor Steg 2. */}
-
-        {/* 1. Tankar */}
-        <section aria-label="Tankar" className="flex flex-col gap-3">
+        {/* 1. Vad du sagt */}
+        <section aria-label="Vad du sagt" className="flex flex-col gap-3">
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-            Tankar (självrapport)
+            Vad du sagt
           </h2>
-          {recentThoughts.length === 0 ? (
+          <p className="text-xs text-neutral-500 dark:text-neutral-500">
+            Allt du själv har skrivit till Selvra över tid.
+          </p>
+          {userStatedLegacy.length === 0 ? (
             <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
-              Inga tankar sparade än.
+              Inget sparat än. Det du säger till Selvra i samtal sparas här.
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {recentThoughts.slice(0, 10).map((event) => (
+              {userStatedLegacy.slice(0, 10).map((event) => (
                 <li
                   key={event.event_id}
                   className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
@@ -85,21 +104,28 @@ export default async function MinnePage() {
           )}
         </section>
 
-        {/* 2. Bakgrund (Dreamer-insights) */}
-        {/* /traces-länkar borttagna 2026-05-15 (v1-refaktor Steg 3: Dreamer-
-            paradigm rivs). Hela detta block konsolideras i Steg 6 till
-            "Vad dina källor visat" (källa-attribuerad observation). */}
-        <section aria-label="Bakgrund" className="flex flex-col gap-3">
+        {/* 2. Vad dina källor visat */}
+        <section
+          aria-label="Vad dina källor visat"
+          className="flex flex-col gap-3"
+        >
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-            Bakgrund (Selvras observationer)
+            Vad dina källor visat
           </h2>
-          {recentInsights.length === 0 ? (
+          <p className="text-xs text-neutral-500 dark:text-neutral-500">
+            Observationer från kopplade källor (Garmin, Strava, Calendar,
+            Gmail). Käll-attribuerade.
+          </p>
+          {sourceObservedLegacy.length === 0 ? (
             <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
-              Inga bakgrunds-observationer än.
+              Inga observationer från källor än.{' '}
+              <Link href="/welcome/sources" className="underline underline-offset-2">
+                Koppla en källa →
+              </Link>
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {recentInsights.slice(0, 5).map((event) => (
+              {sourceObservedLegacy.slice(0, 10).map((event) => (
                 <li
                   key={event.event_id}
                   className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
@@ -111,14 +137,21 @@ export default async function MinnePage() {
           )}
         </section>
 
-        {/* 4. Explicit minnen */}
-        <section aria-label="Explicit minnen" className="flex flex-col gap-3">
+        {/* 3. Explicita minnen */}
+        <section
+          aria-label="Explicita minnen"
+          className="flex flex-col gap-3"
+        >
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-            Explicit minnen
+            Explicita minnen
           </h2>
+          <p className="text-xs text-neutral-500 dark:text-neutral-500">
+            Saker du bett Selvra komma ihåg, ord för ord. Selvra kan inte
+            lägga till här utan att du bekräftar.
+          </p>
           {memoryFacts.length === 0 ? (
             <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
-              Inga explicit minnen sparade. När du säger till Selvra
+              Inga explicita minnen sparade. När du säger till Selvra
               &quot;Kom ihåg X&quot; i ett samtal sparas X här.
             </p>
           ) : (
