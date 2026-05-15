@@ -5,8 +5,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   extractFactsFromTurn,
+  FACT_EXTRACTION_SCHEMA,
   parseFactExtractionResponse,
-  type LlmCallFn,
+  type LlmJsonCallFn,
 } from '../src/lib/observability/extract-facts-from-turn'
 
 const NO_SOURCES: never[] = []
@@ -129,9 +130,69 @@ describe('parseFactExtractionResponse', () => {
   })
 })
 
+describe('FACT_EXTRACTION_SCHEMA (V2 json_schema-mode)', () => {
+  it('schemat är giltigt JSON-schema', () => {
+    expect(FACT_EXTRACTION_SCHEMA.type).toBe('object')
+    expect(FACT_EXTRACTION_SCHEMA.required).toContain('facts')
+    expect(FACT_EXTRACTION_SCHEMA.additionalProperties).toBe(false)
+  })
+
+  it('facts-item kräver factType, factText, sourceName', () => {
+    const items = FACT_EXTRACTION_SCHEMA.properties.facts.items
+    expect(items.required).toEqual(['factType', 'factText', 'sourceName'])
+    expect(items.additionalProperties).toBe(false)
+  })
+
+  it('factType är enum begränsad till user_stated + source_observed', () => {
+    const factType =
+      FACT_EXTRACTION_SCHEMA.properties.facts.items.properties.factType
+    expect(factType.enum).toEqual(['user_stated', 'source_observed'])
+  })
+
+  it('factText har max-längd cap', () => {
+    const factText =
+      FACT_EXTRACTION_SCHEMA.properties.facts.items.properties.factText
+    expect(factText.maxLength).toBeGreaterThan(0)
+  })
+
+  it('sourceName accepterar string eller null', () => {
+    const sourceName =
+      FACT_EXTRACTION_SCHEMA.properties.facts.items.properties.sourceName
+    expect(sourceName.type).toContain('string')
+    expect(sourceName.type).toContain('null')
+  })
+})
+
+describe('extractFactsFromTurn V2 — few-shot examples', () => {
+  it('skickar few-shot examples före faktisk turn', async () => {
+    let capturedMessages: Array<{ role: string; content: string }> = []
+    const llmCall: LlmJsonCallFn = async (messages) => {
+      capturedMessages = [...messages]
+      return JSON.stringify({ facts: [] })
+    }
+
+    await extractFactsFromTurn({
+      userText: 'test',
+      selvraText: 'ok',
+      sourcesConsulted: NO_SOURCES,
+      llmCall,
+    })
+
+    // Förväntat: 1 system + 3 few-shot par (user+assistant) + 1 user
+    // = 1 + 6 + 1 = 8 messages
+    expect(capturedMessages.length).toBe(8)
+    expect(capturedMessages[0].role).toBe('system')
+    expect(capturedMessages[1].role).toBe('user')
+    expect(capturedMessages[2].role).toBe('assistant')
+    expect(capturedMessages[7].role).toBe('user')
+    // Sista message är den faktiska turen
+    expect(capturedMessages[7].content).toContain('test')
+  })
+})
+
 describe('extractFactsFromTurn — fail-safe', () => {
   it('LLM-call kastar fel → tom array', async () => {
-    const llmCall: LlmCallFn = vi.fn(async () => {
+    const llmCall: LlmJsonCallFn = vi.fn(async () => {
       throw new Error('upstream down')
     })
 
@@ -147,7 +208,7 @@ describe('extractFactsFromTurn — fail-safe', () => {
   })
 
   it('LLM returnerar gibberish → tom array', async () => {
-    const llmCall: LlmCallFn = vi.fn(async () => 'inte json alls')
+    const llmCall: LlmJsonCallFn = vi.fn(async () => 'inte json alls')
 
     const result = await extractFactsFromTurn({
       userText: 'a',
@@ -160,7 +221,7 @@ describe('extractFactsFromTurn — fail-safe', () => {
   })
 
   it('LLM returnerar valid JSON → facts extraheras', async () => {
-    const llmCall: LlmCallFn = vi.fn(async () =>
+    const llmCall: LlmJsonCallFn = vi.fn(async () =>
       JSON.stringify({
         facts: [
           {
