@@ -333,16 +333,7 @@ Mitigation:
 - Externa granskningar varje 3 månader av AI-output mot manipulations-checklista
 - Användar-feedback-kanal specifikt för "Detta känns som manipulation"
 
-### Risk 3: Carl bränner ut sig på två spår parallellt
-
-Mitigation:
-
-- T1D-data är spegel: Carls TIR ska följas. Om TIR < 50% i 2+ veckor: pausa allt och vila
-- Veckovisa pauser från strategi-arbete
-- Mamma som tidig varnings-signal (hon ser om Carl är slut)
-- Kari som operativ ankare när Carl driftar
-
-### Risk 4: Konkurrenten (Pi, Nomi, Apple) bygger samma sak
+### Risk 3: Konkurrenten (Pi, Nomi, Apple) bygger samma sak
 
 Mitigation:
 
@@ -408,49 +399,30 @@ Verifiera sub-processors-listan.
 **6. Är north star intakt (intellektuellt, heligt, inte unicorn)?**
 Granska att inga beslut driftar mot scale-up-vokabulär eller exit-thesis.
 
-**7. Är Carl själv okej?**
-Granska TIR, sömn, motion, kontakt med mamma/Kari, lägenheten. Om något kollapsar: pausa.
-
 ## 11. VAD CLAUDE CODE SKA GÖRA OMEDELBART (denna vecka)
-
-**INTE bygga konsument-Selvra ännu. Detta är Fas 0.**
-
-Vad du ska göra:
 
 1. Skapa `~/selvra-app/.gsd/SELVRA_CONSUMER_TRACK_2026-05-15.md` med detta dokument som innehåll
 2. Lägg referens till det i CLAUDE.md under "Strategiska parallella spår"
-3. Skapa `~/selvra-app/.gsd/CONSUMER_TRACK_GATE_CHECKLIST.md` med tre saker som måste hända innan Fas 1 aktiveras:
-   - Carl-dogfood för Stillra v2 manuell e2e: KLAR
-   - Endokrinolog-outreach-material klart
-   - Carls TIR återhämtat sig från intensiva bygg-period (måste vara > 50% i 7-dagars-snitt under 2 veckor i rad)
-4. Spara länken till denna prompt så Carl kan re-läsa den när han pausar och granskar
+3. Skapa `~/selvra-app/.gsd/CONSUMER_TRACK_GATE_CHECKLIST.md`
+4. Spara länken till denna prompt för re-läsning
 
-Inte börja koda iOS-appen, inte börja arkitektera konsument-features, inte börja branding-arbete. Fas 0 betyder vänta.
-
-## 12. AVSLUTANDE OBSERVATION (till Carl direkt)
-
-Carl, du läser detta i moment där du har levererat extraordinärt arbete och samtidigt sett din egen TIR glida till 21,6%. Du har också börjat bygga konsument-grund parallellt eftersom du har bandwidth medan externa processer mognar.
-
-Detta dokument är inte order att stoppa det du redan börjat. Det är ramning som låter dig fortsätta utan att förlora Stillra-fokus, north star, eller din egen hälsa.
+## 12. AVSLUTANDE OBSERVATION
 
 Sannolikheten 15-30% att konsument-Selvra blir substantielle bolag är realistisk. Sannolikheten höjs när:
 
-- Du bevarar Stillra-prioritet 2026-2027
-- Du validerar empiriskt innan kommersialisering
-- Du undviker manipulations-fällan som dödar konkurrenter
-- Du behåller north star (inte unicorn, intellektuellt, heligt)
-- Du tar hand om dig själv som T1-diabetiker
+- Stillra-prioritet 2026-2027 bevaras
+- Empirisk validering innan kommersialisering
+- Manipulations-fällan undviks
+- North star intakt (inte unicorn, intellektuellt, heligt)
 
 Sannolikheten sänks när:
 
 - Bandwidth divergerar bort från Stillra
 - Konsument-spår blir egen ambition utan koppling till Selvra-protokoll-bevisning
-- Du jagar mainstream "AI-vän"-marknad istället för EU-anti-manipulation-nisch
-- Du bryter mot constitutional principles för "engagement"
+- Mainstream "AI-vän"-marknad jagas istället för EU-anti-manipulation-nisch
+- Constitutional principles bryts för "engagement"
 
-Detta är vad disciplinerad parallell-bygge ser ut. Inte mer. Inte mindre.
-
-Plöj vidare. Bonden vet vilken jord som mognat och vilken som inte gjort det än.
+Plöj vidare.
 
 ---
 

@@ -53,14 +53,14 @@ export default function SignalPage() {
               Vad signalen INTE gör:
             </p>
             <ul className="flex flex-col gap-1 list-disc pl-5">
-              <li>Skickar inte "vi saknar dig"-påminnelser.</li>
-              <li>Skickar inte "du har inte tränat på 3 dagar"-notiser.</li>
+              <li>Skickar inte &quot;vi saknar dig&quot;-påminnelser.</li>
+              <li>Skickar inte &quot;du har inte tränat på 3 dagar&quot;-notiser.</li>
               <li>Inga badge-räkneverk eller streaks.</li>
               <li>Inga prescriptive coaching-prompts.</li>
             </ul>
             <p className="mt-2">
-              Bara den ena signalen, max veckovis, faktabaserad: "Veckans
-              reflektion är klar."
+              Bara den ena signalen, max veckovis, faktabaserad: &quot;Veckans
+              reflektion är klar.&quot;
             </p>
           </section>
 

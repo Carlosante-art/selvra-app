@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { scrubObject, scrubMessage } from '@/lib/observability/scrub'
+
 /**
  * Strukturerad server-side-logging för selvra-app.
  *
@@ -22,6 +24,11 @@ import 'server-only'
  *
  * Doktrinärt: vi loggar inte user-content (intentioner, tankar, brev-text).
  * Det är privacy-doktrin. Logger får ID:n och statuskoder, inte payload.
+ *
+ * Enforcement (selvra-paket P0): meta scrubbas alltid via scrubObject INNAN
+ * JSON-line skrivs. Doktrin → tekniskt gate. Caller-disciplin (skicka inte
+ * brief-text alls) gäller fortfarande som primärt försvar — scrubbern är
+ * andra lagret.
  */
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
@@ -64,12 +71,18 @@ class Logger {
   }
 
   private emit(level: LogLevel, message: string, meta: LogMeta): void {
+    // Scrubba INNAN JSON.stringify så ingen PII någonsin når disk eller
+    // stdout — även om en caller råkar passera brief-text eller email.
+    // scrubObject är rekursivt och skyddar nested meta; scrubMessage är
+    // regex-skyddsnät för uppenbara värden i message-strängen.
+    const scrubbedContext = scrubObject(this.context)
+    const scrubbedMeta = scrubObject(meta)
     const entry: LogEntry = {
       ts: new Date().toISOString(),
       level,
-      message,
-      ...this.context,
-      ...meta,
+      message: scrubMessage(message),
+      ...scrubbedContext,
+      ...scrubbedMeta,
     }
     const line = JSON.stringify(entry)
     // Använd korrekt console-metod för rätt severity i Vercel/Railway.

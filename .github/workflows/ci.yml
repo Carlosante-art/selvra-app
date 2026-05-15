@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: Build + verify
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +21,15 @@ jobs:
 
       - run: npm ci
 
-      # Uncomment once you have these scripts in package.json
-      # - run: npm run lint
-      # - run: npm test
-      - run: npm run build
+      # Selvra-paket P0: alla gates blockerar mergen — inget tyst drift av
+      # lint-skuld eller test-failures genom till main. tsc körs implicit
+      # av `next build` (Next 16 type-checks); separat npx tsc-steg lämnas
+      # till framtida utvidgning om vi vill snabbare error-feedback.
+      - name: Lint (0 warnings tolererade)
+        run: npm run lint -- --max-warnings 0
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
