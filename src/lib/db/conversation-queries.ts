@@ -24,6 +24,112 @@ import {
 // ─── Fetchers ────────────────────────────────────────────────────────────
 
 /**
+ * Lista alla conversation-trådar för användaren, nyast först.
+ * Arkiverade (archived_at != null) inkluderas inte by default.
+ */
+export async function listConversationsForUser(
+  userId: string,
+  opts: { includeArchived?: boolean; limit?: number } = {},
+): Promise<
+  Array<{
+    id: string
+    title: string | null
+    startedAt: Date
+    lastMessageAt: Date
+  }>
+> {
+  const limit = opts.limit ?? 50
+  const conditions = [eq(consumerConversations.userId, userId)]
+  if (!opts.includeArchived) {
+    conditions.push(isNull(consumerConversations.archivedAt))
+  }
+
+  return db
+    .select({
+      id: consumerConversations.id,
+      title: consumerConversations.title,
+      startedAt: consumerConversations.startedAt,
+      lastMessageAt: consumerConversations.lastMessageAt,
+    })
+    .from(consumerConversations)
+    .where(and(...conditions))
+    .orderBy(desc(consumerConversations.lastMessageAt))
+    .limit(limit)
+}
+
+/**
+ * Hämta en specifik tråd, men bara om den tillhör userId.
+ * Returnerar null om tråden saknas ELLER tillhör annan user (vi
+ * särskiljer inte i return-typen — defense-in-depth mot probing).
+ */
+export async function getConversationOwned(input: {
+  conversationId: string
+  userId: string
+}): Promise<{
+  id: string
+  title: string | null
+  startedAt: Date
+  lastMessageAt: Date
+  archivedAt: Date | null
+} | null> {
+  const [row] = await db
+    .select({
+      id: consumerConversations.id,
+      title: consumerConversations.title,
+      startedAt: consumerConversations.startedAt,
+      lastMessageAt: consumerConversations.lastMessageAt,
+      archivedAt: consumerConversations.archivedAt,
+    })
+    .from(consumerConversations)
+    .where(
+      and(
+        eq(consumerConversations.id, input.conversationId),
+        eq(consumerConversations.userId, input.userId),
+      ),
+    )
+    .limit(1)
+  return row ?? null
+}
+
+/**
+ * Hämta alla turer i en tråd, ordnade kronologiskt. Används för
+ * thread/[id]-vyn där hela historiken visas. För LLM-context räcker
+ * fetchRecentTurns med limit.
+ */
+export async function fetchAllTurns(
+  conversationId: string,
+): Promise<
+  Array<{
+    id: string
+    turnIndex: number
+    userText: string
+    selvraText: string | null
+    sourcesConsulted: ReadonlyArray<{ source_ai_id: string }> | null
+    createdAt: Date
+  }>
+> {
+  const rows = await db
+    .select({
+      id: conversationTurns.id,
+      turnIndex: conversationTurns.turnIndex,
+      userText: conversationTurns.userText,
+      selvraText: conversationTurns.selvraText,
+      sourcesConsulted: conversationTurns.sourcesConsulted,
+      createdAt: conversationTurns.createdAt,
+    })
+    .from(conversationTurns)
+    .where(eq(conversationTurns.conversationId, conversationId))
+    .orderBy(conversationTurns.turnIndex)
+
+  return rows.map((r) => ({
+    ...r,
+    sourcesConsulted: r.sourcesConsulted as
+      | ReadonlyArray<{ source_ai_id: string }>
+      | null,
+  }))
+}
+
+/**
  * Hämta senaste N turerna i en tråd, ordnade kronologiskt (äldst → nyast).
  * Drizzle returnerar nyaste först per ORDER BY DESC; vi reverserar i JS.
  */

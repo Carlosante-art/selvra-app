@@ -8,17 +8,22 @@
  * iterera + rendera per tur.
  */
 
+// Sources har minst { source_ai_id }. event_id + type är optional eftersom
+// vi sparar dem inte konsekvent i conversation_turn (just nu). UI:t visar
+// bara source_ai_id i footer-raden.
+type SourceRef = { source_ai_id: string }
+
 type Turn = {
   id: string
   turnIndex: number
   userText: string
   selvraText: string | null
-  sourcesConsulted: Array<{ source_ai_id: string; event_id: string; type: string }> | null
+  sourcesConsulted: readonly SourceRef[] | null
   createdAt: Date
 }
 
 type Props = {
-  turns: Turn[]
+  turns: readonly Turn[]
 }
 
 export function ChatMessages({ turns }: Props) {
