@@ -3,24 +3,21 @@
 /**
  * sendMessage — Server Action.
  *
- * Pipeline-wiring som visar hur processUserTurn-orchestratorn anropas
- * från en faktisk Server Action. LLM-callback är fortfarande stub —
- * när Fas 1 aktiveras swap:as stubLlmCall med faktiskt Mistral-anrop.
+ * Pipeline mot Mistral via processUserTurn-orchestratorn. LLM-call:en
+ * är nu live (`callMistral`); DB-fetcher och persistens är fortfarande
+ * stubbar tills migration körs.
  *
- * Pre-Fas-1 stubbar:
+ * Återstående pre-Fas-1 stubbar:
  *   - getRecentTurns: returnerar [] (DB-tabellen finns inte ännu)
  *   - getActiveMemoryFacts: returnerar []
  *   - getRelevantEvents: returnerar []
- *   - stubLlmCall: returnerar en konstruerad text (no real LLM-call)
  *   - persistTurn: loggar, sparar inte (no DB-write)
  *   - persistMemoryFact: loggar, sparar inte
  */
 
+import { callMistral } from '@/lib/llm/mistral'
 import { logger } from '@/lib/logging'
-import {
-  processUserTurn,
-  type LlmCallFn,
-} from '@/lib/observability/process-user-turn'
+import { processUserTurn } from '@/lib/observability/process-user-turn'
 import type {
   ConversationTurn,
   MemoryFact,
@@ -54,7 +51,7 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
     recentTurns,
     activeMemoryFacts,
     relevantEvents,
-    llmCall: stubLlmCall,
+    llmCall: callMistral,
   })
 
   switch (result.kind) {
@@ -116,12 +113,6 @@ async function stubFetchRelevantEvents(_userText: string): Promise<RelevantEvent
   // Selvra-protokollet (via stillra-vard/selvra-server) som är relevanta.
   // Returnera fetched events i RelevantEvent-form.
   return []
-}
-
-const stubLlmCall: LlmCallFn = async (_messages, _retryHint) => {
-  // Fas 1: const response = await mistral.chat.complete({...})
-  //        Returnera response.choices[0].message.content
-  return 'Jag har ingen data att referera till just nu. Vill du koppla källor först?'
 }
 
 async function stubPersistTurn(_turn: {
