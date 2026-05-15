@@ -4,12 +4,10 @@
  * sendMessage — Server Action.
  *
  * Pipeline mot DB + Mistral via processUserTurn-orchestratorn. Auto-
- * genererar tråd-titel på första turn-paret.
+ * genererar tråd-titel på första turn-paret. Relevanta events fetchas
+ * från Selvra-protokollet (senaste 7 dagar, max 20 events).
  *
  * Auth-gate: session.user.id krävs. Anonyma anrop kastar.
- *
- * Återstående pre-Fas-1 stub:
- *   - stubFetchRelevantEvents: returnerar [] (kommer via #4)
  */
 
 import { revalidatePath } from 'next/cache'
@@ -25,8 +23,8 @@ import {
 import { generateThreadTitle } from '@/lib/llm/generate-title'
 import { callMistral } from '@/lib/llm/mistral'
 import { logger } from '@/lib/logging'
+import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import { processUserTurn } from '@/lib/observability/process-user-turn'
-import type { RelevantEvent } from '@/lib/observability/conversation-context'
 
 const SYSTEM_PROMPT_V0 = `Du är Selvra. Spegel, inte coach. All observation källa-attribuerad. Inga manipulations-mönster, ingen prescription. Säg "jag vet inte" när data saknas.`
 
@@ -45,12 +43,13 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
   }
   const userId = session.user.id
 
+  // Fetch context parallellt: DB (turns + memory-facts) + Selvra-protokoll (events)
   const [recentTurns, activeMemoryFacts, relevantEvents] = await Promise.all([
     input.conversationId
       ? fetchRecentTurns(input.conversationId, 5)
       : Promise.resolve([]),
     fetchActiveMemoryFacts(userId),
-    stubFetchRelevantEvents(input.text),
+    fetchRelevantEvents(input.text),
   ])
 
   const result = await processUserTurn({
@@ -136,9 +135,4 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
       break
     }
   }
-}
-
-async function stubFetchRelevantEvents(_userText: string): Promise<RelevantEvent[]> {
-  // Wireas via consumer/event-fetcher-PR.
-  return []
 }
