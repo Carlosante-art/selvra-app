@@ -20,6 +20,7 @@ import {
   conversationMemoryFacts,
   conversationTurns,
 } from './conversation-schema'
+import { users } from './schema'
 
 // ─── Fetchers ────────────────────────────────────────────────────────────
 
@@ -344,4 +345,45 @@ export async function redactMemoryFact(input: {
         eq(conversationMemoryFacts.userId, input.userId),
       ),
     )
+}
+
+// ─── GDPR / patient-ägd portabilitet ─────────────────────────────────────
+
+/**
+ * Hård delete av alla conversations + memory-facts för en user.
+ * conversation_turns cascade:s via consumer_conversation-FK.
+ *
+ * Behåller user-raden (auth-konto) intakt. För full avregistrering, se
+ * deleteUserAccount() nedan.
+ */
+export async function purgeUserConversations(userId: string): Promise<{
+  deletedConversations: number
+  deletedFacts: number
+}> {
+  const deletedFacts = await db
+    .delete(conversationMemoryFacts)
+    .where(eq(conversationMemoryFacts.userId, userId))
+    .returning({ id: conversationMemoryFacts.id })
+
+  const deletedConversations = await db
+    .delete(consumerConversations)
+    .where(eq(consumerConversations.userId, userId))
+    .returning({ id: consumerConversations.id })
+
+  return {
+    deletedConversations: deletedConversations.length,
+    deletedFacts: deletedFacts.length,
+  }
+}
+
+/**
+ * Hård delete av hela user-kontot. Cascade:s:
+ *   - auth: account, session, verificationToken (FK till users.id)
+ *   - konsument: consumer_conversation, conversation_memory_fact
+ *     (FK till users.id) → conversation_turn (FK till consumer_conversation)
+ *
+ * Användaren måste signOut:as efter denna call (Server Action ansvarar).
+ */
+export async function deleteUserAccount(userId: string): Promise<void> {
+  await db.delete(users).where(eq(users.id, userId))
 }
