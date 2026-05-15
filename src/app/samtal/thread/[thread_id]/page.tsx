@@ -18,8 +18,7 @@ import {
   getConversationOwned,
 } from '@/lib/db/conversation-queries'
 
-import { ChatInput } from '../../_components/ChatInput'
-import { ChatMessages } from '../../_components/ChatMessages'
+import { OptimisticChatFeed } from '../../_components/OptimisticChatFeed'
 
 type Props = {
   params: Promise<{ thread_id: string }>
@@ -67,8 +66,7 @@ export default async function ThreadPage({ params }: Props) {
           </p>
         </header>
 
-        <ChatMessages turns={turns} />
-        <ChatInput conversationId={thread_id} />
+        <OptimisticChatFeed initialTurns={turns} conversationId={thread_id} />
       </article>
     </main>
   )

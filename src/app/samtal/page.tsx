@@ -16,7 +16,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth/config'
 import { listConversationsForUser } from '@/lib/db/conversation-queries'
 
-import { ChatInput } from './_components/ChatInput'
+import { OptimisticChatFeed } from './_components/OptimisticChatFeed'
 
 export default async function SamtalPage() {
   const session = await auth()
@@ -41,7 +41,7 @@ export default async function SamtalPage() {
           </p>
         </header>
 
-        <ChatInput conversationId={null} />
+        <OptimisticChatFeed initialTurns={[]} conversationId={null} />
 
         {threads.length > 0 && (
           <section
