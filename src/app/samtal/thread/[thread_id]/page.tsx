@@ -1,14 +1,24 @@
 /**
- * /samtal/thread/[thread_id] — visa specifik tråd.
- * Skeleton-stub.
+ * /samtal/thread/[thread_id] — specifik tråd-vy.
  *
- * Fas 1: ladda thread_id från db.consumerConversations, alla turer från
- * conversationTurns where conversation_id = thread_id, ordnade på
- * turn_index. Auth-gate: thread.userId måste matcha session.user.id.
+ * Auth-gate + ownership-check via getConversationOwned. Trådar som inte
+ * tillhör userId returnerar 404 (notFound) så ingen probing-information
+ * läcker.
+ *
+ * Render hela tråd-historiken via fetchAllTurns. ChatInput nederst skickar
+ * nästa tur till samma conversationId.
  */
 
-import { ChatInput } from '../../_components/ChatInput'
-import { ChatMessages } from '../../_components/ChatMessages'
+import { notFound, redirect } from 'next/navigation'
+import Link from 'next/link'
+
+import { auth } from '@/lib/auth/config'
+import {
+  fetchAllTurns,
+  getConversationOwned,
+} from '@/lib/db/conversation-queries'
+
+import { OptimisticChatFeed } from '../../_components/OptimisticChatFeed'
 
 type Props = {
   params: Promise<{ thread_id: string }>
@@ -16,23 +26,47 @@ type Props = {
 
 export default async function ThreadPage({ params }: Props) {
   const { thread_id } = await params
-  // TODO Fas 1: faktisk ladda + auth-check
-  const turns: never[] = []
+
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect('/login')
+  }
+
+  const conversation = await getConversationOwned({
+    conversationId: thread_id,
+    userId: session.user.id,
+  })
+  if (!conversation) {
+    notFound()
+  }
+
+  const turns = await fetchAllTurns(thread_id)
 
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-16 sm:py-24">
       <article className="max-w-prose w-full flex flex-col gap-8">
-        <header>
-          <p className="text-sm uppercase tracking-wide text-neutral-500 dark:text-neutral-500 mb-2">
+        <header className="flex flex-col gap-3">
+          <Link
+            href="/samtal"
+            className="text-sm text-neutral-500 dark:text-neutral-500 underline underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors w-fit"
+          >
+            ← Alla samtal
+          </Link>
+          <p className="text-sm uppercase tracking-wide text-neutral-500 dark:text-neutral-500">
             Tråd
           </p>
           <h1 className="text-3xl font-medium tracking-tight">
-            Samtal {thread_id.slice(0, 8)}…
+            {conversation.title ?? `Samtal ${thread_id.slice(0, 8)}…`}
           </h1>
+          <p className="text-sm text-neutral-500 dark:text-neutral-500">
+            Startade {conversation.startedAt.toLocaleDateString('sv-SE', {
+              day: 'numeric',
+              month: 'long',
+            })}
+          </p>
         </header>
 
-        <ChatMessages turns={turns} />
-        <ChatInput conversationId={thread_id} />
+        <OptimisticChatFeed initialTurns={turns} conversationId={thread_id} />
       </article>
     </main>
   )
