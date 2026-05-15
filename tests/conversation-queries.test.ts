@@ -27,14 +27,17 @@ import {
   archiveConversation,
   countRecentTurnsForUser,
   createConversation,
+  deleteConversationFact,
   deleteUserAccount,
   fetchActiveMemoryFacts,
   fetchActiveSystemPrompt,
   fetchAllTurns,
   fetchRecentTurns,
   getConversationOwned,
+  listConversationFactsForUi,
   listConversationsForUser,
   listMemoryFactsForUi,
+  persistConversationFacts,
   persistMemoryFact,
   persistTurn,
   purgeUserConversations,
@@ -463,5 +466,175 @@ describe('Patient-ägd portabilitet — purge + delete', () => {
     // Allt borta via FK CASCADE
     expect(await listConversationsForUser(userA)).toHaveLength(0)
     expect(await fetchActiveMemoryFacts(userA)).toHaveLength(0)
+  })
+})
+
+describe('V1 Steg 8: conversation_facts', () => {
+  it('persistConversationFacts batch-insert + listConversationFactsForUi', async () => {
+    const userId = await seedUser(mockDb.current!)
+    const { conversationId, turnId } = await persistTurn({
+      conversationId: null,
+      userId,
+      userText: 'jag är T1D',
+      selvraText: 'sparat',
+      sourcesConsulted: null,
+      llmProvider: 'mistral',
+    })
+
+    const result = await persistConversationFacts([
+      {
+        userId,
+        threadId: conversationId,
+        turnId,
+        factText: 'jag är T1-diabetiker',
+        factType: 'user_stated',
+      },
+      {
+        userId,
+        threadId: conversationId,
+        turnId,
+        factText: '5.4h sömn i natt',
+        factType: 'source_observed',
+        sourceName: 'garmin',
+      },
+    ])
+
+    expect(result.insertedCount).toBe(2)
+
+    const all = await listConversationFactsForUi(userId)
+    expect(all).toHaveLength(2)
+  })
+
+  it('listConversationFactsForUi filtrerar per fact_type', async () => {
+    const userId = await seedUser(mockDb.current!)
+    const { conversationId, turnId } = await persistTurn({
+      conversationId: null,
+      userId,
+      userText: 'x',
+      selvraText: 'y',
+      sourcesConsulted: null,
+      llmProvider: 'mistral',
+    })
+    await persistConversationFacts([
+      { userId, threadId: conversationId, turnId, factText: 'a', factType: 'user_stated' },
+      { userId, threadId: conversationId, turnId, factText: 'b', factType: 'user_stated' },
+      { userId, threadId: conversationId, turnId, factText: 'c', factType: 'source_observed', sourceName: 'garmin' },
+    ])
+
+    const userStated = await listConversationFactsForUi(userId, { factType: 'user_stated' })
+    const sourceObserved = await listConversationFactsForUi(userId, { factType: 'source_observed' })
+
+    expect(userStated).toHaveLength(2)
+    expect(sourceObserved).toHaveLength(1)
+    expect(sourceObserved[0].sourceName).toBe('garmin')
+  })
+
+  it('tom array → no-op (insertedCount=0)', async () => {
+    const result = await persistConversationFacts([])
+    expect(result.insertedCount).toBe(0)
+  })
+
+  it('deleteConversationFact soft-delete döljer från list', async () => {
+    const userId = await seedUser(mockDb.current!)
+    const { conversationId, turnId } = await persistTurn({
+      conversationId: null,
+      userId,
+      userText: 'x',
+      selvraText: 'y',
+      sourcesConsulted: null,
+      llmProvider: 'mistral',
+    })
+    await persistConversationFacts([
+      { userId, threadId: conversationId, turnId, factText: 'a', factType: 'user_stated' },
+    ])
+
+    const before = await listConversationFactsForUi(userId)
+    expect(before).toHaveLength(1)
+    const factId = before[0].id
+
+    await deleteConversationFact({ factId, userId })
+
+    const after = await listConversationFactsForUi(userId)
+    expect(after).toHaveLength(0)
+  })
+
+  it('deleteConversationFact validerar userId (annan-user kan inte radera)', async () => {
+    const userA = await seedUser(mockDb.current!)
+    const userB = await seedUser(mockDb.current!, { email: 'b@test' })
+    const { conversationId, turnId } = await persistTurn({
+      conversationId: null,
+      userId: userA,
+      userText: 'x',
+      selvraText: 'y',
+      sourcesConsulted: null,
+      llmProvider: 'mistral',
+    })
+    await persistConversationFacts([
+      { userId: userA, threadId: conversationId, turnId, factText: 'A:s fakta', factType: 'user_stated' },
+    ])
+
+    const factsA = await listConversationFactsForUi(userA)
+    expect(factsA).toHaveLength(1)
+    const factId = factsA[0].id
+
+    // Försök radera som B
+    await deleteConversationFact({ factId, userId: userB })
+
+    // A:s fakta är fortfarande kvar
+    const stillThere = await listConversationFactsForUi(userA)
+    expect(stillThere).toHaveLength(1)
+  })
+
+  it('FK CASCADE: deleteUserAccount raderar conversation_facts', async () => {
+    const userId = await seedUser(mockDb.current!)
+    const { conversationId, turnId } = await persistTurn({
+      conversationId: null,
+      userId,
+      userText: 'x',
+      selvraText: 'y',
+      sourcesConsulted: null,
+      llmProvider: 'mistral',
+    })
+    await persistConversationFacts([
+      { userId, threadId: conversationId, turnId, factText: 'a', factType: 'user_stated' },
+    ])
+
+    await deleteUserAccount(userId)
+
+    // mem.public.query direct — listConversationFactsForUi kräver userId
+    // som inte längre finns. Använd raw för audit.
+    const rows = mockDb.current!.mem.public.query(
+      `SELECT count(*)::int as n FROM "conversation_fact" WHERE "user_id" = '${userId}'`,
+    )
+    expect((rows.rows[0] as { n: number }).n).toBe(0)
+  })
+
+  it('per-user isolation i listConversationFactsForUi', async () => {
+    const userA = await seedUser(mockDb.current!)
+    const userB = await seedUser(mockDb.current!, { email: 'b@test' })
+    const { conversationId: cA, turnId: tA } = await persistTurn({
+      conversationId: null,
+      userId: userA,
+      userText: 'x',
+      selvraText: 'y',
+      sourcesConsulted: null,
+      llmProvider: 'mistral',
+    })
+    const { conversationId: cB, turnId: tB } = await persistTurn({
+      conversationId: null,
+      userId: userB,
+      userText: 'x',
+      selvraText: 'y',
+      sourcesConsulted: null,
+      llmProvider: 'mistral',
+    })
+    await persistConversationFacts([
+      { userId: userA, threadId: cA, turnId: tA, factText: 'A', factType: 'user_stated' },
+      { userId: userB, threadId: cB, turnId: tB, factText: 'B', factType: 'user_stated' },
+    ])
+
+    const aFacts = await listConversationFactsForUi(userA)
+    expect(aFacts).toHaveLength(1)
+    expect(aFacts[0].factText).toBe('A')
   })
 })

@@ -30,6 +30,7 @@ import {
   fetchActiveMemoryFacts,
   fetchActiveSystemPrompt,
   fetchRecentTurns,
+  persistConversationFacts,
   persistMemoryFact,
   persistTurn,
   updateConversationTitle,
@@ -41,6 +42,7 @@ import {
   searchEventsTool,
 } from '@/lib/llm/tools/search-events'
 import { logger } from '@/lib/logging'
+import { extractFactsFromTurn } from '@/lib/observability/extract-facts-from-turn'
 import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import { processStreamingUserTurn } from '@/lib/observability/process-streaming-user-turn'
 import { processStreamingUserTurnWithTools } from '@/lib/observability/process-streaming-user-turn-with-tools'
@@ -213,7 +215,7 @@ export async function POST(req: Request): Promise<Response> {
             }
 
             case 'stream_end': {
-              const { conversationId } = await persistTurn({
+              const { conversationId, turnId } = await persistTurn({
                 conversationId: body.conversationId,
                 userId,
                 userText: inputText,
@@ -224,6 +226,37 @@ export async function POST(req: Request): Promise<Response> {
                 llmProvider: 'mistral',
               })
               log.info('stream_llm_response_persisted', { conversationId })
+
+              // V1 Steg 8: extrahera facts från turn till conversation_facts.
+              const extractedFacts = await extractFactsFromTurn({
+                userText: inputText,
+                selvraText: event.selvraText,
+                sourcesConsulted: event.sourcesConsulted,
+                llmCall: callMistral,
+              })
+              if (extractedFacts.length > 0) {
+                try {
+                  await persistConversationFacts(
+                    extractedFacts.map((f) => ({
+                      userId,
+                      threadId: conversationId,
+                      turnId,
+                      factText: f.factText,
+                      factType: f.factType,
+                      sourceName: f.sourceName,
+                    })),
+                  )
+                  log.info('stream_facts_extracted', {
+                    conversationId,
+                    count: extractedFacts.length,
+                  })
+                  revalidatePath('/minne')
+                } catch (err) {
+                  log.warn('stream_facts_persist_failed', {
+                    error: err instanceof Error ? err.message : String(err),
+                  })
+                }
+              }
 
               let title: string | null = null
               if (isFirstTurn) {

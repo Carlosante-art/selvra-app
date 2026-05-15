@@ -37,7 +37,10 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { auth } from '@/lib/auth/config'
-import { listMemoryFactsForUi } from '@/lib/db/conversation-queries'
+import {
+  listConversationFactsForUi,
+  listMemoryFactsForUi,
+} from '@/lib/db/conversation-queries'
 import { listEvents } from '@/lib/protocol/client'
 import type { EventListItem } from '@/lib/protocol/types'
 
@@ -50,10 +53,28 @@ export default async function MinnePage() {
     redirect('/login')
   }
 
+  // V1 Steg 8: läs primärt conversation_facts (per fact_type). Fallback
+  // till legacy-events när conversation_facts är tom (Carl-dogfood-
+  // pre-migration eller om extractFactsFromTurn ej hunnit producera än).
+  //
   // Parallella fetches. Sektionen renderar empty-state om respektive
   // källa fall:ar — vi tar inte ner hela vyn för en enskild fail.
-  const [memoryFacts, userStatedLegacy, sourceObservedLegacy] = await Promise.all([
+  const [
+    memoryFacts,
+    userStatedFacts,
+    sourceObservedFacts,
+    userStatedLegacy,
+    sourceObservedLegacy,
+  ] = await Promise.all([
     listMemoryFactsForUi(session.user.id),
+    listConversationFactsForUi(session.user.id, {
+      factType: 'user_stated',
+      limit: 30,
+    }),
+    listConversationFactsForUi(session.user.id, {
+      factType: 'source_observed',
+      limit: 30,
+    }),
     safeListEvents({ eventType: 'selvra.thought.recorded', limit: 30 }),
     safeListEvents({ eventType: 'insight.derived', limit: 20 }),
   ])
@@ -75,36 +96,61 @@ export default async function MinnePage() {
           </p>
         </header>
 
-        {/* 1. Vad du sagt */}
+        {/* 1. Vad du sagt — primärt conversation_facts, legacy fallback */}
         <section aria-label="Vad du sagt" className="flex flex-col gap-3">
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
             Vad du sagt
           </h2>
           <p className="text-xs text-neutral-500 dark:text-neutral-500">
-            Allt du själv har skrivit till Selvra över tid.
+            Saker du själv har sagt om dig själv i samtal med Selvra.
           </p>
-          {userStatedLegacy.length === 0 ? (
-            <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
-              Inget sparat än. Det du säger till Selvra i samtal sparas här.
-            </p>
-          ) : (
+          {userStatedFacts.length > 0 ? (
             <ul className="flex flex-col gap-2">
-              {userStatedLegacy.slice(0, 10).map((event) => (
+              {userStatedFacts.slice(0, 15).map((fact) => (
                 <li
-                  key={event.event_id}
+                  key={fact.id}
                   className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
                 >
                   <span className="text-neutral-500 dark:text-neutral-500 mr-2">
-                    {formatDate(event.created_at)}:
+                    {fact.extractedAt.toLocaleDateString('sv-SE', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                    :
                   </span>
-                  {extractThoughtText(event.payload)}
+                  {fact.factText}
                 </li>
               ))}
             </ul>
+          ) : userStatedLegacy.length > 0 ? (
+            <>
+              <p className="text-xs italic text-neutral-500 dark:text-neutral-500">
+                Visar legacy data — nya facts extraheras automatiskt från
+                samtal framöver.
+              </p>
+              <ul className="flex flex-col gap-2">
+                {userStatedLegacy.slice(0, 10).map((event) => (
+                  <li
+                    key={event.event_id}
+                    className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
+                  >
+                    <span className="text-neutral-500 dark:text-neutral-500 mr-2">
+                      {formatDate(event.created_at)}:
+                    </span>
+                    {extractThoughtText(event.payload)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
+              Inget sparat än. Det du säger till Selvra i samtal sparas här
+              automatiskt.
+            </p>
           )}
         </section>
 
-        {/* 2. Vad dina källor visat */}
+        {/* 2. Vad dina källor visat — primärt conversation_facts, legacy fallback */}
         <section
           aria-label="Vad dina källor visat"
           className="flex flex-col gap-3"
@@ -116,24 +162,46 @@ export default async function MinnePage() {
             Observationer från kopplade källor (Garmin, Strava, Calendar,
             Gmail). Käll-attribuerade.
           </p>
-          {sourceObservedLegacy.length === 0 ? (
+          {sourceObservedFacts.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {sourceObservedFacts.slice(0, 15).map((fact) => (
+                <li
+                  key={fact.id}
+                  className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
+                >
+                  {fact.sourceName && (
+                    <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-500 mr-2">
+                      [{fact.sourceName}]
+                    </span>
+                  )}
+                  {fact.factText}
+                </li>
+              ))}
+            </ul>
+          ) : sourceObservedLegacy.length > 0 ? (
+            <>
+              <p className="text-xs italic text-neutral-500 dark:text-neutral-500">
+                Visar legacy data — nya observationer extraheras automatiskt
+                från samtal framöver.
+              </p>
+              <ul className="flex flex-col gap-2">
+                {sourceObservedLegacy.slice(0, 10).map((event) => (
+                  <li
+                    key={event.event_id}
+                    className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
+                  >
+                    {extractInsightDescription(event.payload)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
             <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
               Inga observationer från källor än.{' '}
               <Link href="/welcome/sources" className="underline underline-offset-2">
                 Koppla en källa →
               </Link>
             </p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {sourceObservedLegacy.slice(0, 10).map((event) => (
-                <li
-                  key={event.event_id}
-                  className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
-                >
-                  {extractInsightDescription(event.payload)}
-                </li>
-              ))}
-            </ul>
           )}
         </section>
 

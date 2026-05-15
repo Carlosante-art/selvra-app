@@ -19,6 +19,7 @@ import {
   fetchActiveMemoryFacts,
   fetchActiveSystemPrompt,
   fetchRecentTurns,
+  persistConversationFacts,
   persistMemoryFact,
   persistTurn,
   updateConversationTitle,
@@ -30,6 +31,7 @@ import {
   searchEventsTool,
 } from '@/lib/llm/tools/search-events'
 import { logger } from '@/lib/logging'
+import { extractFactsFromTurn } from '@/lib/observability/extract-facts-from-turn'
 import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import { processUserTurn } from '@/lib/observability/process-user-turn'
 import { processUserTurnWithTools } from '@/lib/observability/process-user-turn-with-tools'
@@ -188,7 +190,7 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
     }
     case 'llm_response': {
       const isFirstTurn = input.conversationId === null
-      const { conversationId } = await persistTurn({
+      const { conversationId, turnId } = await persistTurn({
         conversationId: input.conversationId,
         userId,
         userText: input.text,
@@ -202,6 +204,39 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
         conversationId,
         attempts: result.attempts,
       })
+
+      // V1 Steg 8: extrahera facts från turn till conversation_facts.
+      // Synkront — opportunistisk men inte critical-path. Fail får inte
+      // ta ner samtals-flow (extractFactsFromTurn returnerar [] vid fel).
+      const extractedFacts = await extractFactsFromTurn({
+        userText: input.text,
+        selvraText: result.selvraText,
+        sourcesConsulted: result.sourcesConsulted,
+        llmCall: callMistral,
+      })
+      if (extractedFacts.length > 0) {
+        try {
+          await persistConversationFacts(
+            extractedFacts.map((f) => ({
+              userId,
+              threadId: conversationId,
+              turnId,
+              factText: f.factText,
+              factType: f.factType,
+              sourceName: f.sourceName,
+            })),
+          )
+          log.info('facts_extracted', {
+            conversationId,
+            count: extractedFacts.length,
+          })
+        } catch (err) {
+          // Persistens-fail ska inte ta ner samtals-pipelinen
+          log.warn('facts_persist_failed', {
+            error: err instanceof Error ? err.message : String(err),
+          })
+        }
+      }
 
       // Sentry: warning om LLM behövde retries (löstes via lock-validate).
       // Synligt i Sentry-dashen för system-prompt-iterations utan att gräva

@@ -85,6 +85,21 @@ const SETUP_SQL = `
     CONSTRAINT "fk_fact_user" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE,
     CONSTRAINT "fk_fact_turn" FOREIGN KEY ("source_turn_id") REFERENCES "conversation_turn"("id")
   );
+
+  CREATE TABLE "conversation_fact" (
+    "id" text PRIMARY KEY NOT NULL,
+    "user_id" text NOT NULL,
+    "thread_id" text NOT NULL,
+    "turn_id" text NOT NULL,
+    "fact_text" text NOT NULL,
+    "fact_type" text NOT NULL,
+    "source_name" text,
+    "extracted_at" timestamptz NOT NULL DEFAULT NOW(),
+    "user_deleted_at" timestamptz,
+    CONSTRAINT "fk_cf_user" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE,
+    CONSTRAINT "fk_cf_thread" FOREIGN KEY ("thread_id") REFERENCES "consumer_conversation"("id") ON DELETE CASCADE,
+    CONSTRAINT "fk_cf_turn" FOREIGN KEY ("turn_id") REFERENCES "conversation_turn"("id") ON DELETE CASCADE
+  );
 `
 
 /**
