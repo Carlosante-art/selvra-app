@@ -1,17 +1,22 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 import { ErrorNotice } from '@/components/error-notice'
-
-type SearchParams = Promise<{ saved?: string; athlete?: string; error?: string }>
+import { auth } from '@/lib/auth/config'
 
 /**
- * Onboarding Steg 4 — Källor. Per DESIGN.md §5.
+ * /welcome/sources — valbar källkoppling efter login.
  *
- * v0-scaffold: listar tillgängliga källor med koppla-knapp. Strava är första
- * implementerade. Övriga (Google Calendar/Gmail, Spotify, Open Wearables,
- * AI-konversation-import) listas men är inaktiva placeholder tills slice för
- * varje är klar.
+ * v1-refaktor (2026-05-15) flyttade denna sida från /onboarding/sources.
+ * Tvingande onboarding-flöde (intentions → signal → sources → done)
+ * raderades. Källor är nu opt-in från /welcome eller via /samtal-flow.
+ *
+ * Strava + Google är live; övriga listas som "Snart" / "Planerad" tills
+ * adapters byggs. OAuth callback-routes redirectar tillbaka hit (inte
+ * längre till /onboarding/sources).
  */
+
+type SearchParams = Promise<{ saved?: string; athlete?: string; error?: string }>
 
 const SOURCES: Array<{
   id: string
@@ -59,6 +64,11 @@ export default async function SourcesPage({
 }: {
   searchParams: SearchParams
 }) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect('/login')
+  }
+
   const params = await searchParams
   const flash = formatFlash(params)
 
@@ -68,8 +78,8 @@ export default async function SourcesPage({
         <header className="flex flex-col gap-3">
           <h1 className="text-3xl font-medium tracking-tight">Källor</h1>
           <p className="text-lg leading-relaxed text-neutral-700 dark:text-neutral-300">
-            Vad du redan använder. Toggla det du vill ha reflekterat. Selvra
-            läser där du finns — du gör inget extra arbete för det.
+            Vad du redan använder. Toggla det du vill att Selvra ska kunna
+            referera till. Du gör inget extra arbete för det.
           </p>
         </header>
 
@@ -120,10 +130,10 @@ export default async function SourcesPage({
 
         <div className="pt-2">
           <Link
-            href="/onboarding/signal"
+            href="/samtal"
             className="inline-flex h-12 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-8 text-base font-medium hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
           >
-            Fortsätt
+            Öppna samtal
           </Link>
         </div>
       </article>

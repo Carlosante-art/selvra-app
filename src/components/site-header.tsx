@@ -13,16 +13,13 @@ import { NavLink } from './nav-link'
  * (denna komponent) renderas inte där.
  */
 
-// '/brev' borttagen 2026-05-15 (v1-refaktor Steg 2: brev-paradigm rivs).
-// '/traces' borttagen 2026-05-15 (v1-refaktor Steg 3: Dreamer-paradigm rivs).
-// '/thoughts' borttagen 2026-05-15 (v1-refaktor Steg 4: standalone thoughts
-// rivs — tankar extraheras inline från samtal i Steg 8).
-// '/onboarding/*' rivs i Steg 5.
-// /samtal blir primär entry-point efter refaktorn är klar.
+// /brev (Steg 2), /traces (Steg 3), /thoughts (Steg 4) och /onboarding/*
+// (Steg 5) raderade 2026-05-15 i v1-refaktor. /samtal är primär entry-
+// point. Källkoppling är flyttad till /welcome/sources (post-login,
+// valbar). /minne är transparens-vy.
 const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: '/samtal', label: 'Samtal' },
-  { href: '/onboarding/intentions', label: 'Intentioner' },
-  { href: '/onboarding/sources', label: 'Källor' },
+  { href: '/minne', label: 'Minne' },
 ]
 
 export function SiteHeader() {

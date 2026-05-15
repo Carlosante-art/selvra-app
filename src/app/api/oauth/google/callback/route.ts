@@ -14,13 +14,13 @@ export async function GET(request: Request) {
 
   if (errorParam) {
     return NextResponse.redirect(
-      `${url.origin}/onboarding/sources?error=${encodeURIComponent(errorParam)}`,
+      `${url.origin}/welcome/sources?error=${encodeURIComponent(errorParam)}`,
     )
   }
 
   if (!code || !stateParam) {
     return NextResponse.redirect(
-      `${url.origin}/onboarding/sources?error=missing_code_or_state`,
+      `${url.origin}/welcome/sources?error=missing_code_or_state`,
     )
   }
 
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   const storedState = cookieStore.get(STATE_COOKIE)?.value
   if (!storedState || storedState !== stateParam) {
     return NextResponse.redirect(
-      `${url.origin}/onboarding/sources?error=invalid_state`,
+      `${url.origin}/welcome/sources?error=invalid_state`,
     )
   }
 
@@ -39,14 +39,14 @@ export async function GET(request: Request) {
     await saveTokens('carl', 'google', tokens)
 
     const response = NextResponse.redirect(
-      `${url.origin}/onboarding/sources?saved=google`,
+      `${url.origin}/welcome/sources?saved=google`,
     )
     response.cookies.delete(STATE_COOKIE)
     return response
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     return NextResponse.redirect(
-      `${url.origin}/onboarding/sources?error=${encodeURIComponent(msg)}`,
+      `${url.origin}/welcome/sources?error=${encodeURIComponent(msg)}`,
     )
   }
 }

@@ -23,9 +23,11 @@ async function startSignIn(formData: FormData) {
   'use server'
   const email = formData.get('email')
   if (typeof email !== 'string' || email.trim().length === 0) return
+  // redirectTo /onboarding/intentions ändrad till /welcome 2026-05-15
+  // (v1-refaktor Steg 5: tvingande onboarding rivs).
   await signIn('resend', {
     email: email.trim(),
-    redirectTo: '/onboarding/intentions',
+    redirectTo: '/welcome',
   })
 }
 

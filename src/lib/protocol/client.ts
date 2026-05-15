@@ -2,13 +2,9 @@ import 'server-only'
 import { SignJWT } from 'jose'
 
 import type {
-  CreateEventRequest,
-  EventResponse,
   EventsListResponse,
-  IntentionPayload,
   LatestReflection,
   MCPScope,
-  SignalPreferencePayload,
   SrefExportResponse,
   SubjectSnapshot,
 } from './types'
@@ -299,46 +295,14 @@ export async function deriveSubjectIdUnderTenant(params: {
 
 /* ─── User-driven API (per-request-context) ────────────────────────── */
 
-export async function declareIntention(
-  payload: IntentionPayload,
-): Promise<EventResponse> {
-  const ctx = await getRequestContext()
-  const body: CreateEventRequest = {
-    category: 'data_ingested',
-    event_type: 'selvra.intention.declared',
-    source_ai_id: ctx.sourceId,
-    payload: payload as unknown as Record<string, unknown>,
-  }
-  return call<EventResponse>(ctx, `/v1/subjects/${ctx.subjectId}/events`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    scopes: ['write'],
-  })
-}
-
 /**
- * recordThought raderad 2026-05-15 (v1-refaktor Steg 4: standalone thoughts
- * rivs). Befintliga selvra.thought.recorded-events lever kvar i Selvra-
- * protokollet och läses fortfarande av /minne via listEvents. Ny path för
- * user-stated facts: extractFactsFromTurn → conversation_facts-tabell (Steg 8).
+ * declareIntention, recordThought, recordSignalPreference raderade
+ * 2026-05-15 (v1-refaktor Steg 2-5: brev/Dreamer/thoughts/onboarding
+ * rivs). Befintliga selvra.intention.declared, selvra.thought.recorded
+ * och selvra.signal.preference-events lever kvar i Selvra-protokollet
+ * och läses av /minne via listEvents. Ny path för user-stated facts:
+ * extractFactsFromTurn → conversation_facts (Steg 8).
  */
-
-export async function recordSignalPreference(
-  payload: SignalPreferencePayload,
-): Promise<EventResponse> {
-  const ctx = await getRequestContext()
-  const body: CreateEventRequest = {
-    category: 'data_ingested',
-    event_type: 'selvra.signal.preference',
-    source_ai_id: ctx.sourceId,
-    payload: payload as unknown as Record<string, unknown>,
-  }
-  return call<EventResponse>(ctx, `/v1/subjects/${ctx.subjectId}/events`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    scopes: ['write'],
-  })
-}
 
 export async function getSnapshot(): Promise<SubjectSnapshot> {
   const ctx = await getRequestContext()

@@ -163,7 +163,7 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Återkalla källor</strong>: OAuth-kopplingar kan kopplas bort
-              från /onboarding/sources. Tidigare hämtad data kan raderas på begäran
+              från /welcome/sources. Tidigare hämtad data kan raderas på begäran
               (manuellt under v1; automatiserat senare).
             </li>
           </ul>
