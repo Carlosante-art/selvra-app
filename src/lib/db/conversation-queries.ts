@@ -230,6 +230,47 @@ export async function fetchActiveMemoryFacts(
 // ─── Persistens ──────────────────────────────────────────────────────────
 
 /**
+ * Soft-arkivera en tråd (sätter archivedAt). Behåller data; bara döljs
+ * från default-listan i /samtal. Användaren kan återställa via
+ * unarchiveConversation eller se via "Visa arkiverade"-toggle.
+ *
+ * Validerar userId i WHERE — annan-users conversationId kan inte arkiveras
+ * även om id gissas.
+ */
+export async function archiveConversation(input: {
+  conversationId: string
+  userId: string
+}): Promise<void> {
+  await db
+    .update(consumerConversations)
+    .set({ archivedAt: new Date() })
+    .where(
+      and(
+        eq(consumerConversations.id, input.conversationId),
+        eq(consumerConversations.userId, input.userId),
+      ),
+    )
+}
+
+/**
+ * Återställ en arkiverad tråd (nollar archivedAt).
+ */
+export async function unarchiveConversation(input: {
+  conversationId: string
+  userId: string
+}): Promise<void> {
+  await db
+    .update(consumerConversations)
+    .set({ archivedAt: null })
+    .where(
+      and(
+        eq(consumerConversations.id, input.conversationId),
+        eq(consumerConversations.userId, input.userId),
+      ),
+    )
+}
+
+/**
  * Sätt eller uppdatera titel på en conversation-tråd. Kallas typiskt
  * efter generateThreadTitle på första turn-paret.
  */

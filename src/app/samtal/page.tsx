@@ -18,13 +18,24 @@ import { listConversationsForUser } from '@/lib/db/conversation-queries'
 
 import { OptimisticChatFeed } from './_components/OptimisticChatFeed'
 
-export default async function SamtalPage() {
+type SearchParams = Promise<{ archived?: string }>
+
+export default async function SamtalPage({
+  searchParams,
+}: {
+  searchParams: SearchParams
+}) {
   const session = await auth()
   if (!session?.user?.id) {
     redirect('/login')
   }
 
-  const threads = await listConversationsForUser(session.user.id, { limit: 20 })
+  const params = await searchParams
+  const showArchived = params.archived === '1'
+  const threads = await listConversationsForUser(session.user.id, {
+    limit: 20,
+    includeArchived: showArchived,
+  })
 
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-16 sm:py-24">
@@ -43,14 +54,29 @@ export default async function SamtalPage() {
 
         <OptimisticChatFeed initialTurns={[]} conversationId={null} />
 
-        {threads.length > 0 && (
-          <section
-            aria-label="Tidigare samtal"
-            className="flex flex-col gap-3 border-t border-neutral-200 dark:border-neutral-800 pt-8"
-          >
+        <section
+          aria-label="Tidigare samtal"
+          className="flex flex-col gap-3 border-t border-neutral-200 dark:border-neutral-800 pt-8"
+        >
+          <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-              Tidigare samtal
+              {showArchived ? 'Alla samtal (inkl arkiverade)' : 'Tidigare samtal'}
             </h2>
+            <Link
+              href={showArchived ? '/samtal' : '/samtal?archived=1'}
+              className="text-xs text-neutral-500 dark:text-neutral-500 underline underline-offset-2"
+            >
+              {showArchived ? 'Bara aktiva' : 'Visa arkiverade'}
+            </Link>
+          </div>
+
+          {threads.length === 0 ? (
+            <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
+              {showArchived
+                ? 'Inga arkiverade samtal.'
+                : 'Inga samtal än. Det första du skriver startar en tråd.'}
+            </p>
+          ) : (
             <ul className="flex flex-col gap-2">
               {threads.map((thread) => (
                 <li key={thread.id}>
@@ -66,8 +92,8 @@ export default async function SamtalPage() {
                 </li>
               ))}
             </ul>
-          </section>
-        )}
+          )}
+        </section>
       </article>
     </main>
   )
