@@ -360,30 +360,13 @@ export async function getSnapshot(): Promise<SubjectSnapshot> {
 }
 
 /**
- * Trigga manuell synthesis (re-generera brev). Sync — tar 30-60s eftersom
- * Layer-3-LLM-call är synkron i protokollets internal-admin-route.
+ * triggerReflectionRun raderad 2026-05-15 (v1-refaktor: brev-paradigmen
+ * rivs). Endpoint `/v1/internal/carl/reflect` lever kvar i Selvra-protokollet
+ * (Carl-only internal-admin) men exponeras inte längre från konsument-appen.
  *
- * NOTERA: Detta är Carl-only internal-admin-endpoint (`/v1/internal/carl/reflect`).
- * Den hard-checkar Carl-tenant i selvra-protokollet och fungerar inte för
- * andra users. När multi-user kommer behövs en publik endpoint eller
- * subject-scoped-version. Detta är medvetet kvar som Carl-bara just nu.
- */
-export async function triggerReflectionRun(): Promise<{
-  event_id: string
-  model_used: string
-  chars: number
-  inputs: Record<string, unknown>
-}> {
-  const ctx = await getRequestContext()
-  return call(ctx, '/v1/internal/carl/reflect', {
-    method: 'POST',
-    scopes: ['write'],
-  })
-}
-
-/**
- * Trigga manuell Dreamer-pass (background reasoning). Carl-only — se
- * triggerReflectionRun.
+ * Trigga manuell Dreamer-pass (background reasoning). Carl-only.
+ * NOTERA: Detta är Carl-only internal-admin-endpoint (`/v1/internal/carl/dream`).
+ * Rivs i Steg 3 (Dreamer-paradigm).
  */
 export async function triggerDreamerRun(): Promise<{
   run_id: string

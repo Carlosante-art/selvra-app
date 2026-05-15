@@ -97,12 +97,13 @@ export default function ExportPage() {
           encodar embeddings, dedupar provenance. Spamma inte; sparas över tid.
         </p>
 
+        {/* /brev-länk borttagen 2026-05-15 (v1-refaktor Steg 2). */}
         <p>
           <Link
-            href="/brev"
+            href="/samtal"
             className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
           >
-            ← Tillbaka till brevet
+            ← Tillbaka till samtal
           </Link>
         </p>
       </article>

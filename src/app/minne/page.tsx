@@ -3,16 +3,17 @@
  * om henne. Per konsument-track §2 patient-ägd portabilitet: detta är
  * konstitutionellt krav, inte feature.
  *
- * Fyra block:
- *   1. Senaste reflektion (brev) — länk till /brev
- *   2. Tankar (självrapport) — från Selvra-protokollet listEvents
- *   3. Bakgrunds-observationer (Dreamer) — från Selvra-protokollet
- *   4. Explicit minnes-fakta — från ny conversation_memory_facts
+ * Status 2026-05-15: v1-refaktor Steg 2 raderade brev-blocket. Återstående
+ * tre block kvar tills Steg 6 konsoliderar till två-kategori-modellen
+ * ("Vad du sagt" / "Vad dina källor visat" + "Explicita minnen"):
+ *   1. Tankar (självrapport) — från Selvra-protokollet listEvents
+ *   2. Bakgrunds-observationer (Dreamer) — rivs i Steg 3
+ *   3. Explicit minnes-fakta — från conversation_memory_facts
  *
- * Plus två globala actions:
+ * Plus globala actions:
  *   - Exportera allt (SREF v1) → befintlig /api/export/sref
  *   - Radera enskilt fakta via MemoryFactRow
- *   - "Radera allt och avregistrera" → fortfarande TODO (Fas 1 beslut)
+ *   - DangerZone — purge alla conversations / delete-account
  */
 
 import Link from 'next/link'
@@ -56,23 +57,9 @@ export default async function MinnePage() {
           </p>
         </header>
 
-        {/* 1. Senaste reflektion */}
-        <section
-          aria-label="Senaste reflektion"
-          className="flex flex-col gap-3"
-        >
-          <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-            Senaste reflektion
-          </h2>
-          <p className="text-sm text-neutral-500 dark:text-neutral-500">
-            <Link href="/brev" className="underline underline-offset-2">
-              Öppna /brev
-            </Link>{' '}
-            — frusna dokument, en åt gången.
-          </p>
-        </section>
+        {/* Block 1 (Senaste reflektion / brev) raderad 2026-05-15 — v1-refaktor Steg 2. */}
 
-        {/* 2. Tankar */}
+        {/* 1. Tankar */}
         <section aria-label="Tankar" className="flex flex-col gap-3">
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
             Tankar (självrapport)

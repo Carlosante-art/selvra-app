@@ -7,7 +7,8 @@ import { recordThought } from '@/lib/protocol/client'
 const MAX_THOUGHT_CHARS = 4000
 
 // Tillåtna return_to-värden — whitelist mot open-redirect.
-const ALLOWED_RETURNS = new Set(['/thoughts', '/brev'])
+// '/brev' borttaget 2026-05-15 (v1-refaktor Steg 2: brev-paradigm rivs).
+const ALLOWED_RETURNS = new Set(['/thoughts'])
 
 export async function submitThought(formData: FormData): Promise<void> {
   const raw = formData.get('text')

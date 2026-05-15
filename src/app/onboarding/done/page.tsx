@@ -32,11 +32,13 @@ export default function OnboardingDonePage() {
           >
             Skriv en tanke
           </Link>
+          {/* /brev-länk borttagen 2026-05-15 (v1-refaktor Steg 2). Hela
+              onboarding-flödet rivs i Steg 5. */}
           <Link
-            href="/brev"
+            href="/samtal"
             className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-300 dark:border-neutral-700 px-6 text-base font-medium hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
           >
-            Förhandsvisa brevet
+            Öppna samtal
           </Link>
         </div>
       </article>

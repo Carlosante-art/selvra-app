@@ -1,8 +1,8 @@
 /**
  * /samtal — chat-ytan med Selvra. Ny tråd-yta + lista över befintliga.
  *
- * Asymmetri mot brev: brevet (/brev) är frozen reflektion. Samtalet
- * (/samtal) är on-demand dialog. Två separata ytor med olika kontrakt.
+ * Primär entry-point efter login (v1-refaktor 2026-05-15). /brev-paradigm
+ * raderad — samtalet är vad användaren möter direkt.
  *
  * Render-pipeline:
  *   1. Auth-gate via auth() — anonym → /login
