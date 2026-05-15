@@ -48,6 +48,7 @@ export type ViolationRule =
   | 'prescriptive_coaching'
   | 'fake_emotion'
   | 'unsourced_observation'
+  | 'fabricated_source'
 
 export type LockValidateResult =
   | { valid: true }
@@ -109,7 +110,33 @@ const PATTERNS: Record<ViolationRule, RegExp[]> = {
   // Detekteras heuristiskt genom att leta numeriska påståenden utan
   // intilliggande käll-attribution. Implementeras separat nedan.
   unsourced_observation: [],
+
+  // Speciell: kontroll att named-källor i text faktiskt finns i
+  // sourcesConsulted. Implementeras separat nedan.
+  fabricated_source: [],
 }
+
+// Kända källa-namn vi specifikt validerar mot. LLM kan nämna andra namn
+// utan att flaggas — vi flaggar bara om ett känt namn används UTAN att
+// finnas i sourcesConsulted. Lista utökas när nya adapter-källor läggs.
+const KNOWN_SOURCE_NAMES: readonly string[] = [
+  'dexcom',
+  'libre',
+  'garmin',
+  'oura',
+  'whoop',
+  'apple health',
+  'apple watch',
+  'google calendar',
+  'google fit',
+  'spotify',
+  'apple music',
+  'strava',
+  'notion',
+  'todoist',
+  'outlook',
+  'gmail',
+]
 
 /**
  * Validera LLM-output mot konstitutionen.
@@ -165,6 +192,33 @@ export function validateConsumerOutput(
     }
   }
 
+  // Rule 9: fabricated source. För varje känd source-name i texten,
+  // kontrollera att den finns i sourcesConsulted. Om LLM nämner "Dexcom
+  // visade ..." men Dexcom inte var i den data LLM hade tillgång till,
+  // är det fabrikation.
+  //
+  // Konservativ: bara namn i KNOWN_SOURCE_NAMES räknas. Mindre kända
+  // ord (t.ex. "blod", "min hjärtfrekvens") flaggas inte. Hellre miss
+  // än false positive — annars bryter validatorn alla legitima svar
+  // med vanliga ord.
+  const consultedNormalized = new Set(
+    sourcesConsulted.map((s) => s.source_ai_id.toLowerCase()),
+  )
+  const lowerText = text.toLowerCase()
+  for (const sourceName of KNOWN_SOURCE_NAMES) {
+    // Word-boundary för enskilt ord, men sammansatta som "apple health"
+    // har space — \b runt hela frasen funkar för båda fall.
+    const pattern = new RegExp(`\\b${sourceName.replace(/ /g, '\\s+')}\\b`, 'i')
+    const match = pattern.exec(lowerText)
+    if (match && !consultedNormalized.has(sourceName)) {
+      violations.push({
+        rule: 'fabricated_source',
+        match: match[0],
+        index: match.index,
+      })
+    }
+  }
+
   if (violations.length === 0) {
     return { valid: true }
   }
@@ -186,6 +240,8 @@ export function describeViolation(v: LockViolation): string {
     fake_emotion: 'Selvra får inte låtsas ha känslor.',
     unsourced_observation:
       'Numerisk observation utan källa. Antingen källa eller "jag vet inte".',
+    fabricated_source:
+      'Selvra refererar till en källa som inte fanns i tillgängliga events. Hallucination eller fel attribution.',
   }
   return `${v.rule}: ${explanations[v.rule]} (matchade "${v.match}")`
 }
