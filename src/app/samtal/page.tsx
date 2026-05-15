@@ -16,7 +16,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth/config'
 import { listConversationsForUser } from '@/lib/db/conversation-queries'
 
-import { OptimisticChatFeed } from './_components/OptimisticChatFeed'
+import { StreamingChatFeed } from './_components/StreamingChatFeed'
 
 type SearchParams = Promise<{ archived?: string; q?: string }>
 
@@ -54,7 +54,7 @@ export default async function SamtalPage({
           </p>
         </header>
 
-        <OptimisticChatFeed initialTurns={[]} conversationId={null} />
+        <StreamingChatFeed initialTurns={[]} conversationId={null} />
 
         <section
           aria-label="Tidigare samtal"

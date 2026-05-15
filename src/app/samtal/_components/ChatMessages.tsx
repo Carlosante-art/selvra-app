@@ -20,6 +20,8 @@ type Turn = {
   selvraText: string | null
   sourcesConsulted: readonly SourceRef[] | null
   createdAt: Date
+  /** Endast set från klient-streaming. Visar cursor + skippar "läser…"-text. */
+  isStreaming?: boolean
 }
 
 type Props = {
@@ -61,10 +63,16 @@ function ChatTurn({ turn }: { turn: Turn }) {
         </p>
       </div>
 
-      {turn.selvraText ? (
+      {turn.selvraText !== null || turn.isStreaming ? (
         <div className="self-start max-w-[90%] flex flex-col gap-3">
           <p className="text-base leading-relaxed text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
-            {turn.selvraText}
+            {turn.selvraText ?? ''}
+            {turn.isStreaming && (
+              <span
+                aria-hidden="true"
+                className="inline-block w-2 h-4 ml-0.5 bg-neutral-500 dark:bg-neutral-400 align-text-bottom animate-pulse"
+              />
+            )}
           </p>
           {turn.sourcesConsulted && turn.sourcesConsulted.length > 0 && (
             <p className="text-xs italic text-neutral-500 dark:text-neutral-500">
