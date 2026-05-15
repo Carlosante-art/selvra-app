@@ -19,6 +19,7 @@ import {
   consumerConversations,
   conversationMemoryFacts,
   conversationTurns,
+  systemPromptVersions,
 } from './conversation-schema'
 import { users } from './schema'
 
@@ -386,6 +387,32 @@ export async function redactMemoryFact(input: {
         eq(conversationMemoryFacts.userId, input.userId),
       ),
     )
+}
+
+// ─── System-prompt-versionering ──────────────────────────────────────────
+
+/**
+ * Fetcha aktiv system-prompt från DB. Bara EN version har isActive=true
+ * (unique partial index garanterar). Om ingen finns: returnera null (caller
+ * fallback:ar till hardcoded default).
+ *
+ * För Carl-dogfood under Fas 1: kan ändras via SQL utan deploy. När en
+ * ny version aktiveras, UPDATE den gamla till is_active=false i samma
+ * transaktion (constraint kräver det).
+ */
+export async function fetchActiveSystemPrompt(): Promise<{
+  version: string
+  promptText: string
+} | null> {
+  const [row] = await db
+    .select({
+      version: systemPromptVersions.version,
+      promptText: systemPromptVersions.promptText,
+    })
+    .from(systemPromptVersions)
+    .where(eq(systemPromptVersions.isActive, true))
+    .limit(1)
+  return row ?? null
 }
 
 // ─── Rate-limiting ───────────────────────────────────────────────────────
