@@ -15,11 +15,12 @@ import { NavLink } from './nav-link'
 
 // '/brev' borttagen 2026-05-15 (v1-refaktor Steg 2: brev-paradigm rivs).
 // '/traces' borttagen 2026-05-15 (v1-refaktor Steg 3: Dreamer-paradigm rivs).
-// '/thoughts', '/onboarding/*' rivs i senare steg (4-5).
+// '/thoughts' borttagen 2026-05-15 (v1-refaktor Steg 4: standalone thoughts
+// rivs — tankar extraheras inline från samtal i Steg 8).
+// '/onboarding/*' rivs i Steg 5.
 // /samtal blir primär entry-point efter refaktorn är klar.
 const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: '/samtal', label: 'Samtal' },
-  { href: '/thoughts', label: 'Tankar' },
   { href: '/onboarding/intentions', label: 'Intentioner' },
   { href: '/onboarding/sources', label: 'Källor' },
 ]

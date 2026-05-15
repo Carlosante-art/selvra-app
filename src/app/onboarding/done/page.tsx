@@ -25,18 +25,12 @@ export default function OnboardingDonePage() {
           tankar om du vill. De blir källa för brevet.
         </p>
 
+        {/* /thoughts + /brev-länkar borttagna 2026-05-15 (v1-refaktor Steg
+            2+4). Hela onboarding-flödet rivs i Steg 5. */}
         <div className="flex flex-wrap gap-3 pt-2">
           <Link
-            href="/thoughts"
-            className="inline-flex h-12 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-6 text-base font-medium hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
-          >
-            Skriv en tanke
-          </Link>
-          {/* /brev-länk borttagen 2026-05-15 (v1-refaktor Steg 2). Hela
-              onboarding-flödet rivs i Steg 5. */}
-          <Link
             href="/samtal"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-300 dark:border-neutral-700 px-6 text-base font-medium hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-6 text-base font-medium hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
           >
             Öppna samtal
           </Link>
