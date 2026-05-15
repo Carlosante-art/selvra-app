@@ -83,6 +83,26 @@ export async function fetchActiveMemoryFacts(
 // ─── Persistens ──────────────────────────────────────────────────────────
 
 /**
+ * Sätt eller uppdatera titel på en conversation-tråd. Kallas typiskt
+ * efter generateThreadTitle på första turn-paret.
+ */
+export async function updateConversationTitle(input: {
+  conversationId: string
+  title: string
+  userId: string
+}): Promise<void> {
+  await db
+    .update(consumerConversations)
+    .set({ title: input.title })
+    .where(
+      and(
+        eq(consumerConversations.id, input.conversationId),
+        eq(consumerConversations.userId, input.userId),
+      ),
+    )
+}
+
+/**
  * Skapa ny conversation-tråd. Returnerar nya id:t så caller kan
  * redirect:a till /samtal/thread/[id].
  */
