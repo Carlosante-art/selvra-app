@@ -444,7 +444,7 @@ export async function persistConversationFacts(
  */
 export async function listConversationFactsForUi(
   userId: string,
-  opts: { factType?: FactType; limit?: number } = {},
+  opts: { factType?: FactType; sourceName?: string; limit?: number } = {},
 ): Promise<
   Array<{
     id: string
@@ -463,6 +463,9 @@ export async function listConversationFactsForUi(
   ]
   if (opts.factType) {
     conditions.push(eq(conversationFacts.factType, opts.factType))
+  }
+  if (opts.sourceName) {
+    conditions.push(eq(conversationFacts.sourceName, opts.sourceName))
   }
 
   const rows = await db

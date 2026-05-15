@@ -2,11 +2,17 @@
  * ChatMessages — Server Component, renderar tråd-historik.
  *
  * Asymmetri: användar-tur höger-utan-källor, Selvra-tur vänster-med-källor.
- * Källa-attribuering i footer per tur (DESIGN.md §3 designval 5).
+ *
+ * V1 Steg 9: Selvra-text kan innehålla [source:X]-markup som renderas
+ * inline som klickbara badges via SourceAttributedText. Detta ersätter
+ * footer-baserad källa-rad — källor är nu inline där claim finns.
+ * sourcesConsulted-footern behålls som backup för svar utan inline-markup.
  *
  * Skeleton-state: tom tråd → empty-state. När conversation_turns finns,
  * iterera + rendera per tur.
  */
+
+import { SourceAttributedText } from '@/components/source-attributed-text'
 
 // Sources har minst { source_ai_id }. event_id + type är optional eftersom
 // vi sparar dem inte konsekvent i conversation_turn (just nu). UI:t visar
@@ -66,7 +72,7 @@ function ChatTurn({ turn }: { turn: Turn }) {
       {turn.selvraText !== null || turn.isStreaming ? (
         <div className="self-start max-w-[90%] flex flex-col gap-3">
           <p className="text-base leading-relaxed text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
-            {turn.selvraText ?? ''}
+            <SourceAttributedText text={turn.selvraText ?? ''} />
             {turn.isStreaming && (
               <span
                 aria-hidden="true"

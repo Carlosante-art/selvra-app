@@ -47,11 +47,27 @@ import type { EventListItem } from '@/lib/protocol/types'
 import { DangerZone } from './_components/DangerZone'
 import { MemoryFactRow } from './_components/MemoryFactRow'
 
-export default async function MinnePage() {
+type SearchParams = Promise<{ source?: string }>
+
+export default async function MinnePage({
+  searchParams,
+}: {
+  searchParams: SearchParams
+}) {
   const session = await auth()
   if (!session?.user?.id) {
     redirect('/login')
   }
+
+  // V1 Steg 9: ?source=X-filter. Klick på [source:X]-badge i samtal
+  // navigerar hit med source-query. Filtrerar "Vad dina källor visat"
+  // till bara den källan. "Vad du sagt" och "Explicita minnen" filtreras
+  // inte (de är inte källa-knutna).
+  const params = await searchParams
+  const sourceFilter =
+    params.source && params.source.trim().length > 0
+      ? params.source.trim().toLowerCase()
+      : undefined
 
   // V1 Steg 8: läs primärt conversation_facts (per fact_type). Fallback
   // till legacy-events när conversation_facts är tom (Carl-dogfood-
@@ -73,6 +89,7 @@ export default async function MinnePage() {
     }),
     listConversationFactsForUi(session.user.id, {
       factType: 'source_observed',
+      sourceName: sourceFilter,
       limit: 30,
     }),
     safeListEvents({ eventType: 'selvra.thought.recorded', limit: 30 }),
@@ -157,11 +174,28 @@ export default async function MinnePage() {
         >
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
             Vad dina källor visat
+            {sourceFilter && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 text-xs uppercase tracking-wide text-neutral-700 dark:text-neutral-300">
+                {sourceFilter}
+              </span>
+            )}
           </h2>
-          <p className="text-xs text-neutral-500 dark:text-neutral-500">
-            Observationer från kopplade källor (Garmin, Strava, Calendar,
-            Gmail). Käll-attribuerade.
-          </p>
+          {sourceFilter ? (
+            <p className="text-xs text-neutral-500 dark:text-neutral-500">
+              Filtrerat på {sourceFilter}.{' '}
+              <Link
+                href="/minne"
+                className="underline underline-offset-2"
+              >
+                Visa alla källor
+              </Link>
+            </p>
+          ) : (
+            <p className="text-xs text-neutral-500 dark:text-neutral-500">
+              Observationer från kopplade källor (Garmin, Strava, Calendar,
+              Gmail). Käll-attribuerade.
+            </p>
+          )}
           {sourceObservedFacts.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {sourceObservedFacts.slice(0, 15).map((fact) => (
