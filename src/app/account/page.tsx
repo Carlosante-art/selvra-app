@@ -1,8 +1,10 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 import { DeleteSubmit } from '@/components/delete-submit'
 import { ErrorNotice } from '@/components/error-notice'
 import { TriggerButton } from '@/components/trigger-button'
+import { auth } from '@/lib/auth/config'
 import { deleteAccount, restoreAccount } from '@/lib/actions/account'
 import { getSubjectLifecycle } from '@/lib/protocol/client'
 
@@ -26,6 +28,14 @@ export default async function AccountPage({
 }: {
   searchParams: SearchParams
 }) {
+  // V1 Steg 10 audit-fix: saknad auth-gate. /account har deleteAccount-
+  // Server Action — anonyma får inte se sidan ens om Server Action har
+  // egen validation.
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect('/login')
+  }
+
   const params = await searchParams
   const lifecycle = await getSubjectLifecycle().catch(() => null)
 

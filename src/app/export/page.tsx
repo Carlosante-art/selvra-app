@@ -1,4 +1,7 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+
+import { auth } from '@/lib/auth/config'
 
 /**
  * /export — visar exportflöde för användarens SREF v1-doc.
@@ -6,9 +9,16 @@ import Link from 'next/link'
  * Doktrinärt: "du äger representationen" görs synlig som första-klassig
  * funktion. Klicka → server-route fetchar SREF från protokollet → browser
  * laddar ner som JSON-fil.
+ *
+ * Auth-gate tillagd 2026-05-16 (V1 Steg 10 audit-fix).
  */
 
-export default function ExportPage() {
+export default async function ExportPage() {
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect('/login')
+  }
+
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-16 sm:py-24">
       <article className="max-w-prose w-full flex flex-col gap-8">
