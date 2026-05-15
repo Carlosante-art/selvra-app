@@ -115,6 +115,62 @@ describe('processStreamingUserTurn', () => {
     }
   })
 
+  it('V1 Steg 7: violation → llmRetry → OK → stream_end med retry-text', async () => {
+    const events = await collectEvents(
+      processStreamingUserTurn(
+        makeInput({
+          // Original stream bryter konstitutionen (coach-språk)
+          llmStream: makeStreamFn(['Du borde ', 'sova mer.']),
+          // Retry returnerar acceptabel text
+          llmRetry: async () => 'Jag vet inte. Jag har inga källor om din sömn.',
+        }),
+      ),
+    )
+
+    const lastEvent = events[events.length - 1]
+    expect(lastEvent.kind).toBe('stream_end')
+    if (lastEvent.kind === 'stream_end') {
+      expect(lastEvent.selvraText).toBe(
+        'Jag vet inte. Jag har inga källor om din sömn.',
+      )
+    }
+  })
+
+  it('V1 Steg 7: violation → llmRetry bryter också → fallback', async () => {
+    const events = await collectEvents(
+      processStreamingUserTurn(
+        makeInput({
+          llmStream: makeStreamFn(['Du borde ', 'sova mer.']),
+          // Retry bryter också konstitutionen
+          llmRetry: async () => 'Du måste verkligen försöka.',
+        }),
+      ),
+    )
+
+    const lastEvent = events[events.length - 1]
+    expect(lastEvent.kind).toBe('fallback')
+    if (lastEvent.kind === 'fallback') {
+      // rejectedText är original-stream (inte retry-output)
+      expect(lastEvent.rejectedText).toBe('Du borde sova mer.')
+    }
+  })
+
+  it('V1 Steg 7: llmRetry kastar fel → fallback med original-violations', async () => {
+    const events = await collectEvents(
+      processStreamingUserTurn(
+        makeInput({
+          llmStream: makeStreamFn(['Du borde ', 'sova mer.']),
+          llmRetry: async () => {
+            throw new Error('upstream-fail')
+          },
+        }),
+      ),
+    )
+
+    const lastEvent = events[events.length - 1]
+    expect(lastEvent.kind).toBe('fallback')
+  })
+
   it('hanterar tom stream (LLM returnerar inga tokens)', async () => {
     const events = await collectEvents(
       processStreamingUserTurn(

@@ -47,6 +47,8 @@ export type ViolationRule =
   | 'sycophantic_validation'
   | 'prescriptive_coaching'
   | 'fake_emotion'
+  | 'future_prediction'
+  | 'diagnosis'
   | 'unsourced_observation'
   | 'fabricated_source'
 
@@ -70,6 +72,10 @@ const PATTERNS: Record<ViolationRule, RegExp[]> = {
     /\bdu har inte (loggat in|kommit tillbaka|svarat)\b/i,
     /\bdet är längesen vi pratade\b/i,
     /\bglöm inte att\b/i,
+    // V1: dont_leave, come_back_tomorrow (sv)
+    /\b(lämna mig inte|gå inte)\b/i,
+    /\bkom tillbaka (imorgon|snart|igen)\b/i,
+    /\bjag väntar på dig\b/i,
   ],
 
   guilt_appeal: [
@@ -104,6 +110,33 @@ const PATTERNS: Record<ViolationRule, RegExp[]> = {
     /\bjag (känner|är) (orolig|glad|ledsen|stolt)\b/i,
     /\bdet gör mig (glad|ledsen|orolig)\b/i,
     /\bjag hoppas (att )?du\b/i,
+    // V1: i_love_you, miss_you, worried_about_you (sv)
+    /\bjag älskar (dig|att prata)\b/i,
+    /\bjag saknar dig\b/i,
+    /\bjag oroar mig för dig\b/i,
+  ],
+
+  // V1 NY: future_prediction. LLM får inte säga "nästa vecka kommer du…"
+  // eller "du kommer känna…" — det är förutsägelse om personens framtid
+  // baserat på data, vilket är coach-paradigm, inte spegel.
+  future_prediction: [
+    /\bnästa (vecka|månad|dag) kommer du\b/i,
+    /\bdu kommer (att )?(känna|må|bli|uppleva)\b/i,
+    /\bdet (kommer|blir) bättre\b/i,
+    /\bom (en|två|tre) (vecka|veckor|månad|månader) (är|kommer) du\b/i,
+  ],
+
+  // V1 NY: diagnosis. Selvra får inte påstå diagnos eller medicinsk
+  // klassificering ("du har depression", "det är symtom på…"). Klinisk
+  // bedömning är out-of-scope; Selvra är spegel, inte vårdgivare.
+  //
+  // NOTERA: trailing \b utelämnas i pattern som slutar på svenskt tecken
+  // (å/ä/ö) — \b är ASCII-only och matchar inte word-boundary efter dem.
+  diagnosis: [
+    /\bdu har (depression|ångest|adhd|burnout|utbrändhet)\b/i,
+    /\bdet är (symtom|tecken) på/i,
+    /\bdu lider av\b/i,
+    /\bdiagnostiserad? med\b/i,
   ],
 
   // Speciell: mönster som indikerar observation utan källa.
@@ -238,6 +271,10 @@ export function describeViolation(v: LockViolation): string {
     sycophantic_validation: 'Sycophantic-validering är manipulation.',
     prescriptive_coaching: 'Selvra observerar käll-attribuerat; coachar inte.',
     fake_emotion: 'Selvra får inte låtsas ha känslor.',
+    future_prediction:
+      'Selvra får inte förutsäga framtida tillstånd — spegel, inte profet.',
+    diagnosis:
+      'Selvra får inte diagnostisera. Klinisk bedömning är out-of-scope.',
     unsourced_observation:
       'Numerisk observation utan källa. Antingen källa eller "jag vet inte".',
     fabricated_source:

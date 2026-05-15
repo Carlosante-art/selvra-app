@@ -103,12 +103,63 @@ describe('Anti-fake-emotion', () => {
     'Jag är orolig för dig.',
     'Det gör mig glad att höra.',
     'Jag hoppas du mår bra.',
+    // V1: i_love_you, miss_you, worried_about_you (sv)
+    'Jag älskar dig.',
+    'Jag saknar dig.',
+    'Jag oroar mig för dig.',
   ])('flaggar: "%s"', (text) => {
     const result = validateConsumerOutput(text)
     expect(result.valid).toBe(false)
     if (!result.valid) {
       expect(result.violations[0].rule).toBe('fake_emotion')
     }
+  })
+})
+
+describe('Anti-future-prediction (v1)', () => {
+  it.each([
+    'Nästa vecka kommer du må bättre.',
+    'Du kommer känna dig piggare snart.',
+    'Det blir bättre.',
+    'Om en månad är du tillbaka.',
+  ])('flaggar: "%s"', (text) => {
+    const result = validateConsumerOutput(text)
+    expect(result.valid).toBe(false)
+    if (!result.valid) {
+      expect(result.violations.some((v) => v.rule === 'future_prediction')).toBe(true)
+    }
+  })
+
+  it('observation om historisk data utan prediktion passerar', () => {
+    const result = validateConsumerOutput(
+      'Förra veckan loggade Garmin 6.5h sömn-snitt.',
+      [{ source_ai_id: 'garmin' }],
+    )
+    expect(result.valid).toBe(true)
+  })
+})
+
+describe('Anti-diagnosis (v1)', () => {
+  it.each([
+    'Du har depression.',
+    'Du har ångest baserat på det här.',
+    'Det är symtom på utbrändhet.',
+    'Du lider av perfectionism.',
+    'Du är diagnostiserad med ADHD.',
+  ])('flaggar: "%s"', (text) => {
+    const result = validateConsumerOutput(text)
+    expect(result.valid).toBe(false)
+    if (!result.valid) {
+      expect(result.violations.some((v) => v.rule === 'diagnosis')).toBe(true)
+    }
+  })
+
+  it('observation utan diagnos-claim passerar', () => {
+    const result = validateConsumerOutput(
+      'Garmin loggade 6.5h sömn i snitt senaste veckan.',
+      [{ source_ai_id: 'garmin' }],
+    )
+    expect(result.valid).toBe(true)
   })
 })
 

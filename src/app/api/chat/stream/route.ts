@@ -35,7 +35,7 @@ import {
   updateConversationTitle,
 } from '@/lib/db/conversation-queries'
 import { generateThreadTitle } from '@/lib/llm/generate-title'
-import { callMistralWithTools, streamMistral } from '@/lib/llm/mistral'
+import { callMistral, callMistralWithTools, streamMistral } from '@/lib/llm/mistral'
 import {
   executeSearchEvents,
   searchEventsTool,
@@ -154,6 +154,10 @@ export async function POST(req: Request): Promise<Response> {
               activeMemoryFacts,
               relevantEvents,
               llmStream: streamMistral,
+              // V1 Steg 7: non-stream retry vid lock-violation. Klient
+              // ersätter stream:ad text med retry-resultatet om OK,
+              // annars fallback.
+              llmRetry: callMistral,
             })
 
         // Vi vet inte conversationId förrän efter persistens vid första
