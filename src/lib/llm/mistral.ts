@@ -97,3 +97,70 @@ export async function callMistral(
     throw err
   }
 }
+
+/**
+ * Streaming variant av callMistral. Yieldar token-chunks (string) som de
+ * kommer från Mistral. Caller ansvarar för att samla fullText om den
+ * behövs för post-stream-validation.
+ *
+ * Använder samma model + temperature som callMistral så streaming-svaret
+ * är identiskt till non-streaming utöver leveransformen.
+ *
+ * NOTE: ContentChunk[]-fallet ignoreras — vår system-prompt genererar
+ * aldrig tool-calls eller multi-modal, så delta.content är alltid string
+ * eller null. Loggar warning om annat ses så vi upptäcker drift.
+ */
+export async function* streamMistral(
+  messages: ReadonlyArray<ChatMessage>,
+  retryHint?: string,
+): AsyncGenerator<string, void, void> {
+  const log = logger.child({ module: 'llm/mistral/stream' })
+  const model = process.env.MISTRAL_MODEL ?? 'mistral-large-latest'
+
+  const finalMessages: ChatMessage[] = retryHint
+    ? [...messages, { role: 'system', content: retryHint }]
+    : [...messages]
+
+  const t0 = Date.now()
+  let chunkCount = 0
+  let totalLength = 0
+  try {
+    const stream = await getClient().chat.stream({
+      model,
+      messages: finalMessages,
+      temperature: 0.7,
+      maxTokens: 2000,
+    })
+
+    for await (const event of stream) {
+      const delta = event.data?.choices?.[0]?.delta?.content
+      if (delta == null) continue
+      if (typeof delta !== 'string') {
+        log.warn('mistral_stream_non_string_delta', {
+          deltaType: Array.isArray(delta) ? 'array' : typeof delta,
+        })
+        continue
+      }
+      chunkCount += 1
+      totalLength += delta.length
+      yield delta
+    }
+
+    log.info('mistral_stream_complete', {
+      model,
+      durationMs: Date.now() - t0,
+      promptMessages: finalMessages.length,
+      chunkCount,
+      totalLength,
+      hadRetryHint: Boolean(retryHint),
+    })
+  } catch (err) {
+    log.error('mistral_stream_failed', {
+      model,
+      durationMs: Date.now() - t0,
+      chunkCount,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    throw err
+  }
+}

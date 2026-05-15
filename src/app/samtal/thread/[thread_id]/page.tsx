@@ -19,7 +19,7 @@ import {
 } from '@/lib/db/conversation-queries'
 
 import { ArchiveButton } from '../../_components/ArchiveButton'
-import { OptimisticChatFeed } from '../../_components/OptimisticChatFeed'
+import { StreamingChatFeed } from '../../_components/StreamingChatFeed'
 
 type Props = {
   params: Promise<{ thread_id: string }>
@@ -84,7 +84,7 @@ export default async function ThreadPage({ params }: Props) {
           </div>
         </header>
 
-        <OptimisticChatFeed initialTurns={turns} conversationId={thread_id} />
+        <StreamingChatFeed initialTurns={turns} conversationId={thread_id} />
       </article>
     </main>
   )
