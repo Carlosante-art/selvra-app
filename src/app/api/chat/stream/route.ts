@@ -36,13 +36,21 @@ import {
   updateConversationTitle,
 } from '@/lib/db/conversation-queries'
 import { generateThreadTitle } from '@/lib/llm/generate-title'
-import { callMistral, callMistralWithTools, streamMistral } from '@/lib/llm/mistral'
+import {
+  callMistral,
+  callMistralJsonSchema,
+  callMistralWithTools,
+  streamMistral,
+} from '@/lib/llm/mistral'
 import {
   executeSearchEvents,
   searchEventsTool,
 } from '@/lib/llm/tools/search-events'
 import { logger } from '@/lib/logging'
-import { extractFactsFromTurn } from '@/lib/observability/extract-facts-from-turn'
+import {
+  extractFactsFromTurn,
+  FACT_EXTRACTION_SCHEMA,
+} from '@/lib/observability/extract-facts-from-turn'
 import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import { processStreamingUserTurn } from '@/lib/observability/process-streaming-user-turn'
 import { processStreamingUserTurnWithTools } from '@/lib/observability/process-streaming-user-turn-with-tools'
@@ -237,12 +245,17 @@ export async function POST(req: Request): Promise<Response> {
               })
               log.info('stream_llm_response_persisted', { conversationId })
 
-              // V1 Steg 8: extrahera facts från turn till conversation_facts.
+              // V1 Steg 8 (V2 2026-05-16): json_schema-mode för strikt output.
               const extractedFacts = await extractFactsFromTurn({
                 userText: inputText,
                 selvraText: event.selvraText,
                 sourcesConsulted: event.sourcesConsulted,
-                llmCall: callMistral,
+                llmCall: (messages) =>
+                  callMistralJsonSchema(
+                    messages,
+                    'fact_extraction',
+                    FACT_EXTRACTION_SCHEMA,
+                  ),
               })
               if (extractedFacts.length > 0) {
                 try {

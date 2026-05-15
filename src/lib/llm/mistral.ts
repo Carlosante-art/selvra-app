@@ -135,6 +135,68 @@ export async function callMistral(
 }
 
 /**
+ * JSON-schema-strikt chat-anrop. Mistral garanterar att svaret är giltig
+ * JSON som matchar schemat. För `extractFactsFromTurn` v2 — vi får
+ * structurellt-giltig JSON utan kod-fence-stripping eller defensiv parsing.
+ *
+ * Per Mistral docs: när responseFormat.type='json_schema' MÅSTE prompten
+ * också explicit instruera modellen att producera JSON. SDK:n validerar
+ * inte detta — det är upp till caller.
+ *
+ * Returnerar rå JSON-text (caller anropar JSON.parse). Vid Mistral-fel
+ * eller om innehållet är non-string kastas Error.
+ */
+export async function callMistralJsonSchema(
+  messages: ReadonlyArray<ChatMessage>,
+  schemaName: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  schemaDefinition: Record<string, any>,
+): Promise<string> {
+  const log = logger.child({ module: 'llm/mistral/json-schema' })
+  const model = process.env.MISTRAL_MODEL ?? 'mistral-large-latest'
+
+  const t0 = Date.now()
+  try {
+    const response = await getClient().chat.complete({
+      model,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      messages: messages as any,
+      responseFormat: {
+        type: 'json_schema',
+        jsonSchema: {
+          name: schemaName,
+          schemaDefinition,
+          strict: true,
+        },
+      },
+      temperature: 0.3, // lägre temp för strukturerad output
+      maxTokens: 2000,
+    })
+
+    const content = response.choices?.[0]?.message?.content
+    if (typeof content !== 'string' || content.length === 0) {
+      throw new Error('Mistral returned non-string or empty content for json_schema mode')
+    }
+
+    log.info('mistral_json_schema_ok', {
+      model,
+      schemaName,
+      durationMs: Date.now() - t0,
+      responseLength: content.length,
+    })
+    return content
+  } catch (err) {
+    log.error('mistral_json_schema_failed', {
+      model,
+      schemaName,
+      durationMs: Date.now() - t0,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    throw err
+  }
+}
+
+/**
  * Tool-aware chat-anrop. Skickar `tools` till Mistral. LLM:n får välja
  * mellan att svara med text eller anropa ett verktyg.
  *
