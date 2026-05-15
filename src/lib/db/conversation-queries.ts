@@ -12,7 +12,7 @@ import 'server-only'
  * Verifieras integration när migration körs mot Carls DB.
  */
 
-import { and, desc, eq, isNull, lte, or, sql } from 'drizzle-orm'
+import { and, desc, eq, ilike, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { db } from './index'
 import {
@@ -28,10 +28,14 @@ import { users } from './schema'
 /**
  * Lista alla conversation-trådar för användaren, nyast först.
  * Arkiverade (archived_at != null) inkluderas inte by default.
+ *
+ * `query`-opt aktiverar ILIKE-filter på title (case-insensitive substring).
+ * Inkluderar inte tråd-innehåll i sökning — bara titlar. Trådar utan
+ * titel matchar aldrig query (skapa-första-tur-fas eller titel-gen-fel).
  */
 export async function listConversationsForUser(
   userId: string,
-  opts: { includeArchived?: boolean; limit?: number } = {},
+  opts: { includeArchived?: boolean; limit?: number; query?: string } = {},
 ): Promise<
   Array<{
     id: string
@@ -44,6 +48,11 @@ export async function listConversationsForUser(
   const conditions = [eq(consumerConversations.userId, userId)]
   if (!opts.includeArchived) {
     conditions.push(isNull(consumerConversations.archivedAt))
+  }
+  if (opts.query && opts.query.trim().length > 0) {
+    conditions.push(
+      ilike(consumerConversations.title, `%${opts.query.trim()}%`),
+    )
   }
 
   return db

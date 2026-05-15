@@ -18,7 +18,7 @@ import { listConversationsForUser } from '@/lib/db/conversation-queries'
 
 import { OptimisticChatFeed } from './_components/OptimisticChatFeed'
 
-type SearchParams = Promise<{ archived?: string }>
+type SearchParams = Promise<{ archived?: string; q?: string }>
 
 export default async function SamtalPage({
   searchParams,
@@ -32,9 +32,11 @@ export default async function SamtalPage({
 
   const params = await searchParams
   const showArchived = params.archived === '1'
+  const query = params.q?.trim() ?? ''
   const threads = await listConversationsForUser(session.user.id, {
     limit: 20,
     includeArchived: showArchived,
+    query: query || undefined,
   })
 
   return (
@@ -58,9 +60,13 @@ export default async function SamtalPage({
           aria-label="Tidigare samtal"
           className="flex flex-col gap-3 border-t border-neutral-200 dark:border-neutral-800 pt-8"
         >
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-              {showArchived ? 'Alla samtal (inkl arkiverade)' : 'Tidigare samtal'}
+              {query
+                ? `Söker: "${query}"`
+                : showArchived
+                  ? 'Alla samtal (inkl arkiverade)'
+                  : 'Tidigare samtal'}
             </h2>
             <Link
               href={showArchived ? '/samtal' : '/samtal?archived=1'}
@@ -70,11 +76,33 @@ export default async function SamtalPage({
             </Link>
           </div>
 
+          {/* Search-form — GET submit till samma sida med ?q= */}
+          <form action="/samtal" method="GET" className="flex gap-2">
+            {showArchived && <input type="hidden" name="archived" value="1" />}
+            <input
+              type="text"
+              name="q"
+              defaultValue={query}
+              placeholder="Sök bland tråd-titlar…"
+              className="flex-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-1.5 text-sm"
+            />
+            {query && (
+              <Link
+                href={showArchived ? '/samtal?archived=1' : '/samtal'}
+                className="text-xs text-neutral-500 dark:text-neutral-500 underline underline-offset-2 self-center"
+              >
+                Rensa
+              </Link>
+            )}
+          </form>
+
           {threads.length === 0 ? (
             <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
-              {showArchived
-                ? 'Inga arkiverade samtal.'
-                : 'Inga samtal än. Det första du skriver startar en tråd.'}
+              {query
+                ? `Inga trådar matchar "${query}".`
+                : showArchived
+                  ? 'Inga arkiverade samtal.'
+                  : 'Inga samtal än. Det första du skriver startar en tråd.'}
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
