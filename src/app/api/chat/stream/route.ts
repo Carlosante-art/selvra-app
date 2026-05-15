@@ -35,10 +35,15 @@ import {
   updateConversationTitle,
 } from '@/lib/db/conversation-queries'
 import { generateThreadTitle } from '@/lib/llm/generate-title'
-import { streamMistral } from '@/lib/llm/mistral'
+import { callMistralWithTools, streamMistral } from '@/lib/llm/mistral'
+import {
+  executeSearchEvents,
+  searchEventsTool,
+} from '@/lib/llm/tools/search-events'
 import { logger } from '@/lib/logging'
 import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import { processStreamingUserTurn } from '@/lib/observability/process-streaming-user-turn'
+import { processStreamingUserTurnWithTools } from '@/lib/observability/process-streaming-user-turn-with-tools'
 
 const SYSTEM_PROMPT_FALLBACK = `Du är Selvra. Spegel, inte coach. All observation källa-attribuerad. Inga manipulations-mönster, ingen prescription. Säg "jag vet inte" när data saknas.`
 
@@ -98,20 +103,30 @@ export async function POST(req: Request): Promise<Response> {
     )
   }
 
-  // Fetch context parallellt (samma som sendMessage)
+  // Tool-call-flagga: när =1 hoppar vi över naivt 7-dagars-pre-fetch
+  // och låter LLM:n tool-call:a search_events on-demand innan stream
+  // börjar. Identisk env-var som sendMessage Server Action.
+  const useToolCall = process.env.SELVRA_USE_TOOL_CALL === '1'
+
+  // Fetch context parallellt (samma som sendMessage). relevantEvents
+  // skippas vid tool-call — orchestratorn hanterar event-fetch.
   const [recentTurns, activeMemoryFacts, relevantEvents, activePrompt] =
     await Promise.all([
       body.conversationId
         ? fetchRecentTurns(body.conversationId, 5)
         : Promise.resolve([]),
       fetchActiveMemoryFacts(userId),
-      fetchRelevantEvents(body.text),
+      useToolCall ? Promise.resolve([]) : fetchRelevantEvents(body.text),
       fetchActiveSystemPrompt().catch(() => null),
     ])
 
   const systemPrompt = activePrompt?.promptText ?? SYSTEM_PROMPT_FALLBACK
   const isFirstTurn = body.conversationId === null
   const inputText = body.text
+
+  if (useToolCall) {
+    log.info('stream_using_tool_call_pathway')
+  }
 
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({
@@ -121,14 +136,25 @@ export async function POST(req: Request): Promise<Response> {
       }
 
       try {
-        const turnStream = processStreamingUserTurn({
-          systemPrompt,
-          currentUserText: inputText,
-          recentTurns,
-          activeMemoryFacts,
-          relevantEvents,
-          llmStream: streamMistral,
-        })
+        const turnStream = useToolCall
+          ? processStreamingUserTurnWithTools({
+              systemPrompt,
+              currentUserText: inputText,
+              recentTurns,
+              activeMemoryFacts,
+              llmCallWithTools: callMistralWithTools,
+              llmFinalStream: streamMistral,
+              searchEventsTool,
+              executeSearchEvents,
+            })
+          : processStreamingUserTurn({
+              systemPrompt,
+              currentUserText: inputText,
+              recentTurns,
+              activeMemoryFacts,
+              relevantEvents,
+              llmStream: streamMistral,
+            })
 
         // Vi vet inte conversationId förrän efter persistens vid första
         // turn. För befintliga trådar kan vi skicka meta direkt.
