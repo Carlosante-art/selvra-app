@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation'
 
 /**
  * Nav-link med active-state. Markeras som "active" när nuvarande URL
- * matchar exakt eller är en sub-route (t.ex. /onboarding/intentions/confirm
- * räknas som active för /onboarding/intentions).
+ * matchar exakt eller är en sub-route (t.ex. /samtal/thread/abc räknas
+ * som active för /samtal).
  */
 
 export function NavLink({

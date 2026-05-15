@@ -17,9 +17,11 @@ import { and, desc, eq, ilike, isNull, lte, or, sql } from 'drizzle-orm'
 import { db } from './index'
 import {
   consumerConversations,
+  conversationFacts,
   conversationMemoryFacts,
   conversationTurns,
   systemPromptVersions,
+  type FactType,
 } from './conversation-schema'
 import { users } from './schema'
 
@@ -394,6 +396,116 @@ export async function redactMemoryFact(input: {
       and(
         eq(conversationMemoryFacts.id, input.factId),
         eq(conversationMemoryFacts.userId, input.userId),
+      ),
+    )
+}
+
+// ─── V1 conversation_facts (Steg 8) ──────────────────────────────────────
+
+/**
+ * Batch-persist conversation_facts. Anropas av extractFactsFromTurn efter
+ * varje user-turn med 0-N extraherade facts. Tom array → no-op.
+ *
+ * Validerar fact_type på applikations-nivå (DB-CHECK-constraint är
+ * defense-in-depth). source_name är required för 'source_observed',
+ * null för 'user_stated'.
+ */
+export async function persistConversationFacts(
+  facts: ReadonlyArray<{
+    userId: string
+    threadId: string
+    turnId: string
+    factText: string
+    factType: FactType
+    sourceName?: string | null
+  }>,
+): Promise<{ insertedCount: number }> {
+  if (facts.length === 0) return { insertedCount: 0 }
+
+  await db.insert(conversationFacts).values(
+    facts.map((f) => ({
+      userId: f.userId,
+      threadId: f.threadId,
+      turnId: f.turnId,
+      factText: f.factText,
+      factType: f.factType,
+      sourceName: f.sourceName ?? null,
+    })),
+  )
+
+  return { insertedCount: facts.length }
+}
+
+/**
+ * Lista conversation_facts för UI (filtered by fact_type), nyast först.
+ * Soft-deleted facts (user_deleted_at != null) inkluderas inte.
+ *
+ * Används av /minne för "Vad du sagt" + "Vad dina källor visat"-kategorierna.
+ */
+export async function listConversationFactsForUi(
+  userId: string,
+  opts: { factType?: FactType; sourceName?: string; limit?: number } = {},
+): Promise<
+  Array<{
+    id: string
+    factText: string
+    factType: FactType
+    sourceName: string | null
+    threadId: string
+    turnId: string
+    extractedAt: Date
+  }>
+> {
+  const limit = opts.limit ?? 30
+  const conditions = [
+    eq(conversationFacts.userId, userId),
+    isNull(conversationFacts.userDeletedAt),
+  ]
+  if (opts.factType) {
+    conditions.push(eq(conversationFacts.factType, opts.factType))
+  }
+  if (opts.sourceName) {
+    conditions.push(eq(conversationFacts.sourceName, opts.sourceName))
+  }
+
+  const rows = await db
+    .select({
+      id: conversationFacts.id,
+      factText: conversationFacts.factText,
+      factType: conversationFacts.factType,
+      sourceName: conversationFacts.sourceName,
+      threadId: conversationFacts.threadId,
+      turnId: conversationFacts.turnId,
+      extractedAt: conversationFacts.extractedAt,
+    })
+    .from(conversationFacts)
+    .where(and(...conditions))
+    .orderBy(desc(conversationFacts.extractedAt))
+    .limit(limit)
+
+  // factType är text i DB; cast till discriminated union på applikations-nivå.
+  return rows.map((r) => ({
+    ...r,
+    factType: r.factType as FactType,
+  }))
+}
+
+/**
+ * Soft-delete en conversation_fact. Validerar userId så annan-users facts
+ * inte kan raderas. UI:t kommer aldrig visa raderade facts igen, men de
+ * bevaras för audit + ev. legal-hold (samma som conversation_memory_facts).
+ */
+export async function deleteConversationFact(input: {
+  factId: string
+  userId: string
+}): Promise<void> {
+  await db
+    .update(conversationFacts)
+    .set({ userDeletedAt: new Date() })
+    .where(
+      and(
+        eq(conversationFacts.id, input.factId),
+        eq(conversationFacts.userId, input.userId),
       ),
     )
 }

@@ -129,7 +129,10 @@ function Hero() {
         </p>
 
         <div className="mt-[clamp(32px,4vw,48px)]">
-          <CTALink href="/onboarding/intentions">
+          {/* CTA-href /onboarding/intentions ändrad till /welcome 2026-05-15
+              (v1-refaktor Steg 5). Text-copy uppdateras när landing-spec
+              re-lockas för v1 (samtal-paradigm). */}
+          <CTALink href="/welcome">
             Skriv din första intention
           </CTALink>
         </div>
@@ -650,7 +653,10 @@ function BeginCTA() {
       </div>
 
       <div className="mt-[clamp(48px,6vw,72px)]">
-        <CTALink href="/onboarding/intentions">
+        {/* CTA-href /onboarding/intentions ändrad till /welcome 2026-05-15
+            (v1-refaktor Steg 5). Text-copy uppdateras när landing-spec
+            re-lockas för v1 (samtal-paradigm). */}
+        <CTALink href="/welcome">
           Skriv din första intention
         </CTALink>
       </div>

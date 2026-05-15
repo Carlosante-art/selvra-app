@@ -112,7 +112,7 @@ export default function PrivacyPage() {
             </li>
             <li>
               Dreamer-pass: random-walk över dina events för att hitta mönster.
-              Output är bakgrunds-observationer du ser på /traces.
+              Output visas som bakgrunds-observationer i /minne.
             </li>
             <li>
               Cross-subject-aggregation: ej aktiverad i v1. Om aktiverad senare
@@ -163,7 +163,7 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Återkalla källor</strong>: OAuth-kopplingar kan kopplas bort
-              från /onboarding/sources. Tidigare hämtad data kan raderas på begäran
+              från /welcome/sources. Tidigare hämtad data kan raderas på begäran
               (manuellt under v1; automatiserat senare).
             </li>
           </ul>

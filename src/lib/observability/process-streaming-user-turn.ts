@@ -26,6 +26,7 @@ import {
 } from './conversation-context'
 import { detectMemoryFact } from './memory-fact-detector'
 import {
+  describeViolation,
   validateConsumerOutput,
   type LockViolation,
 } from './consumer-lock-validate'
@@ -35,6 +36,11 @@ export type LlmStreamFn = (
   retryHint?: string,
 ) => AsyncIterable<string>
 
+export type LlmRetryFn = (
+  messages: ReadonlyArray<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+  retryHint?: string,
+) => Promise<string>
+
 export type ProcessStreamingTurnInput = {
   systemPrompt: string
   currentUserText: string
@@ -42,6 +48,9 @@ export type ProcessStreamingTurnInput = {
   activeMemoryFacts: readonly MemoryFact[]
   relevantEvents: readonly RelevantEvent[]
   llmStream: LlmStreamFn
+  /** V1 Steg 7: non-stream retry-fn för validation-violation. Om utelämnad
+   *  faller pipelinen direkt till fallback vid violation (legacy-läge). */
+  llmRetry?: LlmRetryFn
 }
 
 export type StreamEvent =
@@ -126,15 +135,65 @@ export async function* processStreamingUserTurn(
     return
   }
 
-  // Violation → fallback. Klient ersätter den stream:ade texten med
-  // FALLBACK_TEXT. rejectedText skickas tillbaka så route-handlern kan
-  // audit:a den i Sentry (vad bröt LLM mot?).
-  yield {
+  // V1 Steg 7: Violation → om llmRetry injektad, gör non-stream retry-call
+  // med retry-hint, validera, returnera retry-text om OK (klient ersätter
+  // sin stream:ade text). Om retry också fail:ar eller llmRetry saknas →
+  // fallback.
+  if (input.llmRetry) {
+    const retryHint = buildRetryHint(validation.violations)
+    let retryText: string
+    try {
+      retryText = await input.llmRetry(messages, retryHint)
+    } catch {
+      // Retry fail:ade tekniskt — fall till fallback med original-violation
+      yield buildFallbackEvent(validation.violations, fullText)
+      return
+    }
+
+    const retryValidation = validateConsumerOutput(
+      retryText,
+      input.relevantEvents.map((e) => ({ source_ai_id: e.sourceAiId })),
+    )
+
+    if (retryValidation.valid) {
+      // Retry OK. Yielda stream_end med retry-text — klient ersätter
+      // den stream:ade texten med detta som final.
+      yield {
+        kind: 'stream_end',
+        selvraText: retryText,
+        sourcesConsulted: input.relevantEvents,
+      }
+      return
+    }
+
+    // Retry också bröt → fallback. Original-text loggas som rejected.
+    yield buildFallbackEvent(retryValidation.violations, fullText)
+    return
+  }
+
+  // Ingen retry-fn injektad → fallback direkt (legacy-läge).
+  yield buildFallbackEvent(validation.violations, fullText)
+}
+
+function buildFallbackEvent(
+  violations: readonly LockViolation[],
+  rejectedText: string,
+): StreamEvent {
+  return {
     kind: 'fallback',
     selvraText: FALLBACK_TEXT,
-    lastViolations: validation.violations,
-    rejectedText: fullText,
+    lastViolations: violations,
+    rejectedText,
   }
+}
+
+function buildRetryHint(violations: readonly LockViolation[]): string {
+  const violationLines = violations.map((v) => `  - ${describeViolation(v)}`)
+  return (
+    `Ditt förra svar bröt mot Selvras konstitution:\n` +
+    violationLines.join('\n') +
+    `\n\nGenerera om svaret. Följ DU FÅR / DU FÅR ALDRIG-listorna strikt.`
+  )
 }
 
 function buildMemoryAcknowledgement(factText: string): string {

@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   // Guard: AB-deferred. Returnera graceful redirect istället för 500.
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     return NextResponse.redirect(
-      `${url.origin}/onboarding/sources?error=google_not_configured`,
+      `${url.origin}/welcome/sources?error=google_not_configured`,
     )
   }
 

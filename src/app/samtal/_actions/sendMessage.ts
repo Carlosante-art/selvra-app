@@ -19,6 +19,7 @@ import {
   fetchActiveMemoryFacts,
   fetchActiveSystemPrompt,
   fetchRecentTurns,
+  persistConversationFacts,
   persistMemoryFact,
   persistTurn,
   updateConversationTitle,
@@ -30,6 +31,7 @@ import {
   searchEventsTool,
 } from '@/lib/llm/tools/search-events'
 import { logger } from '@/lib/logging'
+import { extractFactsFromTurn } from '@/lib/observability/extract-facts-from-turn'
 import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import { processUserTurn } from '@/lib/observability/process-user-turn'
 import { processUserTurnWithTools } from '@/lib/observability/process-user-turn-with-tools'
@@ -37,7 +39,19 @@ import { processUserTurnWithTools } from '@/lib/observability/process-user-turn-
 // Fallback om DB-fetch fail:ar. Identisk text som migrations-seed:en.
 // När fetchActiveSystemPrompt returnerar något använder vi det istället —
 // så Carl kan iterera via UPDATE utan att röra denna konstant.
-const SYSTEM_PROMPT_FALLBACK = `Du är Selvra. Spegel, inte coach. All observation källa-attribuerad. Inga manipulations-mönster, ingen prescription. Säg "jag vet inte" när data saknas.`
+//
+// V1 Steg 9: utökad med källa-attribution-instruktion ([source:NAME]-markup).
+// UI:t (SourceAttributedText) renderar markupen som klickbara badges till
+// /minne?source=NAME.
+const SYSTEM_PROMPT_FALLBACK = `Du är Selvra. Spegel, inte coach. All observation källa-attribuerad. Inga manipulations-mönster, ingen prescription. Säg "jag vet inte" när data saknas.
+
+KÄLLA-ATTRIBUTION (obligatoriskt):
+När du refererar till data från en kopplad källa, markera det inline med [source:NAME] direkt efter claim:en. Använd lowercase + underscore i NAME.
+
+Exempel:
+"Du sov 5h 40min senaste 5 dagarna [source:garmin]. Din baseline är 7h 15min [source:garmin_baseline]."
+
+Använd ENDAST källa-namn som finns i tillgängliga events. Hitta inte på källor.`
 
 // Rate-limit: max N turer per användare per fönster. Skydd mot bot-spam
 // och stuck-loop som annars skulle spränga LLM-budget + Selvra-protokoll-
@@ -188,7 +202,7 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
     }
     case 'llm_response': {
       const isFirstTurn = input.conversationId === null
-      const { conversationId } = await persistTurn({
+      const { conversationId, turnId } = await persistTurn({
         conversationId: input.conversationId,
         userId,
         userText: input.text,
@@ -202,6 +216,39 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
         conversationId,
         attempts: result.attempts,
       })
+
+      // V1 Steg 8: extrahera facts från turn till conversation_facts.
+      // Synkront — opportunistisk men inte critical-path. Fail får inte
+      // ta ner samtals-flow (extractFactsFromTurn returnerar [] vid fel).
+      const extractedFacts = await extractFactsFromTurn({
+        userText: input.text,
+        selvraText: result.selvraText,
+        sourcesConsulted: result.sourcesConsulted,
+        llmCall: callMistral,
+      })
+      if (extractedFacts.length > 0) {
+        try {
+          await persistConversationFacts(
+            extractedFacts.map((f) => ({
+              userId,
+              threadId: conversationId,
+              turnId,
+              factText: f.factText,
+              factType: f.factType,
+              sourceName: f.sourceName,
+            })),
+          )
+          log.info('facts_extracted', {
+            conversationId,
+            count: extractedFacts.length,
+          })
+        } catch (err) {
+          // Persistens-fail ska inte ta ner samtals-pipelinen
+          log.warn('facts_persist_failed', {
+            error: err instanceof Error ? err.message : String(err),
+          })
+        }
+      }
 
       // Sentry: warning om LLM behövde retries (löstes via lock-validate).
       // Synligt i Sentry-dashen för system-prompt-iterations utan att gräva

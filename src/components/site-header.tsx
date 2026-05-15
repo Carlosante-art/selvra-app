@@ -6,19 +6,20 @@ import { usePathname } from 'next/navigation'
 import { NavLink } from './nav-link'
 
 /**
- * Minimal navigation för app-routes (brev, tankar, traces, etc.).
+ * Minimal navigation för app-routes (samtal, tankar, etc.).
  *
  * Per SELVRA_LANDING_DESIGN_SPEC_2026-05-12.md Avsnitt 4.1: landing-sidan
  * (path `/`) har sin egen minimala nav inom hero. Den globala app-nav:en
  * (denna komponent) renderas inte där.
  */
 
+// /brev (Steg 2), /traces (Steg 3), /thoughts (Steg 4) och /onboarding/*
+// (Steg 5) raderade 2026-05-15 i v1-refaktor. /samtal är primär entry-
+// point. Källkoppling är flyttad till /welcome/sources (post-login,
+// valbar). /minne är transparens-vy.
 const NAV_LINKS: Array<{ href: string; label: string }> = [
-  { href: '/brev', label: 'Brev' },
-  { href: '/thoughts', label: 'Tankar' },
-  { href: '/traces', label: 'Bakgrund' },
-  { href: '/onboarding/intentions', label: 'Intentioner' },
-  { href: '/onboarding/sources', label: 'Källor' },
+  { href: '/samtal', label: 'Samtal' },
+  { href: '/minne', label: 'Minne' },
 ]
 
 export function SiteHeader() {

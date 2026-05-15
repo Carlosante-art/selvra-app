@@ -1,40 +1,97 @@
 /**
  * /minne — transparens-yta. Här ser användaren exakt vad Selvra "minns"
- * om henne. Per konsument-track §2 patient-ägd portabilitet: detta är
- * konstitutionellt krav, inte feature.
+ * om henne.
  *
- * Fyra block:
- *   1. Senaste reflektion (brev) — länk till /brev
- *   2. Tankar (självrapport) — från Selvra-protokollet listEvents
- *   3. Bakgrunds-observationer (Dreamer) — från Selvra-protokollet
- *   4. Explicit minnes-fakta — från ny conversation_memory_facts
+ * v1 två-kategori-modell (per .gsd/SELVRA_CONSUMER_V1_BUILD_2026-05-15.md §5):
  *
- * Plus två globala actions:
+ *   1. Vad du sagt
+ *      Allt användaren sagt — extraherade user-stated facts från samtal.
+ *      Data-källa just nu: legacy selvra.thought.recorded-events från
+ *      Selvra-protokollet. När conversation_facts-tabellen skapas i Steg 8
+ *      kommer denna kategori byta data-källa till
+ *      conversation_facts(fact_type=user_stated) + ev. legacy-merge.
+ *
+ *   2. Vad dina källor visat
+ *      Observationer från kopplade källor (Garmin/Strava/Calendar/Gmail/
+ *      Dexcom). Källa-attribuerade. Data-källa just nu: legacy
+ *      insight.derived-events från Selvra-protokollet (Dreamer-output).
+ *      När conversation_facts-tabellen skapas i Steg 8 kommer denna
+ *      kategori byta till conversation_facts(fact_type=source_observed).
+ *
+ *   3. Explicita minnen
+ *      User-skrivna explicita minnen ("jag är T1-diabetiker") från
+ *      conversation_memory_facts. Användaren skapar dessa genom att
+ *      säga "Kom ihåg X" i ett samtal. Selvra kan inte skapa dem utan
+ *      användarens bekräftelse.
+ *
+ * Plus globala actions:
  *   - Exportera allt (SREF v1) → befintlig /api/export/sref
  *   - Radera enskilt fakta via MemoryFactRow
- *   - "Radera allt och avregistrera" → fortfarande TODO (Fas 1 beslut)
+ *   - DangerZone — purge alla conversations / delete-account
+ *
+ * Konstitutionellt krav (IF1 + EU Data Act): användaren kan radera,
+ * exportera, och se exakt vad som finns. Inget är dolt.
  */
 
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { auth } from '@/lib/auth/config'
-import { listMemoryFactsForUi } from '@/lib/db/conversation-queries'
+import {
+  listConversationFactsForUi,
+  listMemoryFactsForUi,
+} from '@/lib/db/conversation-queries'
 import { listEvents } from '@/lib/protocol/client'
 import type { EventListItem } from '@/lib/protocol/types'
 
 import { DangerZone } from './_components/DangerZone'
 import { MemoryFactRow } from './_components/MemoryFactRow'
 
-export default async function MinnePage() {
+type SearchParams = Promise<{ source?: string }>
+
+export default async function MinnePage({
+  searchParams,
+}: {
+  searchParams: SearchParams
+}) {
   const session = await auth()
   if (!session?.user?.id) {
     redirect('/login')
   }
 
-  // Parallella fetches — om någon faller, sektionen visar empty-state
-  const [memoryFacts, recentThoughts, recentInsights] = await Promise.all([
+  // V1 Steg 9: ?source=X-filter. Klick på [source:X]-badge i samtal
+  // navigerar hit med source-query. Filtrerar "Vad dina källor visat"
+  // till bara den källan. "Vad du sagt" och "Explicita minnen" filtreras
+  // inte (de är inte källa-knutna).
+  const params = await searchParams
+  const sourceFilter =
+    params.source && params.source.trim().length > 0
+      ? params.source.trim().toLowerCase()
+      : undefined
+
+  // V1 Steg 8: läs primärt conversation_facts (per fact_type). Fallback
+  // till legacy-events när conversation_facts är tom (Carl-dogfood-
+  // pre-migration eller om extractFactsFromTurn ej hunnit producera än).
+  //
+  // Parallella fetches. Sektionen renderar empty-state om respektive
+  // källa fall:ar — vi tar inte ner hela vyn för en enskild fail.
+  const [
+    memoryFacts,
+    userStatedFacts,
+    sourceObservedFacts,
+    userStatedLegacy,
+    sourceObservedLegacy,
+  ] = await Promise.all([
     listMemoryFactsForUi(session.user.id),
+    listConversationFactsForUi(session.user.id, {
+      factType: 'user_stated',
+      limit: 30,
+    }),
+    listConversationFactsForUi(session.user.id, {
+      factType: 'source_observed',
+      sourceName: sourceFilter,
+      limit: 30,
+    }),
     safeListEvents({ eventType: 'selvra.thought.recorded', limit: 30 }),
     safeListEvents({ eventType: 'insight.derived', limit: 20 }),
   ])
@@ -56,64 +113,113 @@ export default async function MinnePage() {
           </p>
         </header>
 
-        {/* 1. Senaste reflektion */}
-        <section
-          aria-label="Senaste reflektion"
-          className="flex flex-col gap-3"
-        >
+        {/* 1. Vad du sagt — primärt conversation_facts, legacy fallback */}
+        <section aria-label="Vad du sagt" className="flex flex-col gap-3">
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-            Senaste reflektion
+            Vad du sagt
           </h2>
-          <p className="text-sm text-neutral-500 dark:text-neutral-500">
-            <Link href="/brev" className="underline underline-offset-2">
-              Öppna /brev
-            </Link>{' '}
-            — frusna dokument, en åt gången.
+          <p className="text-xs text-neutral-500 dark:text-neutral-500">
+            Saker du själv har sagt om dig själv i samtal med Selvra.
           </p>
-        </section>
-
-        {/* 2. Tankar */}
-        <section aria-label="Tankar" className="flex flex-col gap-3">
-          <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-            Tankar (självrapport)
-          </h2>
-          {recentThoughts.length === 0 ? (
-            <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
-              Inga tankar sparade än.
-            </p>
-          ) : (
+          {userStatedFacts.length > 0 ? (
             <ul className="flex flex-col gap-2">
-              {recentThoughts.slice(0, 10).map((event) => (
+              {userStatedFacts.slice(0, 15).map((fact) => (
                 <li
-                  key={event.event_id}
+                  key={fact.id}
                   className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
                 >
                   <span className="text-neutral-500 dark:text-neutral-500 mr-2">
-                    {formatDate(event.created_at)}:
+                    {fact.extractedAt.toLocaleDateString('sv-SE', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                    :
                   </span>
-                  {extractThoughtText(event.payload)}
+                  {fact.factText}
                 </li>
               ))}
             </ul>
+          ) : userStatedLegacy.length > 0 ? (
+            <>
+              <p className="text-xs italic text-neutral-500 dark:text-neutral-500">
+                Visar legacy data — nya facts extraheras automatiskt från
+                samtal framöver.
+              </p>
+              <ul className="flex flex-col gap-2">
+                {userStatedLegacy.slice(0, 10).map((event) => (
+                  <li
+                    key={event.event_id}
+                    className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
+                  >
+                    <span className="text-neutral-500 dark:text-neutral-500 mr-2">
+                      {formatDate(event.created_at)}:
+                    </span>
+                    {extractThoughtText(event.payload)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
+              Inget sparat än. Det du säger till Selvra i samtal sparas här
+              automatiskt.
+            </p>
           )}
         </section>
 
-        {/* 3. Bakgrund (Dreamer) */}
-        <section aria-label="Bakgrund" className="flex flex-col gap-3">
+        {/* 2. Vad dina källor visat — primärt conversation_facts, legacy fallback */}
+        <section
+          aria-label="Vad dina källor visat"
+          className="flex flex-col gap-3"
+        >
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-            Bakgrund (Selvras observationer)
+            Vad dina källor visat
+            {sourceFilter && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 text-xs uppercase tracking-wide text-neutral-700 dark:text-neutral-300">
+                {sourceFilter}
+              </span>
+            )}
           </h2>
-          {recentInsights.length === 0 ? (
-            <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
-              Inga bakgrunds-observationer än.{' '}
-              <Link href="/traces" className="underline underline-offset-2">
-                Mer i /traces.
+          {sourceFilter ? (
+            <p className="text-xs text-neutral-500 dark:text-neutral-500">
+              Filtrerat på {sourceFilter}.{' '}
+              <Link
+                href="/minne"
+                className="underline underline-offset-2"
+              >
+                Visa alla källor
               </Link>
             </p>
           ) : (
+            <p className="text-xs text-neutral-500 dark:text-neutral-500">
+              Observationer från kopplade källor (Garmin, Strava, Calendar,
+              Gmail). Käll-attribuerade.
+            </p>
+          )}
+          {sourceObservedFacts.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {sourceObservedFacts.slice(0, 15).map((fact) => (
+                <li
+                  key={fact.id}
+                  className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
+                >
+                  {fact.sourceName && (
+                    <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-500 mr-2">
+                      [{fact.sourceName}]
+                    </span>
+                  )}
+                  {fact.factText}
+                </li>
+              ))}
+            </ul>
+          ) : sourceObservedLegacy.length > 0 ? (
             <>
+              <p className="text-xs italic text-neutral-500 dark:text-neutral-500">
+                Visar legacy data — nya observationer extraheras automatiskt
+                från samtal framöver.
+              </p>
               <ul className="flex flex-col gap-2">
-                {recentInsights.slice(0, 5).map((event) => (
+                {sourceObservedLegacy.slice(0, 10).map((event) => (
                   <li
                     key={event.event_id}
                     className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
@@ -122,23 +228,32 @@ export default async function MinnePage() {
                   </li>
                 ))}
               </ul>
-              <p className="text-sm text-neutral-500 dark:text-neutral-500 mt-2">
-                <Link href="/traces" className="underline underline-offset-2">
-                  Alla i /traces →
-                </Link>
-              </p>
             </>
+          ) : (
+            <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
+              Inga observationer från källor än.{' '}
+              <Link href="/welcome/sources" className="underline underline-offset-2">
+                Koppla en källa →
+              </Link>
+            </p>
           )}
         </section>
 
-        {/* 4. Explicit minnen */}
-        <section aria-label="Explicit minnen" className="flex flex-col gap-3">
+        {/* 3. Explicita minnen */}
+        <section
+          aria-label="Explicita minnen"
+          className="flex flex-col gap-3"
+        >
           <h2 className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-            Explicit minnen
+            Explicita minnen
           </h2>
+          <p className="text-xs text-neutral-500 dark:text-neutral-500">
+            Saker du bett Selvra komma ihåg, ord för ord. Selvra kan inte
+            lägga till här utan att du bekräftar.
+          </p>
           {memoryFacts.length === 0 ? (
             <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">
-              Inga explicit minnen sparade. När du säger till Selvra
+              Inga explicita minnen sparade. När du säger till Selvra
               &quot;Kom ihåg X&quot; i ett samtal sparas X här.
             </p>
           ) : (

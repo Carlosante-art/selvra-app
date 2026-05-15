@@ -30,22 +30,34 @@ import {
   fetchActiveMemoryFacts,
   fetchActiveSystemPrompt,
   fetchRecentTurns,
+  persistConversationFacts,
   persistMemoryFact,
   persistTurn,
   updateConversationTitle,
 } from '@/lib/db/conversation-queries'
 import { generateThreadTitle } from '@/lib/llm/generate-title'
-import { callMistralWithTools, streamMistral } from '@/lib/llm/mistral'
+import { callMistral, callMistralWithTools, streamMistral } from '@/lib/llm/mistral'
 import {
   executeSearchEvents,
   searchEventsTool,
 } from '@/lib/llm/tools/search-events'
 import { logger } from '@/lib/logging'
+import { extractFactsFromTurn } from '@/lib/observability/extract-facts-from-turn'
 import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import { processStreamingUserTurn } from '@/lib/observability/process-streaming-user-turn'
 import { processStreamingUserTurnWithTools } from '@/lib/observability/process-streaming-user-turn-with-tools'
 
-const SYSTEM_PROMPT_FALLBACK = `Du är Selvra. Spegel, inte coach. All observation källa-attribuerad. Inga manipulations-mönster, ingen prescription. Säg "jag vet inte" när data saknas.`
+// V1 Steg 9: matchar sendMessage.ts-fallback. När fetchActiveSystemPrompt
+// returnerar något används det istället — DB-versionerad iteration.
+const SYSTEM_PROMPT_FALLBACK = `Du är Selvra. Spegel, inte coach. All observation källa-attribuerad. Inga manipulations-mönster, ingen prescription. Säg "jag vet inte" när data saknas.
+
+KÄLLA-ATTRIBUTION (obligatoriskt):
+När du refererar till data från en kopplad källa, markera det inline med [source:NAME] direkt efter claim:en. Använd lowercase + underscore i NAME.
+
+Exempel:
+"Du sov 5h 40min senaste 5 dagarna [source:garmin]. Din baseline är 7h 15min [source:garmin_baseline]."
+
+Använd ENDAST källa-namn som finns i tillgängliga events. Hitta inte på källor.`
 
 const RATE_LIMIT_TURNS = 15
 const RATE_LIMIT_WINDOW_SECONDS = 60
@@ -154,6 +166,10 @@ export async function POST(req: Request): Promise<Response> {
               activeMemoryFacts,
               relevantEvents,
               llmStream: streamMistral,
+              // V1 Steg 7: non-stream retry vid lock-violation. Klient
+              // ersätter stream:ad text med retry-resultatet om OK,
+              // annars fallback.
+              llmRetry: callMistral,
             })
 
         // Vi vet inte conversationId förrän efter persistens vid första
@@ -209,7 +225,7 @@ export async function POST(req: Request): Promise<Response> {
             }
 
             case 'stream_end': {
-              const { conversationId } = await persistTurn({
+              const { conversationId, turnId } = await persistTurn({
                 conversationId: body.conversationId,
                 userId,
                 userText: inputText,
@@ -220,6 +236,37 @@ export async function POST(req: Request): Promise<Response> {
                 llmProvider: 'mistral',
               })
               log.info('stream_llm_response_persisted', { conversationId })
+
+              // V1 Steg 8: extrahera facts från turn till conversation_facts.
+              const extractedFacts = await extractFactsFromTurn({
+                userText: inputText,
+                selvraText: event.selvraText,
+                sourcesConsulted: event.sourcesConsulted,
+                llmCall: callMistral,
+              })
+              if (extractedFacts.length > 0) {
+                try {
+                  await persistConversationFacts(
+                    extractedFacts.map((f) => ({
+                      userId,
+                      threadId: conversationId,
+                      turnId,
+                      factText: f.factText,
+                      factType: f.factType,
+                      sourceName: f.sourceName,
+                    })),
+                  )
+                  log.info('stream_facts_extracted', {
+                    conversationId,
+                    count: extractedFacts.length,
+                  })
+                  revalidatePath('/minne')
+                } catch (err) {
+                  log.warn('stream_facts_persist_failed', {
+                    error: err instanceof Error ? err.message : String(err),
+                  })
+                }
+              }
 
               let title: string | null = null
               if (isFirstTurn) {

@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   // .gsd/decisions/APPLICATIONS_PENDING_AB_2026-05-11.md.
   if (!process.env.STRAVA_CLIENT_ID || !process.env.STRAVA_CLIENT_SECRET) {
     return NextResponse.redirect(
-      `${url.origin}/onboarding/sources?error=strava_not_configured`,
+      `${url.origin}/welcome/sources?error=strava_not_configured`,
     )
   }
 

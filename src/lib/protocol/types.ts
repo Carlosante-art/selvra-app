@@ -57,11 +57,11 @@ export type IntentionPayload =
   | IntentionDeliveryRhythmPayload
 
 // ─── Tanke-event (Lager 2 freeform) ────────────────────────────────
-
-export type ThoughtPayload = {
-  text: string
-  captured_at: string // ISO-8601
-}
+//
+// ThoughtPayload-typen raderad 2026-05-15 (v1-refaktor Steg 4: standalone
+// thoughts rivs). Befintliga selvra.thought.recorded-events i Selvra-
+// protokollet lever kvar och deseraliseras vid behov av /minne via
+// generic EventListItem-payload.
 
 // ─── Signal-preference-event ────────────────────────────────────────
 

@@ -2,16 +2,11 @@ import 'server-only'
 import { SignJWT } from 'jose'
 
 import type {
-  CreateEventRequest,
-  EventResponse,
   EventsListResponse,
-  IntentionPayload,
   LatestReflection,
   MCPScope,
-  SignalPreferencePayload,
   SrefExportResponse,
   SubjectSnapshot,
-  ThoughtPayload,
 } from './types'
 
 /**
@@ -300,56 +295,14 @@ export async function deriveSubjectIdUnderTenant(params: {
 
 /* ─── User-driven API (per-request-context) ────────────────────────── */
 
-export async function declareIntention(
-  payload: IntentionPayload,
-): Promise<EventResponse> {
-  const ctx = await getRequestContext()
-  const body: CreateEventRequest = {
-    category: 'data_ingested',
-    event_type: 'selvra.intention.declared',
-    source_ai_id: ctx.sourceId,
-    payload: payload as unknown as Record<string, unknown>,
-  }
-  return call<EventResponse>(ctx, `/v1/subjects/${ctx.subjectId}/events`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    scopes: ['write'],
-  })
-}
-
-export async function recordThought(
-  payload: ThoughtPayload,
-): Promise<EventResponse> {
-  const ctx = await getRequestContext()
-  const body: CreateEventRequest = {
-    category: 'data_ingested',
-    event_type: 'selvra.thought.recorded',
-    source_ai_id: ctx.sourceId,
-    payload: payload as unknown as Record<string, unknown>,
-  }
-  return call<EventResponse>(ctx, `/v1/subjects/${ctx.subjectId}/events`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    scopes: ['write'],
-  })
-}
-
-export async function recordSignalPreference(
-  payload: SignalPreferencePayload,
-): Promise<EventResponse> {
-  const ctx = await getRequestContext()
-  const body: CreateEventRequest = {
-    category: 'data_ingested',
-    event_type: 'selvra.signal.preference',
-    source_ai_id: ctx.sourceId,
-    payload: payload as unknown as Record<string, unknown>,
-  }
-  return call<EventResponse>(ctx, `/v1/subjects/${ctx.subjectId}/events`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    scopes: ['write'],
-  })
-}
+/**
+ * declareIntention, recordThought, recordSignalPreference raderade
+ * 2026-05-15 (v1-refaktor Steg 2-5: brev/Dreamer/thoughts/onboarding
+ * rivs). Befintliga selvra.intention.declared, selvra.thought.recorded
+ * och selvra.signal.preference-events lever kvar i Selvra-protokollet
+ * och läses av /minne via listEvents. Ny path för user-stated facts:
+ * extractFactsFromTurn → conversation_facts (Steg 8).
+ */
 
 export async function getSnapshot(): Promise<SubjectSnapshot> {
   const ctx = await getRequestContext()
@@ -360,44 +313,13 @@ export async function getSnapshot(): Promise<SubjectSnapshot> {
 }
 
 /**
- * Trigga manuell synthesis (re-generera brev). Sync — tar 30-60s eftersom
- * Layer-3-LLM-call är synkron i protokollets internal-admin-route.
- *
- * NOTERA: Detta är Carl-only internal-admin-endpoint (`/v1/internal/carl/reflect`).
- * Den hard-checkar Carl-tenant i selvra-protokollet och fungerar inte för
- * andra users. När multi-user kommer behövs en publik endpoint eller
- * subject-scoped-version. Detta är medvetet kvar som Carl-bara just nu.
+ * triggerReflectionRun + triggerDreamerRun raderade 2026-05-15 (v1-refaktor
+ * Steg 2-3: brev- och Dreamer-paradigm rivs). Endpoints
+ * `/v1/internal/carl/reflect` och `/v1/internal/carl/dream` lever kvar i
+ * Selvra-protokollet (Carl-only internal-admin) men exponeras inte längre
+ * från konsument-appen. Dreamer-output ligger fortfarande som
+ * `insight.derived`-events och läses via listEvents i /minne.
  */
-export async function triggerReflectionRun(): Promise<{
-  event_id: string
-  model_used: string
-  chars: number
-  inputs: Record<string, unknown>
-}> {
-  const ctx = await getRequestContext()
-  return call(ctx, '/v1/internal/carl/reflect', {
-    method: 'POST',
-    scopes: ['write'],
-  })
-}
-
-/**
- * Trigga manuell Dreamer-pass (background reasoning). Carl-only — se
- * triggerReflectionRun.
- */
-export async function triggerDreamerRun(): Promise<{
-  run_id: string
-  insights_produced: number
-  redundancies_found: number
-  total_tokens: number
-  bail_reason: string
-}> {
-  const ctx = await getRequestContext()
-  return call(ctx, '/v1/internal/carl/dream', {
-    method: 'POST',
-    scopes: ['write'],
-  })
-}
 
 /**
  * Hämta lifecycle-status för current user:s subject. Returnerar INTE 410

@@ -80,6 +80,45 @@ export const systemPromptVersions = pgTable('system_prompt_version', {
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })
 
+// V1 conversation_facts (Steg 8 2026-05-15).
+// Extraherade facts från samtals-turns. Två typer:
+//
+//   fact_type='user_stated':
+//     Sak användaren själv sagt i samtal som kan vara värdefullt för
+//     framtida samtal. Extraheras via extractFactsFromTurn-LLM-call efter
+//     varje user-turn. Visas i /minne under "Vad du sagt".
+//
+//   fact_type='source_observed':
+//     Observation från kopplad källa (Garmin, Strava, etc.) som Selvra
+//     refererade till i sitt svar. source_name = vilken källa.
+//     Visas i /minne under "Vad dina källor visat".
+//
+// CHECK CONSTRAINT på fact_type sker i migration. Drizzle validerar på
+// applikationsnivå när vi insert:ar.
+//
+// user_deleted_at är soft-delete (samma pattern som conversation_memory_facts).
+export const conversationFacts = pgTable('conversation_fact', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  threadId: text('thread_id')
+    .notNull()
+    .references(() => consumerConversations.id, { onDelete: 'cascade' }),
+  turnId: text('turn_id')
+    .notNull()
+    .references(() => conversationTurns.id, { onDelete: 'cascade' }),
+  factText: text('fact_text').notNull(),
+  factType: text('fact_type').notNull(), // 'user_stated' | 'source_observed'
+  sourceName: text('source_name'), // null för user_stated, namn för source_observed
+  extractedAt: timestamp('extracted_at', { mode: 'date' }).notNull().defaultNow(),
+  userDeletedAt: timestamp('user_deleted_at', { mode: 'date' }),
+})
+
+export type FactType = 'user_stated' | 'source_observed'
+
 // Explicit minnes-fakta. Användaren säger: "Kom ihåg X." Selvra erkänner
 // och skapar en rad här. Visas i /minne med radera-knapp per fakta.
 //
