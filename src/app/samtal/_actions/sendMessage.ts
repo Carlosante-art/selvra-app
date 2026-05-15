@@ -16,6 +16,7 @@ import { auth } from '@/lib/auth/config'
 import {
   countRecentTurnsForUser,
   fetchActiveMemoryFacts,
+  fetchActiveSystemPrompt,
   fetchRecentTurns,
   persistMemoryFact,
   persistTurn,
@@ -27,7 +28,10 @@ import { logger } from '@/lib/logging'
 import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import { processUserTurn } from '@/lib/observability/process-user-turn'
 
-const SYSTEM_PROMPT_V0 = `Du är Selvra. Spegel, inte coach. All observation källa-attribuerad. Inga manipulations-mönster, ingen prescription. Säg "jag vet inte" när data saknas.`
+// Fallback om DB-fetch fail:ar. Identisk text som migrations-seed:en.
+// När fetchActiveSystemPrompt returnerar något använder vi det istället —
+// så Carl kan iterera via UPDATE utan att röra denna konstant.
+const SYSTEM_PROMPT_FALLBACK = `Du är Selvra. Spegel, inte coach. All observation källa-attribuerad. Inga manipulations-mönster, ingen prescription. Säg "jag vet inte" när data saknas.`
 
 // Rate-limit: max N turer per användare per fönster. Skydd mot bot-spam
 // och stuck-loop som annars skulle spränga LLM-budget + Selvra-protokoll-
@@ -69,17 +73,26 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
     )
   }
 
-  // Fetch context parallellt: DB (turns + memory-facts) + Selvra-protokoll (events)
-  const [recentTurns, activeMemoryFacts, relevantEvents] = await Promise.all([
-    input.conversationId
-      ? fetchRecentTurns(input.conversationId, 5)
-      : Promise.resolve([]),
-    fetchActiveMemoryFacts(userId),
-    fetchRelevantEvents(input.text),
-  ])
+  // Fetch context parallellt: DB (turns + memory-facts + system-prompt) +
+  // Selvra-protokoll (events). Defensiv: system-prompt-fetch får aldrig
+  // ta ner pipelinen — fallback till hardcoded vid fel.
+  const [recentTurns, activeMemoryFacts, relevantEvents, activePrompt] =
+    await Promise.all([
+      input.conversationId
+        ? fetchRecentTurns(input.conversationId, 5)
+        : Promise.resolve([]),
+      fetchActiveMemoryFacts(userId),
+      fetchRelevantEvents(input.text),
+      fetchActiveSystemPrompt().catch(() => null),
+    ])
+
+  const systemPrompt = activePrompt?.promptText ?? SYSTEM_PROMPT_FALLBACK
+  if (activePrompt) {
+    log.info('using_db_prompt', { version: activePrompt.version })
+  }
 
   const result = await processUserTurn({
-    systemPrompt: SYSTEM_PROMPT_V0,
+    systemPrompt,
     currentUserText: input.text,
     recentTurns,
     activeMemoryFacts,

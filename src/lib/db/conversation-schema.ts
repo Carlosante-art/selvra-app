@@ -16,7 +16,14 @@
  * §4 och Fas 1 faktiskt aktiveras, körs migration.
  */
 
-import { pgTable, text, timestamp, integer, jsonb } from 'drizzle-orm/pg-core'
+import {
+  pgTable,
+  text,
+  timestamp,
+  integer,
+  jsonb,
+  boolean,
+} from 'drizzle-orm/pg-core'
 
 import { users } from './schema'
 
@@ -55,6 +62,21 @@ export const conversationTurns = pgTable('conversation_turn', {
   selvraText: text('selvra_text'), // null tills LLM-svar landat
   sourcesConsulted: jsonb('sources_consulted'), // [{source_ai_id, event_id, type}]
   llmProvider: text('llm_provider'), // 'mistral' | 'anthropic-eu' | etc.
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+})
+
+// System-prompt-versioner. Lagras i DB så Carl kan iterera under
+// Carl-dogfood utan att deploy:a. Senaste isActive=true vinner; cache:as
+// per-request i sendMessage. Bara en kan vara aktiv åt gången (UNIQUE
+// partial index).
+export const systemPromptVersions = pgTable('system_prompt_version', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  version: text('version').notNull(), // ex: 'v0', 'v1', 'carl-2026-05-15'
+  promptText: text('prompt_text').notNull(),
+  isActive: boolean('is_active').notNull().default(false),
+  notes: text('notes'), // varför denna version skapades
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 })
 
