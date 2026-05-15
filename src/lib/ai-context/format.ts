@@ -4,7 +4,7 @@ import { listEvents } from '@/lib/protocol/client'
 import type { EventListItem } from '@/lib/protocol/types'
 
 import { periodLabel, periodToDays } from './types'
-import type { AiContextLayer, AiContextOptions } from './types'
+import type { AiContextOptions } from './types'
 
 /**
  * Generera strukturerad text-profil som användaren kan klistra in i

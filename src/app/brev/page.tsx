@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import { regenerateBrev } from '@/lib/actions/triggers'
 import { submitThought } from '@/lib/actions/thoughts'
 import { ErrorNotice } from '@/components/error-notice'
@@ -226,12 +228,12 @@ function ArchiveLink() {
       <p className="text-sm text-neutral-600 dark:text-neutral-400">
         Tidigare brev finns arkiverade — bevarade som de skrevs.
       </p>
-      <a
+      <Link
         href="/brev/arkiv"
         className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors underline underline-offset-2"
       >
         Öppna arkivet →
-      </a>
+      </Link>
     </section>
   )
 }
