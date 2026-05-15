@@ -17,6 +17,7 @@
  */
 
 import { logger } from '@/lib/logging'
+import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import {
   processUserTurn,
   type LlmCallFn,
@@ -46,7 +47,7 @@ export async function sendMessage(input: SendMessageInput): Promise<void> {
 
   const recentTurns = await stubFetchRecentTurns(input.conversationId)
   const activeMemoryFacts = await stubFetchMemoryFacts()
-  const relevantEvents = await stubFetchRelevantEvents(input.text)
+  const relevantEvents = await fetchRelevantEvents(input.text)
 
   const result = await processUserTurn({
     systemPrompt: SYSTEM_PROMPT_V0,
@@ -108,13 +109,6 @@ async function stubFetchMemoryFacts(): Promise<MemoryFact[]> {
   // Fas 1: SELECT från conversation_memory_facts where user_id = session.user.id
   //        AND redacted_at IS NULL AND valid_from <= NOW()
   //        AND (valid_until IS NULL OR valid_until > NOW())
-  return []
-}
-
-async function stubFetchRelevantEvents(_userText: string): Promise<RelevantEvent[]> {
-  // Fas 1: heuristik eller LLM-tool-call för att avgöra vilka events från
-  // Selvra-protokollet (via stillra-vard/selvra-server) som är relevanta.
-  // Returnera fetched events i RelevantEvent-form.
   return []
 }
 
