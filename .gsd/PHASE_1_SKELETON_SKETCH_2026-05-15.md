@@ -1,20 +1,14 @@
 # Fas 1-skeleton — skiss
 
-> **Skriven under medveten override 2026-05-15 17:08–19:08.** Carl explicit
-> överred Fas 0-direktivet i [SELVRA_CONSUMER_TRACK_2026-05-15.md](./SELVRA_CONSUMER_TRACK_2026-05-15.md)
-> §11 för 2-timmars fönster. Scope: **dokument-skiss bara** — ingen kod,
-> ingen commit utanför `.gsd/`, ingen push, ingen plattform-installation,
-> ingen schema-migrations-körning. Detta är ritning, inte bygge.
->
-> När fönstret stängs återgår vi till Fas 0 tills gate-checklistan (Carl-
-> dogfood Stillra v2, endokrinolog-mejl 5/5, TIR > 50% i 2 veckor) är ✅.
+Ritning för konsument-Selvras Fas 1. Skissen tar ett val per arkitektur-
+konflikt och flaggar dem så de kan adresseras vid Fas 1-aktivering.
 
 ---
 
 ## 0. Konflikter att namnge upfront
 
 Två dokument är delvis inkompatibla för Fas 1. Denna skiss tar **ett val per
-konflikt och flaggar det** så Carl-imorgon kan re-locka om hen vill.
+konflikt och flaggar det**.
 
 ### Konflikt A: Plattform
 
@@ -245,7 +239,7 @@ kliniska brief — samma mekanism behöver utvidgas till konsument-context
 
 | Element | Varför inte |
 |---|---|
-| Konkret Drizzle-migration-fil för conversation-tabeller | Migration är kod; override är dokument-only |
+| Konkret Drizzle-migration-fil för conversation-tabeller | Migration är kod; skissen är dokument |
 | Mistral API-key setup eller `npm install @mistralai/sdk` | Dependencies → "Ask before doing" per AGENTS.md |
 | Wireframes för chat-UI | Behövs inte för Fas 0; visuell design är Fas 1-kodnings-arbete |
 | iOS-app | Web first per DESIGN.md låst |
@@ -254,11 +248,11 @@ kliniska brief — samma mekanism behöver utvidgas till konsument-context
 | Onboarding-flow för 5-10 betatestare | Fas 2-fråga, inte Fas 1 |
 | App Store / TestFlight-distribution | Fas 4-fråga |
 | Auth-omarbetning | next-auth via magic-link finns redan i selvra-app |
-| Sentry-integration | Selvra-paket steg 5 är pausad; Sentry för selvra-app är konsument-spår-arbete = Fas 0-låst utanför override-fönstret |
+| Sentry-integration | Separat task — adresseras när Fas 1 är aktiv |
 
 ---
 
-## 4. Beslut Carl behöver fatta innan Fas 1 startar (inte under override-fönstret)
+## 4. Beslut innan Fas 1 startar
 
 1. **Re-lock eller bekräfta DESIGN.md §6** — web-first kvar, eller revidera till iOS-first med tydlig motivering?
 2. **Konversations-minne i protokoll vs selvra-app** — (b) eller (a) per §2.3?
@@ -266,22 +260,6 @@ kliniska brief — samma mekanism behöver utvidgas till konsument-context
 4. **Naming** — `/samtal`, `/dialog`, `/prata` eller annat?
 5. **Konversations-minne-radikalitet** — soft-delete med 30-dagars-fönster, eller hård delete direkt?
 6. **Constitutional enforcement** — utvidga befintlig lock-validate för konsument-context, eller kopia med separata regler?
-7. **Tidpunkt för Fas 1-start** — bör fortfarande matcha gate-checklist (Carl-dogfood Stillra v2 KLAR + endokrinolog-material ute + TIR > 50% i 2 veckor i rad).
+7. **Tidpunkt för Fas 1-start** — per gate-checklistan.
 
-Ingen av dessa kan beslutas i 17:08-fönstret. Skissen visar bara *vad som
-behöver beslutas*.
-
----
-
-## 5. Status efter override-fönstret
-
-När fönstret stängs (19:08) återgår allt arbete till Fas 0-disciplin per
-konsument-track §11. Denna skiss bevaras i `.gsd/` som referens men
-aktiverar **inte** automatiskt Fas 1.
-
-För att Fas 1 ska aktiveras: gate-checklistan måste vara grön + Carl
-fattar de 7 besluten i §4 ovan + DESIGN.md re-lockas om iOS-väg väljs.
-
----
-
-*Skiss klar. Fönster slutar 19:08. Sov vid behov.*
+Skissen visar *vad som behöver beslutas*.

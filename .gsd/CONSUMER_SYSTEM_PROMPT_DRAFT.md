@@ -1,8 +1,8 @@
 # Konsument-Selvra system-prompt — utkast v0
 
-Utkast för LLM-system-prompten som styr Selvras konsument-svar. Skriven
-inom override-fönster 2026-05-15 17:08–19:08. **Inte testad mot någon
-LLM ännu** — design-arbete, inte verifierad implementation.
+Utkast för LLM-system-prompten som styr Selvras konsument-svar.
+Inte testad mot någon LLM ännu — design-arbete, inte verifierad
+implementation.
 
 System-prompten är den enskilda största säkerhets-mekanismen i Fas 1.
 `consumer-lock-validate.ts` är safety-net efteråt; system-prompten är
