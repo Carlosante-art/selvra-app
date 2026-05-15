@@ -54,6 +54,46 @@ export async function fetchRecentTurns(
 }
 
 /**
+ * Lista memory-facts för UI med id + sourceTurnId-koppling.
+ * Inkluderar bara aktiva (icke-redacted, inom validity-fönster) — samma
+ * filter som fetchActiveMemoryFacts. Skillnaden: extra fält för UI
+ * (id för radera-knapp, sourceTurnId för audit-koppling).
+ */
+export async function listMemoryFactsForUi(
+  userId: string,
+): Promise<
+  Array<{
+    id: string
+    factText: string
+    sourceTurnId: string | null
+    validFrom: Date
+    validUntil: Date | null
+  }>
+> {
+  return db
+    .select({
+      id: conversationMemoryFacts.id,
+      factText: conversationMemoryFacts.factText,
+      sourceTurnId: conversationMemoryFacts.sourceTurnId,
+      validFrom: conversationMemoryFacts.validFrom,
+      validUntil: conversationMemoryFacts.validUntil,
+    })
+    .from(conversationMemoryFacts)
+    .where(
+      and(
+        eq(conversationMemoryFacts.userId, userId),
+        isNull(conversationMemoryFacts.redactedAt),
+        lte(conversationMemoryFacts.validFrom, sql`NOW()`),
+        or(
+          isNull(conversationMemoryFacts.validUntil),
+          sql`${conversationMemoryFacts.validUntil} > NOW()`,
+        ),
+      ),
+    )
+    .orderBy(desc(conversationMemoryFacts.validFrom))
+}
+
+/**
  * Hämta aktiva memory-facts för användaren. "Aktiv" = inte redacted +
  * valid_from <= NOW() + (valid_until är NULL eller > NOW()).
  */
