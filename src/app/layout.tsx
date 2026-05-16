@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Source_Serif_4 } from 'next/font/google'
 
 import { SiteFooter } from '@/components/site-footer'
-import { SiteHeader } from '@/components/site-header'
 
 import './globals.css'
+
+// SiteHeader bortagen 2026-05-16 (iOS-pivot Steg 2): ingen nav behövs
+// när webb-appen är pre-launch landing + login + privacy.
 
 /**
  * Typografi-stack per SELVRA_LANDING_DESIGN_SPEC_2026-05-12.md Avsnitt 3.
@@ -39,7 +41,7 @@ export const metadata: Metadata = {
     template: '%s · Selvra',
   },
   description:
-    'Ett brev till dig själv, varje vecka, från någon som har observerat den.',
+    'AI som vet vad du har levt, inte bara vad du har sagt. iOS-app launch H2 2026.',
   applicationName: 'Selvra',
   appleWebApp: {
     capable: true,
@@ -58,13 +60,13 @@ export const metadata: Metadata = {
     siteName: 'Selvra',
     title: 'Selvra',
     description:
-      'Ett brev till dig själv, varje vecka, från någon som har observerat den.',
+      'AI som vet vad du har levt, inte bara vad du har sagt. iOS-app launch H2 2026.',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Selvra',
     description:
-      'Ett brev till dig själv, varje vecka, från någon som har observerat den.',
+      'AI som vet vad du har levt, inte bara vad du har sagt. iOS-app launch H2 2026.',
   },
   robots: {
     index: true,
@@ -92,7 +94,6 @@ export default function RootLayout({
       className={`${sourceSerif.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-paper text-ink font-serif pwa-safe-area">
-        <SiteHeader />
         {children}
         <SiteFooter />
       </body>
