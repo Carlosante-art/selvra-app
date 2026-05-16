@@ -1,21 +1,20 @@
 import type { Metadata } from 'next'
 
 /**
- * Selvra landing — pre-launch minimal.
+ * Selvra landing — pre-launch minimal (v2).
  *
- * Per .gsd/SELVRA_CONSUMER_IOS_PIVOT_2026-05-16.md Steg 3:
- * En sida, en mening, en CTA. Brev-paradigm-copy rivad.
- * Allt webb-UI parkerat — selvra-konsument byggs som iOS-app, launch H2 2026.
+ * Per .gsd/SELVRA_IOS_V1_BUILD_PLAN_2026-05-16.md §5 vecka 1:
+ * en sida, klar position, en CTA. Brev-paradigm-copy rivad i förra
+ * iteration (PR #24). Denna iteration uppdaterar copy till canonical
+ * positioning från build-plan §1.
  *
- * SELVRA_LANDING_DESIGN_SPEC_2026-05-12.md är obsolete för denna sida.
- * Backend bevaras (60% iOS-portbar) men har ingen webb-yta utöver
- * landing + login (scaffold) + privacy.
+ * Pitch (canonical): "Spegling och lättnad. På mätdata och ord."
  */
 
 export const metadata: Metadata = {
   title: 'Selvra',
   description:
-    'AI som vet vad du har levt, inte bara vad du har sagt. iOS-app launch H2 2026.',
+    'Spegling och lättnad. På mätdata och ord. iOS-app launch H2 2026.',
 }
 
 export default function LandingPage() {
@@ -41,36 +40,43 @@ export default function LandingPage() {
             color: 'var(--color-ink)',
           }}
         >
-          AI som vet vad du har levt, inte bara vad du har sagt.
+          Spegling och lättnad. På mätdata och ord.
         </p>
 
-        <p
-          className="leading-relaxed text-left mx-auto max-w-[52ch]"
-          style={{
-            fontSize: '17px',
-            color: 'var(--color-ink-soft)',
-          }}
-        >
-          Bygger en iOS-app för dig som vill förstå dig själv genom det du
-          redan har — kalender, sömn, träning, dina ord. Källa-attribuerat.
-          Patient-ägt. Europeisk infrastruktur. EU AI Act-compliant.
-        </p>
+        <div className="text-left mx-auto max-w-[52ch] flex flex-col gap-6">
+          <p
+            className="leading-relaxed"
+            style={{ fontSize: '17px', color: 'var(--color-ink-soft)' }}
+          >
+            Selvra läser kroppen, kalendern, sömnen, dina ord — och säger
+            vad den ser. Källa-attribuerat. Patient-ägt. Europeiskt byggt.
+          </p>
+
+          <p
+            className="leading-relaxed"
+            style={{ fontSize: '17px', color: 'var(--color-ink-soft)' }}
+          >
+            När du behöver vila finns plats för det. När du behöver förstå
+            finns underlag. Inget coaching. Ingen manipulation. Bara det
+            som är där.
+          </p>
+        </div>
 
         <div
           className="flex flex-col gap-3 items-center pt-6 border-t mx-auto"
-          style={{ borderColor: 'var(--color-hairline)', maxWidth: '32ch' }}
+          style={{ borderColor: 'var(--color-hairline)', maxWidth: '36ch' }}
         >
           <p
             className="text-sm font-sans"
             style={{ color: 'var(--color-ink-soft)' }}
           >
-            Launch H2 2026.
+            iOS-app, launch H2 2026.
           </p>
           <a
             href="mailto:hello@selvra.ai?subject=Selvra%20pre-launch%20uppdatering"
             className="inline-flex h-11 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-6 text-sm font-sans hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
           >
-            Få uppdatering
+            Lämna mail för uppdatering
           </a>
         </div>
       </article>
