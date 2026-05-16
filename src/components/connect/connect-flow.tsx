@@ -17,6 +17,7 @@
 
 import { useState } from 'react'
 
+import type { PlatformKey } from '@/content/connect/types'
 import { issueTokenAction, type IssueTokenActionResult } from '@/lib/connect/actions'
 import { buildConfigSnippet, type ClientMeta } from '@/lib/connect/clients'
 
@@ -38,12 +39,23 @@ type FlowState =
 export function ConnectFlow({
   client,
   mcpEndpoint,
+  platform,
+  mobileInstructionSteps,
+  mobileDocsLink,
 }: {
   client: ClientMeta
   mcpEndpoint: string
+  /** Default 'desktop'. När 'mobile' visas instructionSteps istället för config-snippet. */
+  platform?: PlatformKey
+  /** Krävs när platform='mobile' — visas som numrerad lista efter token-gen. */
+  mobileInstructionSteps?: string[]
+  /** Optional dokumentations-länk visad efter mobile-stegen. */
+  mobileDocsLink?: string
 }) {
   const [state, setState] = useState<FlowState>({ kind: 'idle' })
   const [copyOk, setCopyOk] = useState(false)
+  const [tokenCopyOk, setTokenCopyOk] = useState(false)
+  const effectivePlatform: PlatformKey = platform ?? 'desktop'
 
   async function handleGenerate() {
     setState({ kind: 'issuing' })
@@ -75,6 +87,17 @@ export function ConnectFlow({
       setTimeout(() => setCopyOk(false), 2000)
     } catch {
       // Clipboard kan blockeras; ignore — användaren kan markera och kopiera manuellt
+    }
+  }
+
+  async function handleCopyToken() {
+    if (state.kind !== 'issued') return
+    try {
+      await navigator.clipboard.writeText(state.token)
+      setTokenCopyOk(true)
+      setTimeout(() => setTokenCopyOk(false), 2000)
+    } catch {
+      // ignore — användaren kan markera och kopiera manuellt
     }
   }
 
@@ -132,12 +155,6 @@ export function ConnectFlow({
   }
 
   // state.kind === 'issued'
-  const snippet = buildConfigSnippet({
-    client,
-    token: state.token,
-    endpoint: mcpEndpoint,
-  })
-
   return (
     <div className="flex flex-col gap-6">
       <div
@@ -174,34 +191,24 @@ export function ConnectFlow({
         </p>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <p
-            className="font-sans text-xs uppercase tracking-wider"
-            style={{ color: 'var(--color-ink-soft)' }}
-          >
-            Konfiguration
-          </p>
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="font-sans text-sm transition-colors hover:opacity-70"
-            style={{ color: 'var(--color-ink-soft)' }}
-          >
-            {copyOk ? 'Kopierat ✓' : 'Kopiera'}
-          </button>
-        </div>
-        <pre
-          className="font-mono text-xs p-4 overflow-x-auto whitespace-pre-wrap"
-          style={{
-            backgroundColor: 'var(--color-hover-bg)',
-            color: 'var(--color-ink)',
-            borderRadius: '4px',
-          }}
-        >
-          {snippet}
-        </pre>
-      </div>
+      {effectivePlatform === 'desktop' ? (
+        <DesktopInstructions
+          client={client}
+          token={state.token}
+          mcpEndpoint={mcpEndpoint}
+          copyOk={copyOk}
+          onCopy={handleCopy}
+        />
+      ) : (
+        <MobileInstructions
+          token={state.token}
+          mcpEndpoint={mcpEndpoint}
+          instructionSteps={mobileInstructionSteps ?? []}
+          docsLink={mobileDocsLink}
+          tokenCopyOk={tokenCopyOk}
+          onCopyToken={handleCopyToken}
+        />
+      )}
 
       <div
         className="flex flex-col gap-2 pt-2 border-t"
@@ -218,6 +225,55 @@ export function ConnectFlow({
           issuedAt={state.issuedAt}
           clientDisplayName={client.displayName}
         />
+      </div>
+    </div>
+  )
+}
+
+function DesktopInstructions({
+  client,
+  token,
+  mcpEndpoint,
+  copyOk,
+  onCopy,
+}: {
+  client: ClientMeta
+  token: string
+  mcpEndpoint: string
+  copyOk: boolean
+  onCopy: () => void
+}) {
+  const snippet = buildConfigSnippet({ client, token, endpoint: mcpEndpoint })
+
+  return (
+    <>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <p
+            className="font-sans text-xs uppercase tracking-wider"
+            style={{ color: 'var(--color-ink-soft)' }}
+          >
+            Konfiguration
+          </p>
+          <button
+            type="button"
+            onClick={onCopy}
+            className="font-sans text-sm transition-colors hover:opacity-70"
+            style={{ color: 'var(--color-ink-soft)' }}
+          >
+            {copyOk ? 'Kopierat ✓' : 'Kopiera'}
+          </button>
+        </div>
+        <pre
+          className="font-mono text-xs p-4 overflow-x-auto whitespace-pre-wrap"
+          style={{
+            backgroundColor: 'var(--color-hover-bg)',
+            color: 'var(--color-ink)',
+            borderRadius: '4px',
+          }}
+        >
+          {snippet}
+        </pre>
       </div>
 
       {client.configPaths && (
@@ -268,6 +324,105 @@ export function ConnectFlow({
           </dl>
         </div>
       )}
-    </div>
+    </>
+  )
+}
+
+function MobileInstructions({
+  token,
+  mcpEndpoint,
+  instructionSteps,
+  docsLink,
+  tokenCopyOk,
+  onCopyToken,
+}: {
+  token: string
+  mcpEndpoint: string
+  instructionSteps: string[]
+  docsLink?: string
+  tokenCopyOk: boolean
+  onCopyToken: () => void
+}) {
+  return (
+    <>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <p
+            className="font-sans text-xs uppercase tracking-wider"
+            style={{ color: 'var(--color-ink-soft)' }}
+          >
+            Token (kopiera till mobile-appen)
+          </p>
+          <button
+            type="button"
+            onClick={onCopyToken}
+            className="font-sans text-sm transition-colors hover:opacity-70"
+            style={{ color: 'var(--color-ink-soft)' }}
+          >
+            {tokenCopyOk ? 'Kopierat ✓' : 'Kopiera token'}
+          </button>
+        </div>
+        <pre
+          className="font-mono text-xs p-4 overflow-x-auto whitespace-pre-wrap break-all"
+          style={{
+            backgroundColor: 'var(--color-hover-bg)',
+            color: 'var(--color-ink)',
+            borderRadius: '4px',
+          }}
+        >
+          {token}
+        </pre>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <p
+          className="font-sans text-xs uppercase tracking-wider"
+          style={{ color: 'var(--color-ink-soft)' }}
+        >
+          MCP-endpoint
+        </p>
+        <p
+          className="font-mono text-xs p-3"
+          style={{
+            backgroundColor: 'var(--color-hover-bg)',
+            color: 'var(--color-ink)',
+            borderRadius: '4px',
+          }}
+        >
+          {mcpEndpoint}
+        </p>
+      </div>
+
+      {instructionSteps.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p
+            className="font-sans text-xs uppercase tracking-wider"
+            style={{ color: 'var(--color-ink-soft)' }}
+          >
+            Setup
+          </p>
+          <ol
+            className="font-sans text-sm flex flex-col gap-2 list-decimal pl-5"
+            style={{ color: 'var(--color-ink)' }}
+          >
+            {instructionSteps.map((step, idx) => (
+              <li key={idx}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {docsLink && (
+        <a
+          href={docsLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-sans text-sm transition-colors hover:opacity-70 self-start"
+          style={{ color: 'var(--color-ink-soft)' }}
+        >
+          Klient-dokumentation →
+        </a>
+      )}
+    </>
   )
 }
