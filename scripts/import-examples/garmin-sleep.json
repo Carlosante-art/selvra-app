@@ -1,0 +1,47 @@
+{
+  "sourceName": "manual:garmin",
+  "facts": [
+    {
+      "factType": "source_observed",
+      "value": "sömn 6h 12min — sleep score 68",
+      "observedAt": "2026-05-09T07:00:00+02:00",
+      "metadata": { "deep_min": 52, "rem_min": 78, "light_min": 234, "awake_min": 8, "quality": "fair" }
+    },
+    {
+      "factType": "source_observed",
+      "value": "sömn 7h 28min — sleep score 82",
+      "observedAt": "2026-05-10T07:30:00+02:00",
+      "metadata": { "deep_min": 71, "rem_min": 95, "light_min": 268, "awake_min": 14, "quality": "good" }
+    },
+    {
+      "factType": "source_observed",
+      "value": "sömn 5h 40min — sleep score 54",
+      "observedAt": "2026-05-11T06:15:00+02:00",
+      "metadata": { "deep_min": 38, "rem_min": 62, "light_min": 220, "awake_min": 20, "quality": "poor" }
+    },
+    {
+      "factType": "source_observed",
+      "value": "sömn 6h 45min — sleep score 71",
+      "observedAt": "2026-05-12T07:00:00+02:00",
+      "metadata": { "deep_min": 58, "rem_min": 82, "light_min": 245, "awake_min": 20, "quality": "fair" }
+    },
+    {
+      "factType": "source_observed",
+      "value": "sömn 7h 52min — sleep score 88",
+      "observedAt": "2026-05-13T07:45:00+02:00",
+      "metadata": { "deep_min": 82, "rem_min": 108, "light_min": 282, "awake_min": 8, "quality": "good" }
+    },
+    {
+      "factType": "source_observed",
+      "value": "sömn 4h 58min — sleep score 42",
+      "observedAt": "2026-05-14T06:00:00+02:00",
+      "metadata": { "deep_min": 28, "rem_min": 48, "light_min": 196, "awake_min": 26, "quality": "poor" }
+    },
+    {
+      "factType": "source_observed",
+      "value": "sömn 6h 30min — sleep score 67",
+      "observedAt": "2026-05-15T07:15:00+02:00",
+      "metadata": { "deep_min": 54, "rem_min": 76, "light_min": 240, "awake_min": 20, "quality": "fair" }
+    }
+  ]
+}

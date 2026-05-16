@@ -1,0 +1,35 @@
+{
+  "sourceName": "manual:journal",
+  "facts": [
+    {
+      "factType": "user_stated",
+      "value": "Idag känns det överväldigat. För mycket möten, för lite tid att tänka.",
+      "observedAt": "2026-05-12T18:30:00+02:00",
+      "metadata": { "mood_tag": "overwhelmed", "context": "kvällsanteckning" }
+    },
+    {
+      "factType": "user_stated",
+      "value": "Bra dag. Skrev klart en utkast jag suttit på i en vecka.",
+      "observedAt": "2026-05-13T21:00:00+02:00",
+      "metadata": { "mood_tag": "satisfied", "context": "kvällsanteckning" }
+    },
+    {
+      "factType": "user_stated",
+      "value": "Jag märker att stress kommer mest från oklara förväntningar, inte arbetsmängd.",
+      "observedAt": "2026-05-14T09:15:00+02:00",
+      "metadata": { "mood_tag": "reflective", "context": "morgon-insight" }
+    },
+    {
+      "factType": "user_stated",
+      "value": "Sov dåligt i natt. Vaknade kl 4 och kom inte tillbaka in.",
+      "observedAt": "2026-05-15T07:30:00+02:00",
+      "metadata": { "mood_tag": "tired", "context": "morgon" }
+    },
+    {
+      "factType": "user_stated",
+      "value": "Min mamma sa att hon hade svårt att sova förra veckan. Vi pratade om hur vi båda blir när vi går för länge utan paus.",
+      "observedAt": "2026-05-16T19:45:00+02:00",
+      "metadata": { "mood_tag": "connected", "context": "samtal" }
+    }
+  ]
+}
