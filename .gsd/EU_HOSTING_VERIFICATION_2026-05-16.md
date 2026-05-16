@@ -144,3 +144,75 @@ Carl-tasks:
 - Logga in Supabase → project → settings → general → Region
 
 Output rapporteras tillbaka för audit-uppdatering.
+
+---
+
+## Verifikations-status per 2026-05-17
+
+Claude körde verifikationer via Vercel + Railway CLI. Resultat per pending-rad:
+
+### 1. Vercel Function Region — ✅ VERIFIERAT EU
+
+`vercel.json` har explicit `"regions": ["fra1"]`. Alla serverless functions körs i Frankfurt. Plus 2 crons (`/api/cron/extract-facts` 03:00 UTC, `/api/cron/cleanup-soft-deleted` 04:00 UTC) som ärver region.
+
+**Bekräftat.** Inga ytterligare actions.
+
+### 2. Railway-region — ⏳ INDIRECT VERIFIERAD
+
+Railway CLI exponerar inte region per service via standard-kommandon. Indirekta indikationer:
+
+- `RAILWAY_PRIVATE_DOMAIN=selvra.railway.internal` (intern, ingen region-info)
+- `DATABASE_URL` pekar på `aws-0-eu-west-1.pooler.supabase.com` (= Supabase Frankfurt, INTE Railway-Postgres)
+- Selvra-app + selvra-protocol använder samma Supabase-instans
+
+Vad detta betyder: **all user-data lever i Supabase eu-west-1 (Frankfurt-närliggande AWS Irland)**. Railway-services är compute (Python/Node), inte data-lagring.
+
+**Carl-action kvarstår:** verifiera Railway-compute-region via dashboard (Settings → Region per service). Bör vara `europe-west4` (Amsterdam) eller `europe-west1` (Belgien) — Railway:s EU-regioner.
+
+### 3. Supabase-region — ✅ VERIFIERAT EU
+
+`DATABASE_URL` på Railway selvra-service exponerar: `aws-0-eu-west-1.pooler.supabase.com`. Det är Supabase eu-west-1 (AWS Frankfurt-zon, Irland-datacenter).
+
+**Bekräftat.** All user-data lever på EU-mark.
+
+### 4. Mistral-region — ⏳ SKIPPAT (MISTRAL_API_KEY ej satt)
+
+Per [`CHAT_PIPELINE_DEPRECATION_2026-05-16`](CHAT_PIPELINE_DEPRECATION_2026-05-16.md) är web-chat-pipelinen DEPRECATED. MISTRAL_API_KEY skippad från Vercel-env. När iOS-byget aktiveras (vecka 5+) måste Mistral-test köras innan iOS-chat-streaming exponeras till TestFlight-användare.
+
+**Carl-action när iOS-bygget startar:** sätt MISTRAL_API_KEY + kör `scripts/test-mistral-svenska.sh` för region-verifikation.
+
+### 5. Upstash Redis — ⏳ VERIFIKATION KRÄVS
+
+Redis lever på `divine-ape-116602.upstash.io` (verifierat via Railway env-var i selvra-service). Upstash-region per database visas i deras dashboard, inte i URL.
+
+**Carl-action:** logga in https://console.upstash.com → divine-ape-116602 → Database details → bekräfta region är EU (typ `eu-west-1` eller `eu-central-1`). Om annan region: migrera databasen via Upstash-flow (manuell, kräver downtime).
+
+### 6. Sentry — ✅ EJ I BRUK (skippat per Carl)
+
+SENTRY_DSN är inte satt i Vercel. Sentry-SDK no-op:ar utan DSN. Inget data lämnar systemet till Sentry. När/om Sentry aktiveras måste EU-region-org användas (Settings → Data Residency: "European Union").
+
+### 7. Resend — ⚠ AKTIVT US, AKCEPTERAT TILLS AB-AKTIVERING
+
+RESEND_API_KEY är satt + producerar magic-link-mail. Resend är US-baserat. Detta är **känd compliance-gap** för EU-suveränitet.
+
+**Mitigation:**
+- Resend har EU-region launch H2 2026 (deras roadmap) — re-evaluera vid release
+- Alternativt vid AB-aktivering: byt till Mailgun EU (Tyskland) eller Postmark EU
+- DPA med Resend måste signeras innan extern launch (TestFlight publik = launch)
+
+**Carl-action:** vid AB-aktivering, formell DPA + plan för EU-mail-byte.
+
+## Sammanvägd compliance-status 2026-05-17
+
+| Lager | EU? | Status |
+|---|---|---|
+| Vercel Frontend | ✅ | fra1 bekräftat |
+| Supabase DB | ✅ | eu-west-1 bekräftat |
+| Upstash Redis | ⏳ | Carl-verifikation kvar |
+| Railway Compute | ⏳ | Carl-verifikation kvar |
+| Mistral LLM | ⏳ | Aktiveras vecka 5+, region-test då |
+| Sentry | N/A | Ej aktivt |
+| Resend Mail | ⚠ | US — accepterat tills AB |
+
+**Compliance-grade idag:** **B+** (gap är Resend + 2 outverifierade)
+**Mål för TestFlight-launch (vecka 13):** **A** (alla verifierade EU + Resend bytt eller DPA-signerad)
