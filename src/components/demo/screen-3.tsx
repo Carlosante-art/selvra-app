@@ -97,9 +97,53 @@ export function Screen3() {
           className="font-serif italic leading-relaxed m-0"
           style={{ fontSize: '17px', color: 'var(--color-ink)' }}
         >
-          Carl sa att han sov fyra timmar efter natt-skiftet. Han nämnde
-          att glukosen var hög hela morgonen.
+          Carl förbereder ett samtal med chefen på fredag. Han vill be om
+          att gå ner till 80%. Han har två argument han kan använda — och
+          har inte bestämt sig för vilket han faktiskt tror på själv.
         </blockquote>
+      </figure>
+
+      <p
+        className="leading-relaxed max-w-[55ch]"
+        style={{ fontSize: '17px', color: 'var(--color-ink)' }}
+      >
+        Spotify, Garmin, Strava, Apple Health, kalendern, samtalen med
+        Claude eller ChatGPT — Selvra läser dem du har. Ju fler, desto
+        klarare mönster.
+      </p>
+
+      <figure
+        className="border-l-2 pl-5 py-1 max-w-[55ch] ml-5 my-0 flex flex-col gap-3"
+        style={{ borderColor: 'var(--color-hairline)' }}
+      >
+        <figcaption
+          className="font-sans"
+          style={{
+            fontSize: '12px',
+            color: 'var(--color-ink-tertiary)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Exempel — sex källor, en vecka
+        </figcaption>
+        <blockquote
+          className="font-serif italic leading-relaxed m-0"
+          style={{ fontSize: '17px', color: 'var(--color-ink)' }}
+        >
+          Den här veckan har du spelat samma artist tre kvällar i rad på
+          Spotify. Garmin visar högre vilo-puls. Stravas senaste löppass
+          var långsammare än ditt snitt. Kalendern blev tätare. Du sa
+          &ldquo;jag vet inte vad jag behöver&rdquo; till Claude i tisdags.
+          Apple Health visar att djup-sömnen halverats den här veckan.
+        </blockquote>
+        <p
+          className="font-serif italic leading-relaxed m-0"
+          style={{ fontSize: '15px', color: 'var(--color-ink-soft)' }}
+        >
+          Var för sig: sex notiser. Tillsammans: ett mönster du kanske inte
+          sett själv. Selvra visar det. Inget mer.
+        </p>
       </figure>
 
       <p
