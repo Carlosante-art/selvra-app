@@ -21,6 +21,7 @@ import { claudeCodeContent } from '@/content/connect/claude-code'
 import { claudeContent } from '@/content/connect/claude-desktop'
 import { cursorContent } from '@/content/connect/cursor'
 import { genericContent } from '@/content/connect/generic-mcp'
+import { gooseContent } from '@/content/connect/goose'
 import type {
   ConnectClientContent,
   PlatformKey,
@@ -33,6 +34,7 @@ export const CLIENT_CONTENTS: ConnectClientContent[] = [
   claudeCodeContent,
   cursorContent,
   chatgptContent,
+  gooseContent,
   genericContent,
 ]
 
@@ -147,6 +149,18 @@ export function buildConfigSnippet(input: {
         `2. Endpoint: ${endpoint}`,
         `3. Authorization header: Bearer ${token}`,
         '4. Spara. Anslutningen blir aktiv vid nästa konversation.',
+      ].join('\n')
+
+    case 'goose-yaml':
+      // YAML-snippet att klistra i ~/.config/goose/config.yaml under
+      // extensions:. Alternativ: kör `goose configure` interaktivt.
+      return [
+        'extensions:',
+        '  selvra:',
+        '    type: streamable_http',
+        `    url: ${endpoint}`,
+        '    headers:',
+        `      Authorization: "Bearer ${token}"`,
       ].join('\n')
 
     case 'generic-mcp':

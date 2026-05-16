@@ -53,8 +53,13 @@ export type ConnectClientContent = {
   description: string
   /** UUID5-deriverad från id mot SELVRA_SOURCE_AI_NAMESPACE. */
   sourceAiId: string
-  /** Config-format för buildConfigSnippet — bestämmer JSON/text-format. */
-  configFormat: 'claude-desktop-json' | 'cursor-json' | 'chatgpt-text' | 'generic-mcp'
+  /** Config-format för buildConfigSnippet — bestämmer JSON/YAML/text-format. */
+  configFormat:
+    | 'claude-desktop-json'
+    | 'cursor-json'
+    | 'chatgpt-text'
+    | 'goose-yaml'
+    | 'generic-mcp'
   desktop: DesktopContent
   mobile: MobileContent
 }
