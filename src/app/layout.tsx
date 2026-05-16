@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     template: '%s · Selvra',
   },
   description:
-    'AI som vet vad du har levt, inte bara vad du har sagt. iOS-app launch H2 2026.',
+    'Spegling och lättnad. På mätdata och ord. iOS-app launch H2 2026.',
   applicationName: 'Selvra',
   appleWebApp: {
     capable: true,
@@ -60,13 +60,13 @@ export const metadata: Metadata = {
     siteName: 'Selvra',
     title: 'Selvra',
     description:
-      'AI som vet vad du har levt, inte bara vad du har sagt. iOS-app launch H2 2026.',
+      'Spegling och lättnad. På mätdata och ord. iOS-app launch H2 2026.',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Selvra',
     description:
-      'AI som vet vad du har levt, inte bara vad du har sagt. iOS-app launch H2 2026.',
+      'Spegling och lättnad. På mätdata och ord. iOS-app launch H2 2026.',
   },
   robots: {
     index: true,
