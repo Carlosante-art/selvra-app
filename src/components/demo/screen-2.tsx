@@ -38,9 +38,24 @@ const KROPP: DataRow[] = [
   { text: 'HRV idag: 28% under baseline', source: 'HealthKit' },
 ]
 
+const RORELSE: DataRow[] = [
+  { text: 'Träningspass denna vecka: 3 löpturer, 18km totalt', source: 'Strava' },
+  { text: 'Senaste passet: tisdag 06:42, 5,2km på 28min', source: 'Strava' },
+  { text: 'Pace 12% under snitt senaste månaden', source: 'Strava' },
+]
+
 const TID: DataRow[] = [
   { text: 'Möten efter kl 17 senaste veckan: 8', source: 'Kalender' },
   { text: 'Tidigaste möte i morgon: 08:00', source: 'Kalender' },
+]
+
+const LJUD: DataRow[] = [
+  { text: 'Mest lyssnat denna vecka: Bon Iver, Nils Frahm', source: 'Spotify' },
+  { text: 'Tisdag 07:14: "Holocene" tre gånger i rad', source: 'Spotify' },
+  {
+    text: 'Lyssningar efter 22:00: 14 (senaste månaden: 38)',
+    source: 'Spotify',
+  },
 ]
 
 const ORD: DataRow[] = [
@@ -92,7 +107,9 @@ export function Screen2({ onAdvance }: Screen2Props) {
 
       <div className="flex flex-col gap-10">
         <DataSection title="Kropp" rows={KROPP} />
+        <DataSection title="Rörelse" rows={RORELSE} />
         <DataSection title="Tid" rows={TID} />
+        <DataSection title="Ljud" rows={LJUD} />
         <DataSection title="Ord" rows={ORD} />
         <PatternSection />
       </div>
@@ -202,7 +219,9 @@ function PatternSection() {
       >
         Senaste tre månaderna har följande kombination återkommit 9 gånger:
         sömn under 6h + möten efter 17 + ord som &lsquo;överväldigad&rsquo;
-        eller &lsquo;tung&rsquo; inom 48h.
+        eller &lsquo;tung&rsquo; inom 48h. I sju av nio fall föregicks det
+        av en löptur med pace under snittet och Bon Iver-lyssning kvällen
+        innan.
       </p>
       <p
         className="font-sans italic"
