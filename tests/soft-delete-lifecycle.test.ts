@@ -187,7 +187,9 @@ describe('hardDeleteExpiredUsers', () => {
   })
 
   it('rör inte aktiva (icke-soft-deleted) users', async () => {
-    const userId = await seedUser(mockDb.current!)
+    // Seed:ar en aktiv user för att verifiera att hardDelete inte rör hen.
+    // userId behövs inte för assertion — bara att raden existerar.
+    await seedUser(mockDb.current!)
     const cutoff = new Date(Date.now() - 30 * 86_400_000)
     const count = await hardDeleteExpiredUsers({ cutoff })
     expect(count).toBe(0)
