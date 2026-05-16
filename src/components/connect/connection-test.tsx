@@ -81,7 +81,7 @@ export function ConnectionTest({
     const tick = async () => {
       const result = await pollConnectionAction(sourceAiId, startedAt)
       if (result.ok && result.hit) {
-        handleHit(result.hit.tool_name, result.hit.created_at)
+        handleHit(result.hit.resource_path, result.hit.timestamp)
         return
       }
       if (!result.ok) {
@@ -123,13 +123,13 @@ export function ConnectionTest({
       try {
         const data = JSON.parse(e.data) as {
           source_ai_id: string
-          tool_name: string
-          created_at: string
+          resource_path: string
+          timestamp: string
         }
-        const ts = new Date(data.created_at).getTime()
+        const ts = new Date(data.timestamp).getTime()
         const since = new Date(issuedAt).getTime()
         if (!Number.isNaN(ts) && ts >= since) {
-          handleHit(data.tool_name, data.created_at)
+          handleHit(data.resource_path, data.timestamp)
         }
       } catch {
         // ignore malformed event

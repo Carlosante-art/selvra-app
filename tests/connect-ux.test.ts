@@ -77,10 +77,10 @@ describe('pollConnectionAction', () => {
       items: [
         {
           source_ai_id: sourceAi,
-          tool_name: 'query_representation',
-          verdict: null,
+          resource_path: 'query_representation',
+          response_status: 'ok',
           duration_ms: 45,
-          created_at: '2026-05-16T11:59:00.000Z',
+          timestamp: '2026-05-16T11:59:00.000Z',
         },
       ],
       total_count: 1,
@@ -96,17 +96,17 @@ describe('pollConnectionAction', () => {
         // Senare först (audit-endpoint returnerar DESC)
         {
           source_ai_id: sourceAi,
-          tool_name: 'query_representation',
-          verdict: null,
+          resource_path: 'query_representation',
+          response_status: 'ok',
           duration_ms: 45,
-          created_at: '2026-05-16T12:00:30.000Z',
+          timestamp: '2026-05-16T12:00:30.000Z',
         },
         {
           source_ai_id: sourceAi,
-          tool_name: 'initialize',
-          verdict: null,
+          resource_path: 'initialize',
+          response_status: 'ok',
           duration_ms: 12,
-          created_at: '2026-05-16T11:59:00.000Z',
+          timestamp: '2026-05-16T11:59:00.000Z',
         },
       ],
       total_count: 2,
@@ -115,7 +115,7 @@ describe('pollConnectionAction', () => {
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.hit).not.toBeNull()
-      expect(result.hit?.tool_name).toBe('query_representation')
+      expect(result.hit?.resource_path).toBe('query_representation')
     }
   })
 
@@ -145,10 +145,10 @@ describe('getConnectionAuditAction', () => {
       items: [
         {
           source_ai_id: 'x',
-          tool_name: 'query_representation',
-          verdict: null,
+          resource_path: 'query_representation',
+          response_status: 'ok',
           duration_ms: 45,
-          created_at: '2026-05-16T12:00:00.000Z',
+          timestamp: '2026-05-16T12:00:00.000Z',
         },
       ],
       total_count: 7,

@@ -93,14 +93,16 @@ export function AuditLogPreview({
               <ul className="flex flex-col gap-1 list-none p-0 m-0">
                 {state.items.map((entry, idx) => (
                   <li
-                    key={`${entry.created_at}-${idx}`}
+                    key={`${entry.timestamp}-${idx}`}
                     className="font-sans text-xs"
                     style={{ color: 'var(--color-ink-soft)' }}
                   >
                     {clientDisplayName} anropade{' '}
-                    <span className="font-mono">{entry.tool_name}</span> ·{' '}
-                    {new Date(entry.created_at).toLocaleString('sv-SE')}
-                    {entry.verdict ? ` · ${entry.verdict}` : ''}
+                    <span className="font-mono">{entry.resource_path}</span> ·{' '}
+                    {new Date(entry.timestamp).toLocaleString('sv-SE')}
+                    {entry.response_status !== 'ok'
+                      ? ` · ${entry.response_status}`
+                      : ''}
                   </li>
                 ))}
               </ul>

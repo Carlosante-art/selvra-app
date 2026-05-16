@@ -519,6 +519,9 @@ export type ConnectionItem = {
   resource_types: string[]
   first_granted_at: string
   last_active_at: string | null
+  request_count_24h: number
+  token_fingerprint: string | null
+  token_expires_at: string | null
 }
 
 export async function listConnections(): Promise<{
@@ -546,10 +549,10 @@ export async function revokeConnection(sourceAiId: string): Promise<{
 
 export type AuditEntry = {
   source_ai_id: string
-  tool_name: string
-  verdict: string | null
+  resource_path: string
+  response_status: string
   duration_ms: number | null
-  created_at: string
+  timestamp: string
 }
 
 export async function getConnectionAudit(

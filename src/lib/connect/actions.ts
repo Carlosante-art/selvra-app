@@ -132,7 +132,7 @@ export async function pollConnectionAction(
     const result = await getConnectionAudit(sourceAiId, 20)
     const hit =
       result.items.find((entry) => {
-        const ts = new Date(entry.created_at).getTime()
+        const ts = new Date(entry.timestamp).getTime()
         return !Number.isNaN(ts) && ts >= since
       }) ?? null
     return { ok: true, hit }

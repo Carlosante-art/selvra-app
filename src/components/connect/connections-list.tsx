@@ -97,7 +97,22 @@ export function ConnectionsList({
                     style={{ color: 'var(--color-ink-tertiary)' }}
                   >
                     Läser: {item.resource_types.join(', ')}
+                    {item.request_count_24h > 0
+                      ? ` · ${item.request_count_24h} ${item.request_count_24h === 1 ? 'anrop' : 'anrop'} senaste 24h`
+                      : ''}
                   </span>
+                  {item.token_fingerprint && (
+                    <span
+                      className="font-sans text-xs"
+                      style={{ color: 'var(--color-ink-tertiary)' }}
+                    >
+                      Token{' '}
+                      <span className="font-mono">{item.token_fingerprint}</span>
+                      {item.token_expires_at
+                        ? ` · gäller till ${new Date(item.token_expires_at).toLocaleDateString('sv-SE')}`
+                        : ''}
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
