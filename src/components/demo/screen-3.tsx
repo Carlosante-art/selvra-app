@@ -1,0 +1,109 @@
+'use client'
+
+/**
+ * Skärm 3 — Hur den byggs.
+ *
+ * Spec: Tre numrerade punkter med lucide-ikoner. Avslutande rad. CTA
+ * primär (mailto) + sekundär länk tillbaka till start.
+ *
+ * Mailto matchar landing-sidans exakt: hello@selvra.ai med samma subject.
+ */
+
+import { ArrowRightFromLine, Layers, Link as LinkIcon } from 'lucide-react'
+import Link from 'next/link'
+
+const STEPS = [
+  {
+    icon: LinkIcon,
+    text: 'Du kopplar in det du redan använder — Apple Health, kalender, dina anteckningar. Selvra läser. Inget att logga.',
+  },
+  {
+    icon: Layers,
+    text: 'Selvra strukturerar datan i en representation du kan se. Käll-attribuerad ner till varje rad.',
+  },
+  {
+    icon: ArrowRightFromLine,
+    text: 'Representationen är din. SREF v1-export från dag ett. När du pratar med andra AI-system kan de läsa den — så att du slipper förklara dig från början varje gång.',
+  },
+]
+
+export function Screen3() {
+  return (
+    <section className="flex flex-col gap-12 pt-8 pb-16" aria-labelledby="screen-3-heading">
+      <header>
+        <h1
+          id="screen-3-heading"
+          className="font-serif font-normal tracking-tight"
+          style={{
+            fontSize: 'clamp(32px, 4vw + 0.5rem, 48px)',
+            lineHeight: 1.1,
+            color: 'var(--color-ink)',
+          }}
+        >
+          Selvra läser data du redan har.
+        </h1>
+      </header>
+
+      <ol className="flex flex-col gap-8 list-none p-0 m-0">
+        {STEPS.map((step, i) => {
+          const Icon = step.icon
+          return (
+            <li key={i} className="flex flex-row gap-5 items-start">
+              <div
+                className="shrink-0 mt-1"
+                style={{ color: 'var(--color-ink-soft)' }}
+              >
+                <Icon size={20} aria-hidden="true" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p
+                  className="font-sans"
+                  style={{
+                    fontSize: '12px',
+                    color: 'var(--color-ink-tertiary)',
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  {String(i + 1).padStart(2, '0')}
+                </p>
+                <p
+                  className="leading-relaxed max-w-[55ch]"
+                  style={{ fontSize: '17px', color: 'var(--color-ink)' }}
+                >
+                  {step.text}
+                </p>
+              </div>
+            </li>
+          )
+        })}
+      </ol>
+
+      <p
+        className="font-serif italic leading-relaxed max-w-[55ch]"
+        style={{ fontSize: '17px', color: 'var(--color-ink-soft)' }}
+      >
+        Det din kropp redan vet. Strukturerat så du kan se det. Portabelt så
+        det följer dig.
+      </p>
+
+      <div
+        className="flex flex-col sm:flex-row sm:items-center gap-5 pt-4 border-t"
+        style={{ borderColor: 'var(--color-hairline)' }}
+      >
+        <a
+          href="mailto:hello@selvra.ai?subject=Selvra%20pre-launch%20uppdatering"
+          className="inline-flex h-11 items-center justify-center rounded-full bg-neutral-900 text-neutral-50 px-6 text-sm font-sans hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors self-start"
+        >
+          Lämna mail för uppdatering
+        </a>
+        <Link
+          href="/"
+          className="font-sans text-sm transition-colors hover:opacity-70 self-start"
+          style={{ color: 'var(--color-ink-soft)' }}
+        >
+          Tillbaka till start →
+        </Link>
+      </div>
+    </section>
+  )
+}

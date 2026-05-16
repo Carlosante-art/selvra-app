@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 
 /**
  * Selvra landing — pre-launch minimal (v2).
@@ -78,6 +79,13 @@ export default function LandingPage() {
           >
             Lämna mail för uppdatering
           </a>
+          <Link
+            href="/demo"
+            className="font-sans text-sm transition-colors hover:opacity-70 pt-2"
+            style={{ color: 'var(--color-ink-soft)' }}
+          >
+            Se hur det fungerar →
+          </Link>
         </div>
       </article>
     </main>
