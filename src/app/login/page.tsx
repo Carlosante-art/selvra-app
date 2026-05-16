@@ -23,11 +23,12 @@ async function startSignIn(formData: FormData) {
   'use server'
   const email = formData.get('email')
   if (typeof email !== 'string' || email.trim().length === 0) return
-  // redirectTo /onboarding/intentions ändrad till /welcome 2026-05-15
-  // (v1-refaktor Steg 5: tvingande onboarding rivs).
+  // 2026-05-16 iOS-pivot: /welcome rivad. Redirect till landing (/).
+  // Webb-login är scaffold inaktivt tills AB-aktivering — denna path
+  // körs ej i praktiken eftersom Resend-credentials saknas.
   await signIn('resend', {
     email: email.trim(),
-    redirectTo: '/welcome',
+    redirectTo: '/',
   })
 }
 

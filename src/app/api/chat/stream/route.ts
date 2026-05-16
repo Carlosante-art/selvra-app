@@ -22,7 +22,9 @@
  */
 
 import * as Sentry from '@sentry/nextjs'
-import { revalidatePath } from 'next/cache'
+// revalidatePath-import borttagen 2026-05-16 (iOS-pivot Steg 2):
+// UI-routes raderade. Backend används av framtida iOS-klient som inte
+// behöver Next.js-cache-invalidation.
 
 import { auth } from '@/lib/auth/config'
 import {
@@ -206,9 +208,9 @@ export async function POST(req: Request): Promise<Response> {
                 conversationId,
                 factLength: event.factText.length,
               })
-              revalidatePath(`/samtal/thread/${conversationId}`)
-              revalidatePath('/samtal')
-              revalidatePath('/minne')
+              // revalidatePath('/samtal/thread/...' — iOS-pivot 2026-05-16: route raderad
+              // revalidatePath('/samtal' — iOS-pivot 2026-05-16: route raderad')
+              // revalidatePath('/minne' — iOS-pivot 2026-05-16: route raderad')
 
               if (!body.conversationId) {
                 send({ type: 'meta', conversationId })
@@ -273,7 +275,7 @@ export async function POST(req: Request): Promise<Response> {
                     conversationId,
                     count: extractedFacts.length,
                   })
-                  revalidatePath('/minne')
+                  // revalidatePath('/minne' — iOS-pivot 2026-05-16: route raderad')
                 } catch (err) {
                   log.warn('stream_facts_persist_failed', {
                     error: err instanceof Error ? err.message : String(err),
@@ -297,8 +299,8 @@ export async function POST(req: Request): Promise<Response> {
                 }
               }
 
-              revalidatePath(`/samtal/thread/${conversationId}`)
-              revalidatePath('/samtal')
+              // revalidatePath('/samtal/thread/...' — iOS-pivot 2026-05-16: route raderad
+              // revalidatePath('/samtal' — iOS-pivot 2026-05-16: route raderad')
 
               if (!body.conversationId) {
                 send({ type: 'meta', conversationId })
@@ -336,8 +338,8 @@ export async function POST(req: Request): Promise<Response> {
                 },
               })
 
-              revalidatePath(`/samtal/thread/${conversationId}`)
-              revalidatePath('/samtal')
+              // revalidatePath('/samtal/thread/...' — iOS-pivot 2026-05-16: route raderad
+              // revalidatePath('/samtal' — iOS-pivot 2026-05-16: route raderad')
 
               if (!body.conversationId) {
                 send({ type: 'meta', conversationId })

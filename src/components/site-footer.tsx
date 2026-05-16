@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 /**
- * Minimal app-footer för app-routes (brev, account, etc.).
+ * Minimal app-footer för icke-landing-sidor (login, privacy).
  *
- * Per SELVRA_LANDING_DESIGN_SPEC_2026-05-12.md Avsnitt 5.7: landing-sidan
- * har sin egen minimal footer per spec. Den globala app-footern (denna)
- * renderas inte på `/`.
+ * Per .gsd/SELVRA_CONSUMER_IOS_PIVOT_2026-05-16.md Steg 2: webb-UI
+ * är parkat. Footer-länkar till /export, /account osv borttagna
+ * eftersom de routes är raderade. Bevarar bara /privacy-länk + minimal
+ * copy. Landing (`/`) har egen footer-yta inbyggd i page.tsx.
  */
 
 export function SiteFooter() {
@@ -22,23 +23,9 @@ export function SiteFooter() {
     >
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 flex-wrap px-6 py-6 text-xs font-sans">
         <p style={{ color: 'var(--color-ink-tertiary)' }}>
-          Selvra — ett brev till dig själv, varje vecka.
+          Selvra — pre-launch. iOS-app H2 2026.
         </p>
         <nav className="flex items-center gap-4 flex-wrap">
-          <Link
-            href="/export"
-            className="transition-colors"
-            style={{ color: 'var(--color-ink-soft)' }}
-          >
-            Exportera
-          </Link>
-          <Link
-            href="/account"
-            className="transition-colors"
-            style={{ color: 'var(--color-ink-soft)' }}
-          >
-            Konto
-          </Link>
           <Link
             href="/privacy"
             className="transition-colors"
