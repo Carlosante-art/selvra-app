@@ -429,6 +429,127 @@ export async function listEvents(opts: {
  * från `selvra.reflection.generated`-events). Returns null om ingen finns
  * (404 från protokollet).
  */
+/* ─── Consumer connect-flow (v0.2.3, 2026-05-16) ─────────────────────── */
+
+export type ConsumerClientName =
+  | 'claude-desktop'
+  | 'claude-code'
+  | 'cursor'
+  | 'chatgpt-desktop'
+  | 'generic-mcp'
+
+export type IssueTokenResult = {
+  token: string
+  fingerprint: string
+  expires_at: string
+  jti: string
+  source_ai_id: string
+}
+
+/**
+ * Anropa POST /v1/tokens/issue mot selvra-protocol med shared-secret-auth.
+ *
+ * Server-only — SELVRA_TOKEN_ISSUER_SECRET får aldrig nå klient-bundeln.
+ * Token returneras EN gång; caller (server action) levererar till client
+ * via post-render-respons, klienten ansvarar för att inte persistera.
+ *
+ * Konstitutionellt: v1 är read-only. selvra-protocol-sidan avvisar
+ * WRITE/ADMIN i scopes med 400, så vi defensivt hardcodar READ här.
+ */
+export async function issueConsumerToken(params: {
+  clientName: ConsumerClientName
+  ttlSeconds?: number
+}): Promise<IssueTokenResult> {
+  const infra = getProtocolInfra()
+  const ctx = await getRequestContext()
+  const issuerSecret = process.env.SELVRA_TOKEN_ISSUER_SECRET
+  if (!issuerSecret) {
+    throw new Error(
+      'SELVRA_TOKEN_ISSUER_SECRET env-var saknas. Sätt i Vercel env för production.',
+    )
+  }
+
+  const res = await fetch(`${infra.baseUrl}/v1/tokens/issue`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Selvra-Internal-Secret': issuerSecret,
+    },
+    body: JSON.stringify({
+      tenant_id: ctx.tenantId,
+      subject_ids: [ctx.subjectId],
+      client_name: params.clientName,
+      scopes: ['read'],
+      ttl_seconds: params.ttlSeconds,
+    }),
+    cache: 'no-store',
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(
+      `Selvra POST /v1/tokens/issue → ${res.status}: ${body.slice(0, 300)}`,
+    )
+  }
+
+  return (await res.json()) as IssueTokenResult
+}
+
+export type ConnectionItem = {
+  source_ai_id: string
+  resource_types: string[]
+  first_granted_at: string
+  last_active_at: string | null
+}
+
+export async function listConnections(): Promise<{
+  items: ConnectionItem[]
+  total_count: number
+}> {
+  const ctx = await getRequestContext()
+  return call(ctx, '/v1/connections', {
+    method: 'GET',
+    scopes: ['read'],
+  })
+}
+
+export async function revokeConnection(sourceAiId: string): Promise<{
+  source_ai_id: string
+  revoked_count: number
+  revoked_at: string
+}> {
+  const ctx = await getRequestContext()
+  return call(ctx, `/v1/connections/${sourceAiId}`, {
+    method: 'DELETE',
+    scopes: ['write'],
+  })
+}
+
+export type AuditEntry = {
+  source_ai_id: string
+  tool_name: string
+  verdict: string | null
+  duration_ms: number | null
+  created_at: string
+}
+
+export async function getConnectionAudit(
+  sourceAiId: string,
+  limit = 20,
+): Promise<{ items: AuditEntry[]; total_count: number }> {
+  const ctx = await getRequestContext()
+  return call(
+    ctx,
+    `/v1/connections/${sourceAiId}/audit?limit=${limit}`,
+    {
+      method: 'GET',
+      scopes: ['read'],
+    },
+  )
+}
+
+/* ─── Existing API continues below ─────────────────────────────────── */
+
 export async function getLatestReflection(
   synthesisType?: string,
 ): Promise<LatestReflection | null> {
