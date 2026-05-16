@@ -253,11 +253,9 @@ Allt fungerar offline (data finns lokalt i tillägg till backend).
 
 ## 5. RIVNINGS- OCH BYGG-SEKVENS
 
-### Vecka 1 (16-23 maj 2026): Vila + frysning
+### Vecka 1 (16-23 maj 2026): Frysning + förberedelse
 
-Inget kod-bygge på iOS denna vecka. Vila för Carl efter intensiv bygg-period.
-
-Claude Code utför endast:
+Claude Code utför:
 
 1. Skapa `~/selvra-app/.gsd/SELVRA_IOS_V1_BUILD_PLAN_2026-05-16.md` med detta dokument
 2. Frys webb-consumer-arbetet i selvra-app:
@@ -422,15 +420,7 @@ Granska TIR, sömn, motion, relationer. Om kropp signalerar gränser: pausa.
 - Privacy-policy och data-handling tydligt dokumenterat
 - Subscription-flow följer StoreKit 2-standard
 
-### Risk 5: Carl bränner ut sig
-
-**Mitigation:**
-- Carl-TIR granskas veckovis. Om <50% i 7-dagars-snitt: pausa
-- Stillra dogfood fortsätter — pre-möte-brief används av Carl själv
-- Vila i vecka 1 är icke-förhandlingsbart
-- Vid utbrändhet: pausa iOS-bygget oavsett tidplan
-
-### Risk 6: Konkurrent (Apple, OpenAI, Anthropic) bygger samma sak
+### Risk 5: Konkurrent (Apple, OpenAI, Anthropic) bygger samma sak
 
 **Mitigation:**
 - Selvra differentierar genom multi-source levd minne + käll-attribuering + EU-suveränitet
@@ -438,7 +428,7 @@ Granska TIR, sömn, motion, relationer. Om kropp signalerar gränser: pausa.
 - Open-source delar av SREF-protokollet som community-bygge
 - Tidsfönster 12-24 månader innan stora aktörer adresserar EU AI Act-compliance
 
-### Risk 7: Stillra fortfarande väntar på AB när iOS-bygget börjar
+### Risk 6: Stillra fortfarande väntar på AB när iOS-bygget börjar
 
 **Mitigation:**
 - iOS-bygget startar oavsett — Apple Developer Program registreras när AB klar (vecka 2-3)
@@ -497,10 +487,6 @@ Granska TIR, sömn, motion, relationer. Om kropp signalerar gränser: pausa.
    - Master ska bara behålla backend + API-spec
 4. Omarbeta landing-sida till minimal pre-launch enligt §5 vecka 1
 5. Skapa `~/stillra-server-master/STILLRA_NEXT_STEP_STATUS_2026-05-16.md` dokumenterar Stillras position
-
-### Vecka 1 (vila för Carl):
-
-Inget mer kod-arbete på Selvra eller Stillra. Carl vilar. Claude Code utför endast §10.1-5 ovan.
 
 ### Vecka 2-3:
 
