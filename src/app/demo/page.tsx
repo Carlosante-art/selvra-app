@@ -17,14 +17,13 @@
  */
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback } from 'react'
 
 import { Screen1 } from '@/components/demo/screen-1'
 import { Screen2 } from '@/components/demo/screen-2'
 import { Screen3 } from '@/components/demo/screen-3'
 
-const VALID_STEPS = [1, 2, 3] as const
-type Step = (typeof VALID_STEPS)[number]
+type Step = 1 | 2 | 3
 
 function parseStep(raw: string | null): Step {
   const n = raw ? parseInt(raw, 10) : 1
@@ -35,18 +34,15 @@ function parseStep(raw: string | null): Step {
 function DemoContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [step, setStep] = useState<Step>(() =>
-    parseStep(searchParams.get('step')),
-  )
 
-  // Sync state vid back/forward
-  useEffect(() => {
-    setStep(parseStep(searchParams.get('step')))
-  }, [searchParams])
+  // Step är derivat från URL — searchParams är source of truth. Tidigare
+  // useState+useEffect-paret triggade react-hooks/set-state-in-effect-warning
+  // (cascading renders). Direkt derivation matchar React-rekommendationen
+  // och tar bort dual-state-issue där lokal state och URL kan divergera.
+  const step = parseStep(searchParams.get('step'))
 
   const navigate = useCallback(
     (next: Step) => {
-      setStep(next)
       router.push(`/demo?step=${next}`, { scroll: true })
       // Scroll till top när skärm byts (anchor link kan annars stannar mitt i)
       if (typeof window !== 'undefined') {
