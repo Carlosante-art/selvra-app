@@ -62,6 +62,9 @@ const SETUP_SQL = `
     "sources_consulted" jsonb,
     "llm_provider" text,
     "created_at" timestamptz NOT NULL DEFAULT NOW(),
+    "extraction_status" text NOT NULL DEFAULT 'pending',
+    "extraction_attempted_at" timestamptz,
+    "extraction_failure_reason" text,
     CONSTRAINT "fk_turn_conv" FOREIGN KEY ("conversation_id") REFERENCES "consumer_conversation"("id") ON DELETE CASCADE
   );
 

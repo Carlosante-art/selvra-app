@@ -50,6 +50,13 @@ export const consumerConversations = pgTable('consumer_conversation', {
 // källa-attribuering i UI har data att rendera. LLM får INTE skriva
 // fritext om källor utan strukturerad referens (constitutional enforcement
 // — se DESIGN.md §3 designval 1).
+//
+// extractionStatus drivs av cron-job /api/cron/extract-facts (migration
+// 0005, 2026-05-16). Status-livscykel:
+//   - 'pending'   : ny tur, cron plockar upp inom ~10 min
+//   - 'processed' : extraction klar (även om 0 facts hittades)
+//   - 'failed'    : LLM-fel; cron retry:ar med backoff
+//   - 'skipped'   : memory-ack eller fallback-tur som inte ska extraheras
 export const conversationTurns = pgTable('conversation_turn', {
   id: text('id')
     .primaryKey()
@@ -63,7 +70,12 @@ export const conversationTurns = pgTable('conversation_turn', {
   sourcesConsulted: jsonb('sources_consulted'), // [{source_ai_id, event_id, type}]
   llmProvider: text('llm_provider'), // 'mistral' | 'anthropic-eu' | etc.
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  extractionStatus: text('extraction_status').notNull().default('pending'),
+  extractionAttemptedAt: timestamp('extraction_attempted_at', { mode: 'date' }),
+  extractionFailureReason: text('extraction_failure_reason'),
 })
+
+export type ExtractionStatus = 'pending' | 'processed' | 'failed' | 'skipped'
 
 // System-prompt-versioner. Lagras i DB så Carl kan iterera under
 // Carl-dogfood utan att deploy:a. Senaste isActive=true vinner; cache:as
