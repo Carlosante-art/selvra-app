@@ -2,9 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
+import { AccessSummaryView } from '@/components/connect/access-summary'
 import { ConnectionsList } from '@/components/connect/connections-list'
 import { auth } from '@/lib/auth/config'
-import { listConnections } from '@/lib/protocol/client'
+import type { AccessSummary } from '@/lib/connect/actions'
+import { getSnapshot, listConnections } from '@/lib/protocol/client'
 
 export const metadata: Metadata = {
   title: 'Dina anslutningar',
@@ -27,6 +29,19 @@ export default async function ConnectionsPage() {
     items = result.items
   } catch (err) {
     fetchError = err instanceof Error ? err.message : String(err)
+  }
+
+  let summary: AccessSummary | null = null
+  let summaryError: string | null = null
+  try {
+    const snapshot = await getSnapshot()
+    summary = {
+      factCount: snapshot.total_count,
+      divergenceCount: null,
+      provenanceAvailable: true,
+    }
+  } catch (err) {
+    summaryError = err instanceof Error ? err.message : String(err)
   }
 
   return (
@@ -61,6 +76,8 @@ export default async function ConnectionsPage() {
         ) : (
           <ConnectionsList initialItems={items} />
         )}
+
+        <AccessSummaryView summary={summary} error={summaryError} />
 
         <footer
           className="border-t pt-6 flex flex-col gap-3"

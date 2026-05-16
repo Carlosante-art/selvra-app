@@ -14,9 +14,12 @@ import * as Sentry from '@sentry/nextjs'
 
 import { auth } from '@/lib/auth/config'
 import {
+  getConnectionAudit,
+  getSnapshot,
   issueConsumerToken,
   listConnections,
   revokeConnection,
+  type AuditEntry,
   type ConsumerClientName,
   type IssueTokenResult,
   type ConnectionItem,
@@ -92,6 +95,132 @@ export async function listConnectionsAction(): Promise<ListConnectionsResult> {
 export type RevokeConnectionResult =
   | { ok: true; revokedCount: number }
   | { ok: false; error: string }
+
+/**
+ * Polla audit-logg för att hitta första anrop från source_ai_id efter
+ * en given timestamp. Används av ConnectionTest-komponenten för att
+ * verifiera att klient verkligen anslutit efter token-gen.
+ *
+ * Returnerar { ok: true, hit: AuditEntry } om hit hittas, { ok: true, hit: null }
+ * om inga nya entries finns ännu (caller pollar igen).
+ *
+ * Notera: sinceIso filtreras klient-sidan här (audit-endpoint stödjer
+ * inte ?since=). För typisk anslutnings-test är 20 senaste entries mer
+ * än tillräckligt — verklig multi-tusen-anrop-volym kommer inte hända
+ * inom 60s test-fönster.
+ */
+export type PollConnectionResult =
+  | { ok: true; hit: AuditEntry | null }
+  | { ok: false; error: string }
+
+export async function pollConnectionAction(
+  sourceAiId: string,
+  sinceIso: string,
+): Promise<PollConnectionResult> {
+  const log = logger.child({ module: 'connect/actions/poll' })
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { ok: false, error: 'Inloggning krävs.' }
+  }
+
+  try {
+    const since = new Date(sinceIso).getTime()
+    if (Number.isNaN(since)) {
+      return { ok: false, error: 'Ogiltig timestamp' }
+    }
+    const result = await getConnectionAudit(sourceAiId, 20)
+    const hit =
+      result.items.find((entry) => {
+        const ts = new Date(entry.created_at).getTime()
+        return !Number.isNaN(ts) && ts >= since
+      }) ?? null
+    return { ok: true, hit }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    log.error('poll_connection_failed', {
+      userId: session.user.id,
+      sourceAiId,
+      error: message,
+    })
+    return { ok: false, error: message.slice(0, 200) }
+  }
+}
+
+/**
+ * Hämta senaste N audit-entries för en source_ai_id. Används av
+ * AuditLogPreview-komponenten på /connections.
+ */
+export type GetConnectionAuditResult =
+  | { ok: true; items: AuditEntry[]; total: number }
+  | { ok: false; error: string }
+
+export async function getConnectionAuditAction(
+  sourceAiId: string,
+  limit = 10,
+): Promise<GetConnectionAuditResult> {
+  const log = logger.child({ module: 'connect/actions/audit' })
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { ok: false, error: 'Inloggning krävs.' }
+  }
+
+  try {
+    const result = await getConnectionAudit(sourceAiId, limit)
+    return { ok: true, items: result.items, total: result.total_count }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    log.error('get_connection_audit_failed', {
+      userId: session.user.id,
+      sourceAiId,
+      error: message,
+    })
+    return { ok: false, error: message.slice(0, 200) }
+  }
+}
+
+/**
+ * Hämta access-summary för anslutna systems "Vad får de se"-vy.
+ *
+ * v1 returnerar bara snapshot-count (från befintlig snapshot-endpoint).
+ * Divergens-count + provenance-count kräver protocol-side endpoints
+ * (eller events-aggregation) som inte finns än — markeras null i v1.
+ */
+export type AccessSummary = {
+  factCount: number
+  divergenceCount: number | null
+  provenanceAvailable: boolean
+}
+
+export type GetAccessSummaryResult =
+  | { ok: true; summary: AccessSummary }
+  | { ok: false; error: string }
+
+export async function getAccessSummaryAction(): Promise<GetAccessSummaryResult> {
+  const log = logger.child({ module: 'connect/actions/summary' })
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { ok: false, error: 'Inloggning krävs.' }
+  }
+
+  try {
+    const snapshot = await getSnapshot()
+    return {
+      ok: true,
+      summary: {
+        factCount: snapshot.total_count,
+        divergenceCount: null,
+        provenanceAvailable: true,
+      },
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    log.error('get_access_summary_failed', {
+      userId: session.user.id,
+      error: message,
+    })
+    return { ok: false, error: message.slice(0, 200) }
+  }
+}
 
 export async function revokeConnectionAction(
   sourceAiId: string,

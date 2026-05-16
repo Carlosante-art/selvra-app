@@ -16,6 +16,8 @@ import {
 import { getClientBySourceAiId } from '@/lib/connect/clients'
 import type { ConnectionItem } from '@/lib/protocol/client'
 
+import { AuditLogPreview } from './audit-log-preview'
+
 export function ConnectionsList({
   initialItems,
 }: {
@@ -107,6 +109,10 @@ export function ConnectionsList({
                   {pending ? 'Återkallar…' : 'Återkalla access'}
                 </button>
               </div>
+              <AuditLogPreview
+                sourceAiId={item.source_ai_id}
+                clientDisplayName={displayName}
+              />
             </li>
           )
         })}

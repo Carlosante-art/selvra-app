@@ -20,10 +20,19 @@ import { useState } from 'react'
 import { issueTokenAction, type IssueTokenActionResult } from '@/lib/connect/actions'
 import { buildConfigSnippet, type ClientMeta } from '@/lib/connect/clients'
 
+import { ConnectionTest } from './connection-test'
+
 type FlowState =
   | { kind: 'idle' }
   | { kind: 'issuing' }
-  | { kind: 'issued'; token: string; fingerprint: string; expiresAt: string; sourceAiId: string }
+  | {
+      kind: 'issued'
+      token: string
+      fingerprint: string
+      expiresAt: string
+      sourceAiId: string
+      issuedAt: string
+    }
   | { kind: 'error'; message: string }
 
 export function ConnectFlow({
@@ -46,6 +55,7 @@ export function ConnectFlow({
         fingerprint: result.token.fingerprint,
         expiresAt: result.token.expires_at,
         sourceAiId: result.token.source_ai_id,
+        issuedAt: new Date().toISOString(),
       })
     } else {
       setState({ kind: 'error', message: result.error })
@@ -191,6 +201,23 @@ export function ConnectFlow({
         >
           {snippet}
         </pre>
+      </div>
+
+      <div
+        className="flex flex-col gap-2 pt-2 border-t"
+        style={{ borderColor: 'var(--color-hairline)' }}
+      >
+        <p
+          className="font-sans text-xs uppercase tracking-wider"
+          style={{ color: 'var(--color-ink-soft)' }}
+        >
+          Verifiera anslutning
+        </p>
+        <ConnectionTest
+          sourceAiId={state.sourceAiId}
+          issuedAt={state.issuedAt}
+          clientDisplayName={client.displayName}
+        />
       </div>
 
       {client.configPaths && (
