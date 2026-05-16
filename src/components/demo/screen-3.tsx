@@ -23,7 +23,7 @@ const STEPS = [
   },
   {
     icon: ArrowRightFromLine,
-    text: 'Andra AI-system — Claude, ChatGPT, Cursor — kan läsa din representation via öppet protokoll när du ger dem tillgång. Du slipper förklara dig från början i varje verktyg.',
+    text: 'Selvra har ingen egen chat. Du pratar i Claude, ChatGPT eller Cursor — verktygen du redan använder. När du ger dem tillgång till din representation går de från kalla till varma: ingen mer "förklara dig från början", varje samtal startar där du är.',
   },
 ]
 
@@ -77,6 +77,30 @@ export function Screen3() {
           )
         })}
       </ol>
+
+      <figure
+        className="border-l-2 pl-5 py-1 max-w-[55ch] ml-5 my-0 flex flex-col gap-2"
+        style={{ borderColor: 'var(--color-hairline)' }}
+      >
+        <figcaption
+          className="font-sans"
+          style={{
+            fontSize: '12px',
+            color: 'var(--color-ink-tertiary)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Exempel — Selvra läste från ChatGPT 2026-05-17
+        </figcaption>
+        <blockquote
+          className="font-serif italic leading-relaxed m-0"
+          style={{ fontSize: '17px', color: 'var(--color-ink)' }}
+        >
+          Carl sa att han sov fyra timmar efter natt-skiftet. Han nämnde
+          att glukosen var hög hela morgonen.
+        </blockquote>
+      </figure>
 
       <p
         className="font-serif italic leading-relaxed max-w-[55ch]"
