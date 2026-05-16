@@ -10,6 +10,10 @@
     {
       "path": "/api/cron/extract-facts",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-soft-deleted",
+      "schedule": "0 4 * * *"
     }
   ]
 }

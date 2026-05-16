@@ -24,7 +24,7 @@ import {
   type ExtractionStatus,
   type FactType,
 } from './conversation-schema'
-import { users } from './schema'
+import { sessions, users } from './schema'
 
 // ─── Fetchers ────────────────────────────────────────────────────────────
 
@@ -748,13 +748,154 @@ export async function purgeUserConversations(userId: string): Promise<{
 }
 
 /**
- * Hård delete av hela user-kontot. Cascade:s:
+ * Hard-delete hela user-kontot. Cascade:s:
  *   - auth: account, session, verificationToken (FK till users.id)
- *   - konsument: consumer_conversation, conversation_memory_fact
- *     (FK till users.id) → conversation_turn (FK till consumer_conversation)
+ *   - konsument: consumer_conversation, conversation_memory_fact,
+ *     conversation_fact (FK till users.id) → conversation_turn
  *
- * Användaren måste signOut:as efter denna call (Server Action ansvarar).
+ * Default-flödet för user-initierad radering är softDeleteUserAccount
+ * nedan (30d restore-window). Denna funktion är för:
+ *   - Cron-cleanup efter 30d (hardDeleteExpiredUsers anropar internt)
+ *   - Admin-purge-flöde (icke-exponerat i v1)
+ *   - Tester av cascade-beteende
+ *
+ * Användaren måste signOut:as efter denna call.
  */
 export async function deleteUserAccount(userId: string): Promise<void> {
   await db.delete(users).where(eq(users.id, userId))
+}
+
+/**
+ * Soft-delete user-account med 30-dagars restore-window (audit #18).
+ *
+ * Steg:
+ *   1. Sätt users.deleted_at = NOW() → blockerar all data-access
+ *   2. Radera alla aktiva sessions → tvingar logout omedelbart
+ *
+ * Restore-paths:
+ *   - Magic-link-login inom 30d → events.signIn auto-clear:ar deleted_at
+ *   - Cron (cleanup-soft-deleted) hard-deletar efter 30d via CASCADE
+ *
+ * UI-meddelande till user måste tydligt säga: "Konto raderas slutgiltigt
+ * om 30 dagar. Logga in igen för att ångra."
+ */
+export async function softDeleteUserAccount(userId: string): Promise<void> {
+  await db
+    .update(users)
+    .set({ deletedAt: new Date() })
+    .where(eq(users.id, userId))
+
+  // Invalidera aktiva sessions så user inte kan fortsätta använda appen
+  // efter delete-request. Sessions cascade på user-delete senare när
+  // cron hard-deletar, men vi vill ha omedelbar effekt.
+  await db.delete(sessions).where(eq(sessions.userId, userId))
+}
+
+/**
+ * Kolla om en user är soft-deleted. Används av middleware/auth-gate.
+ * Returnerar { deletedAt: Date, daysAgo: number } eller null om aktiv.
+ */
+export async function getUserSoftDeleteStatus(userId: string): Promise<{
+  deletedAt: Date
+  daysAgo: number
+} | null> {
+  const [row] = await db
+    .select({ deletedAt: users.deletedAt })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  if (!row?.deletedAt) return null
+
+  const daysAgo = Math.floor((Date.now() - row.deletedAt.getTime()) / 86_400_000)
+  return { deletedAt: row.deletedAt, daysAgo }
+}
+
+/**
+ * Restore soft-deleted user. Throw om utanför 30-dagars-fönster eller
+ * om user inte är soft-deleted. Auto-anropas från events.signIn (Auth.js)
+ * när user login:ar med magic-link inom fönstret.
+ */
+export async function restoreUserAccount(
+  userId: string,
+  opts: { windowDays?: number } = {},
+): Promise<void> {
+  const windowDays = opts.windowDays ?? 30
+  const status = await getUserSoftDeleteStatus(userId)
+  if (!status) {
+    throw new Error('restoreUserAccount: user inte soft-deleted')
+  }
+  if (status.daysAgo > windowDays) {
+    throw new Error(
+      `restoreUserAccount: utanför ${windowDays}-dagars-fönster (${status.daysAgo}d sedan)`,
+    )
+  }
+
+  await db.update(users).set({ deletedAt: null }).where(eq(users.id, userId))
+}
+
+// ─── Cleanup-cron (audit #10 + #18) ──────────────────────────────────────
+
+/**
+ * Hard-delete user-rader där deleted_at < cutoff. CASCADE plockar
+ * account, session, conversation_*, memory_fact, conversation_fact.
+ *
+ * Returnerar antal hard-deletade. Caller (cron) loggar.
+ */
+export async function hardDeleteExpiredUsers(opts: {
+  cutoff: Date
+}): Promise<number> {
+  const rows = await db
+    .delete(users)
+    .where(
+      and(
+        sql`${users.deletedAt} IS NOT NULL`,
+        lte(users.deletedAt, opts.cutoff),
+      ),
+    )
+    .returning({ id: users.id })
+
+  return rows.length
+}
+
+/**
+ * Hard-delete conversation_fact-rader där user_deleted_at < cutoff
+ * (user själv markerade dem för delete via UI). Skiljer sig från
+ * hardDeleteExpiredUsers ovan — där cascade:s allt; denna är för facts
+ * som user raderat individuellt utan att radera kontot.
+ */
+export async function hardDeleteExpiredConversationFacts(opts: {
+  cutoff: Date
+}): Promise<number> {
+  const rows = await db
+    .delete(conversationFacts)
+    .where(
+      and(
+        sql`${conversationFacts.userDeletedAt} IS NOT NULL`,
+        lte(conversationFacts.userDeletedAt, opts.cutoff),
+      ),
+    )
+    .returning({ id: conversationFacts.id })
+
+  return rows.length
+}
+
+/**
+ * Hard-delete conversation_memory_fact-rader där redacted_at < cutoff.
+ * Motsvarande mönster — soft-deleted memory facts efter 30d hard-deleteras.
+ */
+export async function hardDeleteExpiredMemoryFacts(opts: {
+  cutoff: Date
+}): Promise<number> {
+  const rows = await db
+    .delete(conversationMemoryFacts)
+    .where(
+      and(
+        sql`${conversationMemoryFacts.redactedAt} IS NOT NULL`,
+        lte(conversationMemoryFacts.redactedAt, opts.cutoff),
+      ),
+    )
+    .returning({ id: conversationMemoryFacts.id })
+
+  return rows.length
 }

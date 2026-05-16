@@ -32,6 +32,11 @@ export const users = pgTable('user', {
   // UUID5(SELVRA_SUBJECT_NAMESPACE, tenant_id + ":" + user.id).
   selvraTenantId: text('selvra_tenant_id'),
   selvraSubjectId: text('selvra_subject_id'),
+
+  // Soft-delete med 30-dagars restore-window (audit 2026-05-16 #18).
+  // Sätts av softDeleteUserAccount(). Cron hard-deletar efter 30d.
+  // Auto-clear vid events.signIn om inom 30d-fönster.
+  deletedAt: timestamp('deleted_at', { mode: 'date' }),
 })
 
 export const accounts = pgTable(
