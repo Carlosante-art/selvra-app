@@ -21,9 +21,11 @@ vi.mock('@/lib/auth/config', () => ({
 
 const mockGetConnectionAudit = vi.fn()
 const mockGetSnapshot = vi.fn()
+const mockGetDivergenceCount = vi.fn()
 vi.mock('@/lib/protocol/client', () => ({
   getConnectionAudit: (...args: unknown[]) => mockGetConnectionAudit(...args),
   getSnapshot: () => mockGetSnapshot(),
+  getDivergenceCount: () => mockGetDivergenceCount(),
   issueConsumerToken: vi.fn(),
   listConnections: vi.fn(),
   revokeConnection: vi.fn(),
@@ -51,6 +53,7 @@ beforeEach(() => {
   mockAuth.mockReset()
   mockGetConnectionAudit.mockReset()
   mockGetSnapshot.mockReset()
+  mockGetDivergenceCount.mockReset()
   mockAuth.mockResolvedValue(VALID_SESSION)
 })
 
@@ -166,22 +169,43 @@ describe('getConnectionAuditAction', () => {
 })
 
 describe('getAccessSummaryAction', () => {
-  it('mappar snapshot.total_count till factCount', async () => {
-    mockGetSnapshot.mockResolvedValue({
-      subject_id: 's',
-      tenant_id: 't',
-      items: [],
-      next_cursor: null,
-      total_count: 42,
-      limit: 100,
-    })
+  const snapshotStub = {
+    subject_id: 's',
+    tenant_id: 't',
+    items: [],
+    next_cursor: null,
+    total_count: 42,
+    limit: 100,
+  }
+
+  it('mappar snapshot.total_count + divergence-count', async () => {
+    mockGetSnapshot.mockResolvedValue(snapshotStub)
+    mockGetDivergenceCount.mockResolvedValue({ subject_id: 's', count: 3 })
+    const result = await getAccessSummaryAction()
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.summary.factCount).toBe(42)
+      expect(result.summary.divergenceCount).toBe(3)
+      expect(result.summary.provenanceAvailable).toBe(true)
+    }
+  })
+
+  it('divergence-count null som best-effort fallback om endpoint ej deployad', async () => {
+    mockGetSnapshot.mockResolvedValue(snapshotStub)
+    mockGetDivergenceCount.mockRejectedValue(new Error('404 Not Found'))
     const result = await getAccessSummaryAction()
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.summary.factCount).toBe(42)
       expect(result.summary.divergenceCount).toBeNull()
-      expect(result.summary.provenanceAvailable).toBe(true)
     }
+  })
+
+  it('failar om snapshot misslyckas (måste-fält)', async () => {
+    mockGetSnapshot.mockRejectedValue(new Error('500 Internal'))
+    mockGetDivergenceCount.mockResolvedValue({ subject_id: 's', count: 0 })
+    const result = await getAccessSummaryAction()
+    expect(result.ok).toBe(false)
   })
 })
 

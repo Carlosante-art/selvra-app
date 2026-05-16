@@ -58,7 +58,9 @@ export function AccessSummaryView({
             label="Divergenser"
             value={
               summary?.divergenceCount != null
-                ? `${summary.divergenceCount} aktiva`
+                ? summary.divergenceCount === 1
+                  ? '1 aktiv'
+                  : `${summary.divergenceCount} aktiva`
                 : 'tillgängliga'
             }
           />

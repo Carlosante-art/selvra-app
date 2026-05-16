@@ -6,7 +6,11 @@ import { AccessSummaryView } from '@/components/connect/access-summary'
 import { ConnectionsList } from '@/components/connect/connections-list'
 import { auth } from '@/lib/auth/config'
 import type { AccessSummary } from '@/lib/connect/actions'
-import { getSnapshot, listConnections } from '@/lib/protocol/client'
+import {
+  getDivergenceCount,
+  getSnapshot,
+  listConnections,
+} from '@/lib/protocol/client'
 
 export const metadata: Metadata = {
   title: 'Dina anslutningar',
@@ -34,11 +38,19 @@ export default async function ConnectionsPage() {
   let summary: AccessSummary | null = null
   let summaryError: string | null = null
   try {
-    const snapshot = await getSnapshot()
-    summary = {
-      factCount: snapshot.total_count,
-      divergenceCount: null,
-      provenanceAvailable: true,
+    const [snapshot, divergence] = await Promise.allSettled([
+      getSnapshot(),
+      getDivergenceCount(),
+    ])
+    if (snapshot.status === 'fulfilled') {
+      summary = {
+        factCount: snapshot.value.total_count,
+        divergenceCount:
+          divergence.status === 'fulfilled' ? divergence.value.count : null,
+        provenanceAvailable: true,
+      }
+    } else {
+      throw snapshot.reason
     }
   } catch (err) {
     summaryError = err instanceof Error ? err.message : String(err)

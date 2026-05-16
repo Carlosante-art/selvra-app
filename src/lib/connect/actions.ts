@@ -15,6 +15,7 @@ import * as Sentry from '@sentry/nextjs'
 import { auth } from '@/lib/auth/config'
 import {
   getConnectionAudit,
+  getDivergenceCount,
   getSnapshot,
   issueConsumerToken,
   listConnections,
@@ -203,12 +204,28 @@ export async function getAccessSummaryAction(): Promise<GetAccessSummaryResult> 
   }
 
   try {
-    const snapshot = await getSnapshot()
+    // Parallella fetches — count-endpoint är O(1) så ingen extra latency oro
+    const [snapshot, divergence] = await Promise.allSettled([
+      getSnapshot(),
+      getDivergenceCount(),
+    ])
+
+    if (snapshot.status === 'rejected') {
+      throw snapshot.reason instanceof Error
+        ? snapshot.reason
+        : new Error(String(snapshot.reason))
+    }
+
+    // Divergence-count är best-effort — om endpoint ej deployad än, fall
+    // tillbaka till null (UI visar "tillgängliga" utan exakt antal).
+    const divergenceCount =
+      divergence.status === 'fulfilled' ? divergence.value.count : null
+
     return {
       ok: true,
       summary: {
-        factCount: snapshot.total_count,
-        divergenceCount: null,
+        factCount: snapshot.value.total_count,
+        divergenceCount,
         provenanceAvailable: true,
       },
     }

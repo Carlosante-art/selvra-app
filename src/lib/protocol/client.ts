@@ -313,6 +313,25 @@ export async function getSnapshot(): Promise<SubjectSnapshot> {
 }
 
 /**
+ * O(1) count av aktiva divergence_detected-events för current subject.
+ * Används av AccessSummary för "Vad får de se: Y divergenser aktiva".
+ */
+export async function getDivergenceCount(): Promise<{
+  subject_id: string
+  count: number
+}> {
+  const ctx = await getRequestContext()
+  return call(
+    ctx,
+    `/v1/subjects/${ctx.subjectId}/representation/divergences/count`,
+    {
+      method: 'GET',
+      scopes: ['read'],
+    },
+  )
+}
+
+/**
  * triggerReflectionRun + triggerDreamerRun raderade 2026-05-15 (v1-refaktor
  * Steg 2-3: brev- och Dreamer-paradigm rivs). Endpoints
  * `/v1/internal/carl/reflect` och `/v1/internal/carl/dream` lever kvar i
