@@ -5,5 +5,11 @@
       "routePrefix": "/",
       "framework": "nextjs"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/extract-facts",
+      "schedule": "*/10 * * * *"
+    }
+  ]
 }

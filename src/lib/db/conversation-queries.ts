@@ -12,7 +12,7 @@ import 'server-only'
  * Verifieras integration när migration körs mot Carls DB.
  */
 
-import { and, desc, eq, ilike, isNull, lte, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { db } from './index'
 import {
@@ -21,6 +21,7 @@ import {
   conversationMemoryFacts,
   conversationTurns,
   systemPromptVersions,
+  type ExtractionStatus,
   type FactType,
 } from './conversation-schema'
 import { users } from './schema'
@@ -508,6 +509,159 @@ export async function deleteConversationFact(input: {
         eq(conversationFacts.userId, input.userId),
       ),
     )
+}
+
+// ─── Async fact-extraction (migration 0005, 2026-05-16) ──────────────────
+
+/**
+ * Hämta N äldsta pending eller failed turns för batch-extraction.
+ * Sorteras på created_at ASC så äldsta processas först (FIFO).
+ *
+ * `failed`-turns inkluderas så cron retry:ar. För att undvika hot-retry
+ * av en kontinuerligt-failande tur, exkluderar vi turns med
+ * extraction_attempted_at < retryBackoffMinutes minuter sedan.
+ *
+ * Returnerar payload som behövs av extractFactsBatch — turnId, userId,
+ * threadId, userText, selvraText, sourcesConsulted.
+ */
+export async function getPendingExtractionTurns(opts: {
+  limit: number
+  retryBackoffMinutes?: number
+}): Promise<
+  Array<{
+    turnId: string
+    userId: string
+    threadId: string
+    userText: string
+    selvraText: string
+    sourcesConsulted: ReadonlyArray<{ sourceAiId: string }>
+  }>
+> {
+  const backoffMin = opts.retryBackoffMinutes ?? 5
+  const backoffThreshold = new Date(Date.now() - backoffMin * 60_000)
+
+  const rows = await db
+    .select({
+      turnId: conversationTurns.id,
+      threadId: conversationTurns.conversationId,
+      userText: conversationTurns.userText,
+      selvraText: conversationTurns.selvraText,
+      sourcesConsulted: conversationTurns.sourcesConsulted,
+      userId: consumerConversations.userId,
+      extractionAttemptedAt: conversationTurns.extractionAttemptedAt,
+      extractionStatus: conversationTurns.extractionStatus,
+    })
+    .from(conversationTurns)
+    .innerJoin(
+      consumerConversations,
+      eq(conversationTurns.conversationId, consumerConversations.id),
+    )
+    .where(
+      and(
+        inArray(conversationTurns.extractionStatus, ['pending', 'failed']),
+        // selvraText måste finnas — annars är det memory-ack/fallback (skipped)
+        sql`${conversationTurns.selvraText} IS NOT NULL`,
+        // failed-turns: bara om backoff-period passerat
+        or(
+          eq(conversationTurns.extractionStatus, 'pending'),
+          and(
+            eq(conversationTurns.extractionStatus, 'failed'),
+            lte(conversationTurns.extractionAttemptedAt, backoffThreshold),
+          ),
+        ),
+      ),
+    )
+    .orderBy(asc(conversationTurns.createdAt))
+    .limit(opts.limit)
+
+  return rows.map((r) => {
+    // selvraText är non-null per WHERE-clause men TS vet inte det.
+    const selvraText = r.selvraText ?? ''
+    // sourcesConsulted är jsonb, kan vara null eller array
+    const raw = r.sourcesConsulted
+    const sources: Array<{ sourceAiId: string }> = Array.isArray(raw)
+      ? (raw as Array<{ sourceAiId?: string; source_ai_id?: string }>)
+          .map((s) => ({ sourceAiId: s.sourceAiId ?? s.source_ai_id ?? '' }))
+          .filter((s) => s.sourceAiId.length > 0)
+      : []
+
+    return {
+      turnId: r.turnId,
+      userId: r.userId,
+      threadId: r.threadId,
+      userText: r.userText,
+      selvraText,
+      sourcesConsulted: sources,
+    }
+  })
+}
+
+/**
+ * Markera en turns extraction-status. Settar extraction_attempted_at till
+ * NOW() oavsett status (för retry-backoff på 'failed').
+ *
+ * failureReason är bara relevant för 'failed' — annars null.
+ */
+export async function markTurnExtractionStatus(input: {
+  turnId: string
+  status: ExtractionStatus
+  failureReason?: string | null
+}): Promise<void> {
+  await db
+    .update(conversationTurns)
+    .set({
+      extractionStatus: input.status,
+      extractionAttemptedAt: new Date(),
+      extractionFailureReason: input.failureReason ?? null,
+    })
+    .where(eq(conversationTurns.id, input.turnId))
+}
+
+/**
+ * Bulk-markera flera turns till samma status. Optimering för batch-cron
+ * när alla succeeded eller alla skipped — sparar N round-trips.
+ */
+export async function bulkMarkTurnExtractionStatus(input: {
+  turnIds: ReadonlyArray<string>
+  status: ExtractionStatus
+}): Promise<void> {
+  if (input.turnIds.length === 0) return
+  await db
+    .update(conversationTurns)
+    .set({
+      extractionStatus: input.status,
+      extractionAttemptedAt: new Date(),
+      extractionFailureReason: null,
+    })
+    .where(inArray(conversationTurns.id, [...input.turnIds]))
+}
+
+/**
+ * Räkna pending/failed turns för monitoring. Cron-endpoint rapporterar
+ * detta så Sentry-alerting kan trigga om backlog växer obegränsat.
+ */
+export async function countPendingExtractionTurns(): Promise<{
+  pending: number
+  failed: number
+}> {
+  const rows = await db
+    .select({
+      status: conversationTurns.extractionStatus,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(conversationTurns)
+    .where(
+      inArray(conversationTurns.extractionStatus, ['pending', 'failed']),
+    )
+    .groupBy(conversationTurns.extractionStatus)
+
+  let pending = 0
+  let failed = 0
+  for (const r of rows) {
+    if (r.status === 'pending') pending = r.count
+    else if (r.status === 'failed') failed = r.count
+  }
+  return { pending, failed }
 }
 
 // ─── System-prompt-versionering ──────────────────────────────────────────

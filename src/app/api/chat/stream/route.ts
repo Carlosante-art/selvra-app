@@ -32,7 +32,7 @@ import {
   fetchActiveMemoryFacts,
   fetchActiveSystemPrompt,
   fetchRecentTurns,
-  persistConversationFacts,
+  markTurnExtractionStatus,
   persistMemoryFact,
   persistTurn,
   updateConversationTitle,
@@ -40,7 +40,6 @@ import {
 import { generateThreadTitle } from '@/lib/llm/generate-title'
 import {
   callMistral,
-  callMistralJsonSchema,
   callMistralWithTools,
   streamMistral,
 } from '@/lib/llm/mistral'
@@ -49,10 +48,6 @@ import {
   searchEventsTool,
 } from '@/lib/llm/tools/search-events'
 import { logger } from '@/lib/logging'
-import {
-  extractFactsFromTurn,
-  FACT_EXTRACTION_SCHEMA,
-} from '@/lib/observability/extract-facts-from-turn'
 import { fetchRelevantEvents } from '@/lib/observability/fetch-relevant-events'
 import { processStreamingUserTurn } from '@/lib/observability/process-streaming-user-turn'
 import { processStreamingUserTurnWithTools } from '@/lib/observability/process-streaming-user-turn-with-tools'
@@ -204,6 +199,14 @@ export async function POST(req: Request): Promise<Response> {
                 factText: event.factText,
                 sourceTurnId: turnId,
               })
+              // Memory-request: faktan går redan in i conversationMemoryFacts
+              // via persistMemoryFact ovan. extraction från ack-text skulle
+              // duplicera utan värde. Markera skipped så cron inte plockar
+              // upp den.
+              await markTurnExtractionStatus({
+                turnId,
+                status: 'skipped',
+              })
               log.info('stream_memory_request_persisted', {
                 conversationId,
                 factLength: event.factText.length,
@@ -245,43 +248,17 @@ export async function POST(req: Request): Promise<Response> {
                 })),
                 llmProvider: 'mistral',
               })
-              log.info('stream_llm_response_persisted', { conversationId })
+              log.info('stream_llm_response_persisted', { conversationId, turnId })
 
-              // V1 Steg 8 (V2 2026-05-16): json_schema-mode för strikt output.
-              const extractedFacts = await extractFactsFromTurn({
-                userText: inputText,
-                selvraText: event.selvraText,
-                sourcesConsulted: event.sourcesConsulted,
-                llmCall: (messages) =>
-                  callMistralJsonSchema(
-                    messages,
-                    'fact_extraction',
-                    FACT_EXTRACTION_SCHEMA,
-                  ),
-              })
-              if (extractedFacts.length > 0) {
-                try {
-                  await persistConversationFacts(
-                    extractedFacts.map((f) => ({
-                      userId,
-                      threadId: conversationId,
-                      turnId,
-                      factText: f.factText,
-                      factType: f.factType,
-                      sourceName: f.sourceName,
-                    })),
-                  )
-                  log.info('stream_facts_extracted', {
-                    conversationId,
-                    count: extractedFacts.length,
-                  })
-                  // revalidatePath('/minne' — iOS-pivot 2026-05-16: route raderad')
-                } catch (err) {
-                  log.warn('stream_facts_persist_failed', {
-                    error: err instanceof Error ? err.message : String(err),
-                  })
-                }
-              }
+              // V2 2026-05-16: fact-extraction flyttad till async cron-job
+              // (/api/cron/extract-facts, var 10:e min). persistTurn defaultar
+              // extraction_status='pending' så cron plockar upp turen.
+              // Sparar 50% LLM-kostnad via batch-amortisering + tar bort
+              // ~2s från turn-latensen användaren upplever.
+              //
+              // Trade-off: facts dyker upp i /minne med upp till 10-15 min
+              // delay. Acceptabelt per Väg-B-pakten (slowburn, ingen
+              // real-time-reflection-pressure).
 
               let title: string | null = null
               if (isFirstTurn) {
@@ -310,13 +287,19 @@ export async function POST(req: Request): Promise<Response> {
             }
 
             case 'fallback': {
-              const { conversationId } = await persistTurn({
+              const { conversationId, turnId } = await persistTurn({
                 conversationId: body.conversationId,
                 userId,
                 userText: inputText,
                 selvraText: event.selvraText,
                 sourcesConsulted: null,
                 llmProvider: 'mistral',
+              })
+              // Fallback-text är generisk "Mitt svar följde inte mina egna
+              // regler..." — inga facts att extrahera. Skipped.
+              await markTurnExtractionStatus({
+                turnId,
+                status: 'skipped',
               })
               log.warn('stream_fallback_persisted', {
                 conversationId,
