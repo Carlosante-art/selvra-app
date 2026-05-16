@@ -19,11 +19,11 @@ const STEPS = [
   },
   {
     icon: Layers,
-    text: 'Selvra strukturerar datan i en representation du kan se. Käll-attribuerad ner till varje rad.',
+    text: 'Selvra strukturerar datan i en representation du kan se. Käll-attribuerad ner till varje rad. Mönster över källor och tid räknas automatiskt.',
   },
   {
     icon: ArrowRightFromLine,
-    text: 'Representationen är din. SREF v1-export från dag ett. När du pratar med andra AI-system kan de läsa den — så att du slipper förklara dig från början varje gång.',
+    text: 'Andra AI-system — Claude, ChatGPT, Cursor — kan läsa din representation via öppet protokoll när du ger dem tillgång. Du slipper förklara dig från början i varje verktyg.',
   },
 ]
 

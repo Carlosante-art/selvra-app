@@ -84,7 +84,7 @@ export default function LandingPage() {
             className="font-sans text-sm transition-colors hover:opacity-70 pt-2"
             style={{ color: 'var(--color-ink-soft)' }}
           >
-            Se hur det fungerar →
+            Se ett exempel →
           </Link>
         </div>
       </article>

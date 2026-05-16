@@ -68,10 +68,10 @@ export function Screen1({ onAdvance }: Screen1Props) {
           className="leading-relaxed"
           style={{ fontSize: '17px', color: 'var(--color-ink)' }}
         >
-          I appen finner du mönster du själv är för nära för att se. Utanför
-          appen följer din representation med dig in i andra AI-ytor — så att
-          varje verktyg du använder kan förstå dig bättre, utan att du behöver
-          förklara dig från början varje gång.
+          I appen ser du mönster du är för nära för att se själv. Utanför
+          appen kan din representation följa dig in i andra AI-system —
+          Claude, ChatGPT, Cursor — via öppet protokoll, när du ger dem
+          tillgång. Du slipper förklara dig från början varje gång.
         </p>
       </div>
 
@@ -87,7 +87,7 @@ export function Screen1({ onAdvance }: Screen1Props) {
             className="font-sans text-sm transition-colors hover:opacity-70"
             style={{ color: 'var(--color-ink-soft)' }}
           >
-            För vem den är {whoForOpen ? '–' : '+'}
+            Vem den är för {whoForOpen ? '–' : '+'}
           </button>
           {whoForOpen && (
             <p
