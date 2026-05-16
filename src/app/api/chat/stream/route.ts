@@ -1,6 +1,32 @@
 /**
  * POST /api/chat/stream — streaming chat-endpoint för konsument-Selvra.
  *
+ * ─────────────────────────────────────────────────────────────────────
+ * DEPRECATED INTERNAL — beslut 2026-05-16
+ *
+ * Denna pipeline lever som Carl-dogfood-instrument under bootstrap.
+ * Den är INTE exponerad till nya användare. Selvra-app:s konsument-yta
+ * är pre-launch och web-UI är arkiverad till
+ * `archive/web-consumer-2026-05-15`.
+ *
+ * Konstitutionell positionering (per CONVERSATION_SOURCE_ATTRIBUTION i
+ * selvra-protocol/docs/ och Princip 11 i SELVRA_SPEC):
+ *   "Selvra äger representationen, inte konversationen.
+ *    En LLM är en kanal, inte en sensor."
+ *
+ * Denna pipeline motsäger den positioneringen genom att göra Selvra-app
+ * till en chat-yta. Beslutet 2026-05-16: behåll tills iOS-port avvecklar
+ * selvra-app helt — då försvinner chat-pipelinen med kroppen. Se
+ * `.gsd/CHAT_PIPELINE_DEPRECATION_2026-05-16.md` för full motivering.
+ *
+ * Regler under deprecation-perioden:
+ *   - INGA nya features får byggas på denna pipeline
+ *   - Bug-fixes endast om de blockerar dogfood
+ *   - Ingen marknadsföring av endpointet till externa konsumenter
+ *   - När iOS-pipelinen är produktions-redo: radera hela pipelinen i
+ *     samma PR som arkiverar web-UI-trådar permanent
+ * ─────────────────────────────────────────────────────────────────────
+ *
  * Pipelinen är samma som sendMessage Server Action men med streaming-
  * LLM och NDJSON-event-respons. Klient (StreamingChatFeed) POST:ar hit
  * och läser response-stream för token-för-token-rendering.
