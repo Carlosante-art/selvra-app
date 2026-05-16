@@ -4,7 +4,13 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import NextAuth from 'next-auth'
 import Resend from 'next-auth/providers/resend'
 
+import * as Sentry from '@sentry/nextjs'
+
 import { db } from '@/lib/db'
+import {
+  getUserSoftDeleteStatus,
+  restoreUserAccount,
+} from '@/lib/db/conversation-queries'
 import {
   accounts,
   sessions,
@@ -12,6 +18,7 @@ import {
   verificationTokens,
 } from '@/lib/db/schema'
 import { ensureSelvraIdentity } from '@/lib/identity/ensure'
+import { logger } from '@/lib/logging'
 import { getMailProvider } from '@/lib/mail'
 
 /**
@@ -68,11 +75,47 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
      * Provisionera Selvra-tenant + derivera subject_id första gången
      * en user signar in. Idempotent — efterföljande sign-ins är no-op.
      *
+     * Auto-restore om user är soft-deleted inom 30-dagars-fönster
+     * (audit 2026-05-16 #18). Magic-link-verifikation bevisar
+     * email-ägarskap, så auto-restore vid explicit login är säkert.
+     * Hard-deleted users (cron körts) finns inte längre i DB → Auth.js
+     * skapar ny user-rad och vi behandlar dem som nya konton.
+     *
      * `events.signIn` fires efter att magic-link verifierats och session
      * skapats. user.id är persistent Auth.js-user-ID, samma över sessions.
      */
     async signIn({ user }) {
       if (!user.id) return
+      const log = logger.child({ module: 'auth/sign-in' })
+
+      // Check soft-delete-status först. Vid auto-restore loggar vi event
+      // till Sentry för audit-trail (GDPR Art. 17 — user kan visa att
+      // de återställde inom fönstret).
+      const softDelete = await getUserSoftDeleteStatus(user.id)
+      if (softDelete) {
+        if (softDelete.daysAgo <= 30) {
+          await restoreUserAccount(user.id)
+          log.info('account_auto_restored', {
+            userId: user.id,
+            daysAgo: softDelete.daysAgo,
+          })
+          Sentry.captureMessage('account auto-restored via sign-in', {
+            level: 'info',
+            tags: { event: 'account_restore' },
+            extra: { userId: user.id, daysSinceDeletion: softDelete.daysAgo },
+          })
+        } else {
+          // Edge-case: cron har inte körts än men user är utanför fönstret.
+          // Vi tillåter inte login — det vore inkonsistent med vad user
+          // explicit bett om. Cron tar dem nästa körning.
+          log.warn('account_login_blocked_expired_window', {
+            userId: user.id,
+            daysAgo: softDelete.daysAgo,
+          })
+          throw new Error('Konto raderat. Skapa nytt konto för att fortsätta.')
+        }
+      }
+
       await ensureSelvraIdentity(user.id)
     },
   },

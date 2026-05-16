@@ -39,7 +39,15 @@ const SETUP_SQL = `
     "emailVerified" timestamptz,
     "image" text,
     "selvra_tenant_id" text,
-    "selvra_subject_id" text
+    "selvra_subject_id" text,
+    "deleted_at" timestamptz
+  );
+
+  CREATE TABLE "session" (
+    "sessionToken" text PRIMARY KEY NOT NULL,
+    "userId" text NOT NULL,
+    "expires" timestamptz NOT NULL,
+    CONSTRAINT "fk_session_user" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE
   );
 
   -- Konsument-Fas-1 tabeller
