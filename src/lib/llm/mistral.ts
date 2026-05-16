@@ -19,6 +19,7 @@ import 'server-only'
 import { Mistral } from '@mistralai/mistralai'
 
 import { logger } from '@/lib/logging'
+import { withMistralRetry } from './mistral-retry'
 
 /**
  * Tool-aware message-type. Används av callMistralWithTools där LLM:n
@@ -101,15 +102,19 @@ export async function callMistral(
 
   const t0 = Date.now()
   try {
-    const response = await getClient().chat.complete({
-      model,
-      // Mistral SDK accepterar tool/assistant-tool-call-messages som vår
-      // ChatMessage-union representerar 1:1. Cast så TS accepterar.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      messages: finalMessages as any,
-      temperature: 0.7,
-      maxTokens: 2000,
-    })
+    const response = await withMistralRetry(
+      () =>
+        getClient().chat.complete({
+          model,
+          // Mistral SDK accepterar tool/assistant-tool-call-messages som vår
+          // ChatMessage-union representerar 1:1. Cast så TS accepterar.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          messages: finalMessages as any,
+          temperature: 0.7,
+          maxTokens: 2000,
+        }),
+      { module: 'llm/mistral' },
+    )
 
     const content = response.choices?.[0]?.message?.content
     if (typeof content !== 'string' || content.length === 0) {
@@ -157,21 +162,25 @@ export async function callMistralJsonSchema(
 
   const t0 = Date.now()
   try {
-    const response = await getClient().chat.complete({
-      model,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      messages: messages as any,
-      responseFormat: {
-        type: 'json_schema',
-        jsonSchema: {
-          name: schemaName,
-          schemaDefinition,
-          strict: true,
-        },
-      },
-      temperature: 0.3, // lägre temp för strukturerad output
-      maxTokens: 2000,
-    })
+    const response = await withMistralRetry(
+      () =>
+        getClient().chat.complete({
+          model,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          messages: messages as any,
+          responseFormat: {
+            type: 'json_schema',
+            jsonSchema: {
+              name: schemaName,
+              schemaDefinition,
+              strict: true,
+            },
+          },
+          temperature: 0.3, // lägre temp för strukturerad output
+          maxTokens: 2000,
+        }),
+      { module: 'llm/mistral/json-schema' },
+    )
 
     const content = response.choices?.[0]?.message?.content
     if (typeof content !== 'string' || content.length === 0) {
@@ -218,18 +227,22 @@ export async function callMistralWithTools(
 
   const t0 = Date.now()
   try {
-    const response = await getClient().chat.complete({
-      model,
-      // SDK-types accepterar union — vi castar för att inkludera tool/
-      // assistant-tool-call-messages som vår union representerar 1:1.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      messages: messages as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tools: tools as any,
-      toolChoice: opts.toolChoice ?? 'auto',
-      temperature: 0.7,
-      maxTokens: 2000,
-    })
+    const response = await withMistralRetry(
+      () =>
+        getClient().chat.complete({
+          model,
+          // SDK-types accepterar union — vi castar för att inkludera tool/
+          // assistant-tool-call-messages som vår union representerar 1:1.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          messages: messages as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          tools: tools as any,
+          toolChoice: opts.toolChoice ?? 'auto',
+          temperature: 0.7,
+          maxTokens: 2000,
+        }),
+      { module: 'llm/mistral/with-tools' },
+    )
 
     const choice = response.choices?.[0]
     if (!choice) {
@@ -308,15 +321,23 @@ export async function* streamMistral(
   let chunkCount = 0
   let totalLength = 0
   try {
-    const stream = await getClient().chat.stream({
-      model,
-      // Samma cast som callMistral — SDK accepterar tool/assistant-tool-call
-      // varianter som vår ChatMessage-union representerar.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      messages: finalMessages as any,
-      temperature: 0.7,
-      maxTokens: 2000,
-    })
+    // Streaming: retry är OK för INITIAL connect (innan första chunk
+    // emitterats). Mid-stream-fel kan inte retry:as utan att klient ser
+    // dubblerade tokens. SDK:n returnerar stream-objektet från chat.stream()
+    // FÖRE några events kommer — så wrapping av just stream-init är säker.
+    const stream = await withMistralRetry(
+      () =>
+        getClient().chat.stream({
+          model,
+          // Samma cast som callMistral — SDK accepterar tool/assistant-tool-call
+          // varianter som vår ChatMessage-union representerar.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          messages: finalMessages as any,
+          temperature: 0.7,
+          maxTokens: 2000,
+        }),
+      { module: 'llm/mistral/stream' },
+    )
 
     for await (const event of stream) {
       const delta = event.data?.choices?.[0]?.delta?.content
