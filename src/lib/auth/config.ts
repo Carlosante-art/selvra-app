@@ -12,12 +12,17 @@ import {
   verificationTokens,
 } from '@/lib/db/schema'
 import { ensureSelvraIdentity } from '@/lib/identity/ensure'
+import { getMailProvider } from '@/lib/mail'
 
 /**
  * Auth.js v5 (NextAuth.js) konfiguration för selvra-app:s magic-link-auth.
  *
  * - Adapter: Drizzle mot Railway Postgres
- * - Provider: Resend (magic-link via mail)
+ * - Provider: Resend-skal som routar genom getMailProvider()-abstraktion.
+ *   sendVerificationRequest-override gör att vi kan byta mail-backend
+ *   (Resend → Postmark EU → Mailgun EU → ...) via MAIL_PROVIDER env-var
+ *   utan att röra Auth.js-config eller koppla in/ut providers. Audit
+ *   2026-05-16 (EU-suveränitet).
  * - Strategy: database sessions (server-renderade pages kan await:a sessionen)
  *
  * Selvra-protokoll-linkage (selvraSubjectId/selvraTenantId i users-tabellen)
@@ -28,6 +33,8 @@ import { ensureSelvraIdentity } from '@/lib/identity/ensure'
  * sin egen tenant i Selvra-protokollet så RLS isolerar defense-in-depth.
  */
 
+const MAIL_FROM = process.env.MAIL_FROM ?? 'onboarding@resend.dev'
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db, {
     usersTable: users,
@@ -37,8 +44,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   }),
   providers: [
     Resend({
-      from: process.env.MAIL_FROM ?? 'onboarding@resend.dev',
-      apiKey: process.env.RESEND_API_KEY ?? '',
+      from: MAIL_FROM,
+      // apiKey behålls eftersom Auth.js's Resend-provider validerar närvaro
+      // vid config-tid. När MAIL_PROVIDER != 'resend' används den inte —
+      // sendVerificationRequest tar över hela send-pathen.
+      apiKey: process.env.RESEND_API_KEY ?? 'unused-when-mail-provider-not-resend',
+      async sendVerificationRequest({ identifier, url }) {
+        await getMailProvider().sendMagicLink({
+          to: identifier,
+          magicLink: url,
+          from: MAIL_FROM,
+        })
+      },
     }),
   ],
   session: { strategy: 'database' },
