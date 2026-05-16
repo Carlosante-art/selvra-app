@@ -126,6 +126,7 @@ export function ConnectionsList({
               </div>
               <AuditLogPreview
                 sourceAiId={item.source_ai_id}
+                clientId={meta?.id ?? item.source_ai_id}
                 clientDisplayName={displayName}
               />
             </li>
