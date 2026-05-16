@@ -59,7 +59,6 @@ function DemoContent() {
   return (
     <main className="landing-page flex flex-1 flex-col items-stretch px-6 py-8 sm:px-8 sm:py-12">
       <div className="w-full max-w-[58ch] mx-auto">
-        <ProgressIndicator current={step} />
         <div key={step}>
           {step === 1 && <Screen1 onAdvance={() => navigate(2)} />}
           {step === 2 && <Screen2 onAdvance={() => navigate(3)} />}
@@ -67,31 +66,6 @@ function DemoContent() {
         </div>
       </div>
     </main>
-  )
-}
-
-function ProgressIndicator({ current }: { current: Step }) {
-  return (
-    <nav
-      aria-label="Demo-progress"
-      className="flex items-center gap-2 pt-4 pb-2"
-    >
-      {VALID_STEPS.map((s) => (
-        <span
-          key={s}
-          aria-current={current === s ? 'step' : undefined}
-          className="block h-px transition-all"
-          style={{
-            width: s === current ? '32px' : '16px',
-            backgroundColor:
-              s === current ? 'var(--color-ink)' : 'var(--color-hairline)',
-          }}
-        />
-      ))}
-      <span className="sr-only">
-        Steg {current} av {VALID_STEPS.length}
-      </span>
-    </nav>
   )
 }
 

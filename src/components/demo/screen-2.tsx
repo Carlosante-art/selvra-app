@@ -3,14 +3,18 @@
 /**
  * Skärm 2 — Representationen. Hjärtat av demon.
  *
- * Spec: "strukturerad sida som ser ut som en faktisk representation, INTE
- * en chat". Fyra sektioner — Kropp, Tid, Ord, Mönster. Mönster är visuellt
- * distinkt men inte skrikigt (vänster-kant-markering räcker).
+ * Spec v2 (2026-05-16): "Varje rad kan raderas..."-stroffen ligger direkt
+ * under underrubriken, inte i footer. Ny "Tillgång"-sektion efter de fyra
+ * data-sektionerna manifesterar MCP-portabilitet konkret ("Inga AI-system
+ * har just nu läsåtkomst"). Modal-texter uppdaterade med "signerad",
+ * "stöder Selvra-protokollet", "Inga kopior".
  *
- * Käll-badges på varje data-rad. Export- och Radera-knappar likvärdiga.
+ * Repetitions-disciplin: "representation", "käll-attribuerad", "du äger
+ * den" sägs varje koncept EN gång på sin starkaste plats. Bra läsare
+ * fattar.
  *
- * Konstitutionell: ingen klinisk vokabulär ("depression", "ångest"). Bara
- * "överväldigad", "tung", "sliten" — vanliga ord.
+ * Konstitutionell: ingen klinisk vokabulär. Bara "överväldigad", "tung",
+ * "sliten" — vanliga ord.
  */
 
 import { useState } from 'react'
@@ -59,7 +63,7 @@ export function Screen2({ onAdvance }: Screen2Props) {
       className="flex flex-col gap-12 pt-8 pb-16"
       aria-labelledby="screen-2-heading"
     >
-      <header className="flex flex-col gap-2">
+      <header className="flex flex-col gap-3">
         <h1
           id="screen-2-heading"
           className="font-serif font-normal tracking-tight"
@@ -77,6 +81,13 @@ export function Screen2({ onAdvance }: Screen2Props) {
         >
           Demo med syntetisk data — exempel-användare i mars.
         </p>
+        <p
+          className="leading-relaxed pt-2"
+          style={{ fontSize: '15px', color: 'var(--color-ink-soft)' }}
+        >
+          Varje rad kan raderas. Hela kan exporteras. Selvra äger inget av
+          detta.
+        </p>
       </header>
 
       <div className="flex flex-col gap-10">
@@ -86,29 +97,7 @@ export function Screen2({ onAdvance }: Screen2Props) {
         <PatternSection />
       </div>
 
-      <div
-        className="border-t pt-8 flex flex-col gap-3"
-        style={{ borderColor: 'var(--color-hairline)' }}
-      >
-        <p
-          className="font-sans"
-          style={{ fontSize: '13px', color: 'var(--color-ink-tertiary)' }}
-        >
-          Käll-badge är klickbar — i appen öppnar den källans data.
-        </p>
-        <p
-          className="font-sans"
-          style={{ fontSize: '13px', color: 'var(--color-ink-tertiary)' }}
-        >
-          Varje rad kan raderas. Hela representationen kan exporteras.
-        </p>
-        <p
-          className="font-sans"
-          style={{ fontSize: '13px', color: 'var(--color-ink-tertiary)' }}
-        >
-          Selvra äger inget av detta.
-        </p>
-      </div>
+      <AccessSection />
 
       <div className="flex flex-wrap gap-3 pt-2">
         <CtaButton variant="secondary" onClick={() => setExportOpen(true)}>
@@ -130,8 +119,8 @@ export function Screen2({ onAdvance }: Screen2Props) {
         title="Exportera (SREF v1)"
       >
         <p>
-          I appen laddas en JSON-fil som följer öppna SREF v1-formatet. Andra
-          LLM-system kan läsa den. Stänger demo.
+          I appen laddas en signerad JSON-fil i SREF v1-format. Andra system
+          som stöder Selvra-protokollet kan läsa den. Stänger demo.
         </p>
         <div className="pt-4">
           <CtaButton variant="secondary" onClick={() => setExportOpen(false)}>
@@ -147,7 +136,8 @@ export function Screen2({ onAdvance }: Screen2Props) {
         title="Radera allt"
       >
         <p>
-          I appen raderas hela representationen omedelbart. Stänger demo.
+          I appen raderas hela representationen omedelbart. Inga kopior.
+          Stänger demo.
         </p>
         <div className="pt-4">
           <CtaButton variant="secondary" onClick={() => setDeleteOpen(false)}>
@@ -223,6 +213,39 @@ function PatternSection() {
       <div className="pt-1">
         <SourceBadge source="Mönster, beräknat över 90 dagar" />
       </div>
+    </div>
+  )
+}
+
+function AccessSection() {
+  return (
+    <div
+      className="flex flex-col gap-3 border-t pt-8"
+      style={{ borderColor: 'var(--color-hairline)' }}
+    >
+      <h2
+        className="font-serif font-normal"
+        style={{
+          fontSize: '18px',
+          letterSpacing: '0.02em',
+          color: 'var(--color-ink)',
+        }}
+      >
+        Tillgång
+      </h2>
+      <p
+        className="leading-relaxed"
+        style={{ fontSize: '16px', color: 'var(--color-ink)' }}
+      >
+        Inga AI-system har just nu läsåtkomst till denna representation.
+      </p>
+      <p
+        className="leading-relaxed"
+        style={{ fontSize: '14px', color: 'var(--color-ink-soft)' }}
+      >
+        I appen kan du ge tillgång per AI-system och per datatyp. Tillgång
+        kan återkallas när som helst.
+      </p>
     </div>
   )
 }
