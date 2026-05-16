@@ -61,6 +61,14 @@ export default function LandingPage() {
             finns underlag. Inget coaching. Ingen manipulation. Bara det
             som är där.
           </p>
+
+          <p
+            className="leading-relaxed"
+            style={{ fontSize: '17px', color: 'var(--color-ink-soft)' }}
+          >
+            Du kan dela det Selvra ser med Claude, ChatGPT, Cursor eller
+            Goose. När och hur du väljer.
+          </p>
         </div>
 
         <div
