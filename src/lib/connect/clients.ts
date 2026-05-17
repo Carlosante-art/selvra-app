@@ -17,7 +17,11 @@
  */
 
 import { chatgptContent } from '@/content/connect/chatgpt-desktop'
-import { claudeCodeContent } from '@/content/connect/claude-code'
+// claudeCodeContent borttagen från katalogen 2026-05-18 — Claude Code är
+// dev-verktyg, inte konsument-AI. Selvras connect-position passar inte
+// "AI som hjälper bygga kod". Filen claude-code.ts behålls oimporterad
+// så utvecklare som vet om Selvra kan DCR-registrera manuellt
+// (claude-code är fortfarande i protocol-sidans _KNOWN_CLIENTS-whitelist).
 import { claudeContent } from '@/content/connect/claude-desktop'
 import { cursorContent } from '@/content/connect/cursor'
 import { genericContent } from '@/content/connect/generic-mcp'
@@ -31,7 +35,6 @@ export type { ConnectClientContent, PlatformKey }
 
 export const CLIENT_CONTENTS: ConnectClientContent[] = [
   claudeContent,
-  claudeCodeContent,
   cursorContent,
   chatgptContent,
   gooseContent,
