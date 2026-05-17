@@ -122,14 +122,6 @@ export function PlatformToggle({
   )
 }
 
-/**
- * Helper: läs platform-param från searchParams. Default desktop om
- * saknas, invalid, eller om klienten inte stöder mobile.
- */
-export function resolvePlatform(
-  rawParam: string | undefined,
-  mobileSupported: boolean,
-): PlatformKey {
-  if (rawParam === 'mobile' && mobileSupported) return 'mobile'
-  return 'desktop'
-}
+// resolvePlatform flyttad till './platform' (server-safe utility).
+// Importera därifrån direkt — re-export från denna 'use client'-fil
+// skulle propagera client-boundary till callers.

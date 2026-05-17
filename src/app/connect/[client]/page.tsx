@@ -7,10 +7,8 @@ import {
   BetaStatusNote,
   PlanRequirementNote,
 } from '@/components/connect/plan-and-beta-notes'
-import {
-  PlatformToggle,
-  resolvePlatform,
-} from '@/components/connect/platform-toggle'
+import { resolvePlatform } from '@/components/connect/platform'
+import { PlatformToggle } from '@/components/connect/platform-toggle'
 import { auth } from '@/lib/auth/config'
 import {
   getClientById,
