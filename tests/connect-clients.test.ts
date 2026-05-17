@@ -15,13 +15,14 @@ import {
 } from '@/lib/connect/clients'
 
 describe('CLIENTS catalog', () => {
-  it('innehåller alla 5 v1-klienter', () => {
+  it('innehåller alla 6 v2-klienter', () => {
     const ids = CLIENTS.map((c) => c.id)
     expect(ids).toEqual([
       'claude-desktop',
       'claude-code',
       'cursor',
       'chatgpt-desktop',
+      'goose',
       'generic-mcp',
     ])
   })
@@ -45,6 +46,7 @@ describe('CLIENTS catalog', () => {
       'claude-code': 'ccd910a9-9a99-5beb-a30a-3bab05342e37',
       cursor: '87d04481-b344-5ea6-b799-ab49a202b07f',
       'chatgpt-desktop': 'd4ad7c9f-b441-55dc-ade3-b641e6151067',
+      goose: '9c1e7204-4d5f-52c8-b7af-17cd4d996a21',
       'generic-mcp': 'e40b3b8e-4f6b-50b5-b5cf-5fb2d22e0e96',
     }
     for (const client of CLIENTS) {
@@ -104,6 +106,16 @@ describe('buildConfigSnippet', () => {
     expect(snippet).toContain(endpointStub)
     expect(snippet).toContain(`Bearer ${tokenStub}`)
     expect(snippet).toContain('Settings')
+  })
+
+  it('goose-yaml: YAML-snippet med extensions + streamable_http', () => {
+    const client = getClientById('goose') as ClientMeta
+    const snippet = buildConfigSnippet({ client, token: tokenStub, endpoint: endpointStub })
+    expect(snippet).toContain('extensions:')
+    expect(snippet).toContain('selvra:')
+    expect(snippet).toContain('type: streamable_http')
+    expect(snippet).toContain(`url: ${endpointStub}`)
+    expect(snippet).toContain(`Authorization: "Bearer ${tokenStub}"`)
   })
 
   it('generic-mcp: text-format med MCP-handshake-hint', () => {

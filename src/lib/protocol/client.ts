@@ -478,6 +478,7 @@ export type ConsumerClientName =
   | 'claude-code'
   | 'cursor'
   | 'chatgpt-desktop'
+  | 'goose'
   | 'generic-mcp'
 
 export type IssueTokenResult = {

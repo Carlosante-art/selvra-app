@@ -16,6 +16,7 @@ import { claudeCodeContent } from '@/content/connect/claude-code'
 import { claudeContent } from '@/content/connect/claude-desktop'
 import { cursorContent } from '@/content/connect/cursor'
 import { genericContent } from '@/content/connect/generic-mcp'
+import { gooseContent } from '@/content/connect/goose'
 import { resolvePlatform } from '@/components/connect/platform-toggle'
 import {
   CLIENT_CONTENTS,
@@ -24,13 +25,14 @@ import {
 } from '@/lib/connect/clients'
 
 describe('CLIENT_CONTENTS — katalog-shape', () => {
-  it('innehåller alla 5 v2-klienter', () => {
+  it('innehåller alla 6 v2-klienter (Goose tillagd 2026-05-16)', () => {
     const ids = CLIENT_CONTENTS.map((c) => c.id)
     expect(ids).toEqual([
       'claude-desktop',
       'claude-code',
       'cursor',
       'chatgpt-desktop',
+      'goose',
       'generic-mcp',
     ])
   })
@@ -44,15 +46,26 @@ describe('CLIENT_CONTENTS — katalog-shape', () => {
     }
   })
 
-  it('Cursor + Claude Code har mobile.supported=false', () => {
+  it('Cursor + Claude Code + Goose har mobile.supported=false (CLI-only)', () => {
     expect(cursorContent.mobile.supported).toBe(false)
     expect(claudeCodeContent.mobile.supported).toBe(false)
+    expect(gooseContent.mobile.supported).toBe(false)
   })
 
   it('Claude + ChatGPT + generic har mobile.supported=true', () => {
     expect(claudeContent.mobile.supported).toBe(true)
     expect(chatgptContent.mobile.supported).toBe(true)
     expect(genericContent.mobile.supported).toBe(true)
+  })
+
+  it('Goose saknar plan-krav (open-source) och beta-status (stable MCP-stöd)', () => {
+    expect(gooseContent.desktop.planRequirement).toBeNull()
+    expect(gooseContent.desktop.betaStatus).toBeUndefined()
+    expect(gooseContent.configFormat).toBe('goose-yaml')
+  })
+
+  it('Goose mobile-notes förklarar CLI-only-naturen', () => {
+    expect(gooseContent.mobile.notes).toMatch(/CLI|ingen mobile/i)
   })
 
   it('Claude desktop saknar plan-krav, mobile kräver Pro+', () => {
@@ -135,6 +148,7 @@ describe('konstitutionella checks på copy', () => {
     'src/content/connect/claude-code.ts',
     'src/content/connect/cursor.ts',
     'src/content/connect/chatgpt-desktop.ts',
+    'src/content/connect/goose.ts',
     'src/content/connect/generic-mcp.ts',
     'src/app/connect/page.tsx',
     'src/app/connect/[client]/page.tsx',
