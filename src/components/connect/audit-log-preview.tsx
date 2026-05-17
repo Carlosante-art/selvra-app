@@ -3,15 +3,21 @@
 /**
  * AuditLogPreview — expanderbar "Senaste anrop" per anslutning.
  *
+ * Preview-vy med 10 senaste anrop. För full historik finns separat
+ * route /connections/[client]/audit (länkad via "Se all historik"-länk
+ * när preview-listan är expanderad).
+ *
  * Lazy-loadar via getConnectionAuditAction först när användaren expanderar.
- * Visar upp till 10 senaste anrop med käll-attribuerad text.
  *
  * Konstitutionellt:
- * - Audit visar bara metadata (tool_name, timestamp) — aldrig payload
- * - "Claude Desktop läste …" — käll-attribuerat, inte "Du läste"
+ * - Audit visar bara metadata (resource_path, timestamp) — aldrig payload
+ * - "Claude Desktop anropade …" — käll-attribuerat, inte "Du läste"
  * - "Inga anrop ännu" är neutral, inte coachande
+ * - Preview != audit. Full audit-historik är konstitutionellt löfte och
+ *   måste alltid vara tillgänglig från denna komponent.
  */
 
+import Link from 'next/link'
 import { useState } from 'react'
 
 import {
@@ -22,9 +28,11 @@ import type { AuditEntry } from '@/lib/protocol/client'
 
 export function AuditLogPreview({
   sourceAiId,
+  clientId,
   clientDisplayName,
 }: {
   sourceAiId: string
+  clientId: string
   clientDisplayName: string
 }) {
   const [expanded, setExpanded] = useState(false)
@@ -42,7 +50,7 @@ export function AuditLogPreview({
       setState({ kind: 'loading' })
       const result: GetConnectionAuditResult = await getConnectionAuditAction(
         sourceAiId,
-        10,
+        { limit: 10 },
       )
       if (result.ok) {
         setState({ kind: 'loaded', items: result.items, total: result.total })
@@ -106,15 +114,35 @@ export function AuditLogPreview({
                   </li>
                 ))}
               </ul>
-              {state.total > state.items.length && (
-                <p
-                  className="font-sans text-xs"
-                  style={{ color: 'var(--color-ink-tertiary)' }}
+              <div className="flex items-baseline justify-between gap-3 flex-wrap pt-1">
+                {state.total > state.items.length ? (
+                  <p
+                    className="font-sans text-xs"
+                    style={{ color: 'var(--color-ink-tertiary)' }}
+                  >
+                    Visar {state.items.length} av {state.total} totalt.
+                  </p>
+                ) : (
+                  <span />
+                )}
+                <Link
+                  href={`/connections/${clientId}/audit`}
+                  className="font-sans text-xs transition-colors hover:opacity-70"
+                  style={{ color: 'var(--color-ink-soft)' }}
                 >
-                  Visar {state.items.length} av {state.total} totalt.
-                </p>
-              )}
+                  Se all historik →
+                </Link>
+              </div>
             </>
+          )}
+          {state.kind === 'loaded' && state.items.length === 0 && (
+            <Link
+              href={`/connections/${clientId}/audit`}
+              className="font-sans text-xs transition-colors hover:opacity-70"
+              style={{ color: 'var(--color-ink-tertiary)' }}
+            >
+              Öppna full audit-vy →
+            </Link>
           )}
         </div>
       )}

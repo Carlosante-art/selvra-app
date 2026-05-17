@@ -129,7 +129,7 @@ export async function pollConnectionAction(
     if (Number.isNaN(since)) {
       return { ok: false, error: 'Ogiltig timestamp' }
     }
-    const result = await getConnectionAudit(sourceAiId, 20)
+    const result = await getConnectionAudit(sourceAiId, { limit: 20 })
     const hit =
       result.items.find((entry) => {
         const ts = new Date(entry.timestamp).getTime()
@@ -152,12 +152,18 @@ export async function pollConnectionAction(
  * AuditLogPreview-komponenten på /connections.
  */
 export type GetConnectionAuditResult =
-  | { ok: true; items: AuditEntry[]; total: number }
+  | {
+      ok: true
+      items: AuditEntry[]
+      total: number
+      offset: number
+      hasMore: boolean
+    }
   | { ok: false; error: string }
 
 export async function getConnectionAuditAction(
   sourceAiId: string,
-  limit = 10,
+  options: { limit?: number; offset?: number } = {},
 ): Promise<GetConnectionAuditResult> {
   const log = logger.child({ module: 'connect/actions/audit' })
   const session = await auth()
@@ -166,8 +172,17 @@ export async function getConnectionAuditAction(
   }
 
   try {
-    const result = await getConnectionAudit(sourceAiId, limit)
-    return { ok: true, items: result.items, total: result.total_count }
+    const result = await getConnectionAudit(sourceAiId, {
+      limit: options.limit ?? 10,
+      offset: options.offset ?? 0,
+    })
+    return {
+      ok: true,
+      items: result.items,
+      total: result.total_count,
+      offset: result.offset,
+      hasMore: result.has_more,
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     log.error('get_connection_audit_failed', {

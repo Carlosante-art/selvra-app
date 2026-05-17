@@ -152,19 +152,52 @@ describe('getConnectionAuditAction', () => {
         },
       ],
       total_count: 7,
+      offset: 0,
+      has_more: false,
     })
-    const result = await getConnectionAuditAction('x', 10)
+    const result = await getConnectionAuditAction('x', { limit: 10 })
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.items).toHaveLength(1)
       expect(result.total).toBe(7)
+      expect(result.offset).toBe(0)
+      expect(result.hasMore).toBe(false)
     }
   })
 
-  it('respekterar limit-arg', async () => {
-    mockGetConnectionAudit.mockResolvedValue({ items: [], total_count: 0 })
-    await getConnectionAuditAction('x', 5)
-    expect(mockGetConnectionAudit).toHaveBeenCalledWith('x', 5)
+  it('respekterar limit + offset-arg', async () => {
+    mockGetConnectionAudit.mockResolvedValue({
+      items: [],
+      total_count: 0,
+      offset: 50,
+      has_more: false,
+    })
+    await getConnectionAuditAction('x', { limit: 5, offset: 50 })
+    expect(mockGetConnectionAudit).toHaveBeenCalledWith('x', {
+      limit: 5,
+      offset: 50,
+    })
+  })
+
+  it('hasMore=true vid paginerings-fönster med fler entries', async () => {
+    mockGetConnectionAudit.mockResolvedValue({
+      items: new Array(50).fill({
+        source_ai_id: 'x',
+        resource_path: 'query_representation',
+        response_status: 'ok',
+        duration_ms: 10,
+        timestamp: '2026-05-16T12:00:00.000Z',
+      }),
+      total_count: 200,
+      offset: 0,
+      has_more: true,
+    })
+    const result = await getConnectionAuditAction('x', { limit: 50 })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.hasMore).toBe(true)
+      expect(result.total).toBe(200)
+    }
   })
 })
 

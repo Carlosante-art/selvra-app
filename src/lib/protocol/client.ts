@@ -581,12 +581,23 @@ export type AuditEntry = {
 
 export async function getConnectionAudit(
   sourceAiId: string,
-  limit = 20,
-): Promise<{ items: AuditEntry[]; total_count: number }> {
+  options: { limit?: number; offset?: number } = {},
+): Promise<{
+  items: AuditEntry[]
+  total_count: number
+  offset: number
+  has_more: boolean
+}> {
   const ctx = await getRequestContext()
+  const limit = options.limit ?? 20
+  const offset = options.offset ?? 0
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  })
   return call(
     ctx,
-    `/v1/connections/${sourceAiId}/audit?limit=${limit}`,
+    `/v1/connections/${sourceAiId}/audit?${params.toString()}`,
     {
       method: 'GET',
       scopes: ['read'],
