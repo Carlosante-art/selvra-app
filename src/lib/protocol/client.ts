@@ -400,6 +400,29 @@ export async function getSREFExport(): Promise<SrefExportResponse> {
 }
 
 /**
+ * Pusha ett event till current user:s subject via POST
+ * /v1/subjects/{id}/events. Används av sync-jobb (Strava etc.) som
+ * pushar data-källor till Selvra-protokollet via event-injection.
+ *
+ * Eventet passerar moderator-pipelinen (trust → consistency → scope)
+ * innan persist. Vid REQUIRES_USER_REVIEW eller REJECTED kastar
+ * `call()` med statuskoden — caller får hantera.
+ */
+export async function appendEvent(request: import('./types').CreateEventRequest): Promise<{
+  event_id: string
+  sequence: number
+  category: string
+  event_type: string
+}> {
+  const ctx = await getRequestContext()
+  return call(ctx, `/v1/subjects/${ctx.subjectId}/events`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+    scopes: ['write'],
+  })
+}
+
+/**
  * Lista events för current user:s subject med optional filter på
  * event_type och tidpunkt.
  */
