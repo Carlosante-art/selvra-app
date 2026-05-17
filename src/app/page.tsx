@@ -94,6 +94,13 @@ export default function LandingPage() {
           >
             Se ett exempel →
           </Link>
+          <Link
+            href="/connect"
+            className="font-sans text-sm transition-colors hover:opacity-70"
+            style={{ color: 'var(--color-ink-soft)' }}
+          >
+            Anslut till AI →
+          </Link>
         </div>
       </article>
     </main>
