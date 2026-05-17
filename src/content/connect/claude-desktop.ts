@@ -4,6 +4,13 @@
  * Tekniskt ID är fortfarande 'claude-desktop' (låst i protocol UUID5
  * pre-computed mapping). Display-namn är "Claude" eftersom samma
  * grants/token gäller desktop, mobile-app och claude.ai webb.
+ *
+ * 2026-05-17 update: Claude Desktop (latest), claude.ai webb och
+ * mobile-app stödjer ALLA remote MCP via Custom Connectors + OAuth 2.1
+ * + Dynamic Client Registration (MCP-spec 2025-03+). Användaren behöver
+ * bara klistra in vår MCP-URL — Claude registrerar sig själv mot vår
+ * /oauth/register, redirectar till vår /oauth/authorize-consent-screen
+ * och får tokens automatiskt. Ingen token-kopiering, ingen config-fil.
  */
 
 import type { ConnectClientContent } from './types'
@@ -17,33 +24,30 @@ export const claudeContent: ConnectClientContent = {
   configFormat: 'claude-desktop-json',
   desktop: {
     planRequirement: null,
-    configPaths: {
-      macos: '~/Library/Application Support/Claude/claude_desktop_config.json',
-      windows: '%APPDATA%\\Claude\\claude_desktop_config.json',
-    },
+    oauthDcrSupported: true,
     instructionSteps: [
-      'Öppna config-filen (skapa den om den inte finns).',
-      'Klistra in JSON-snippet ovan.',
-      'Starta om Claude Desktop.',
-      'Klicka "Testa anslutning" nedan.',
+      'Öppna Claude Desktop på din dator.',
+      'Klicka Settings → Connectors → "+" → "Add custom connector".',
+      'Klistra in URL:en ovan. Lämna namn, client ID och secret tomma.',
+      'Klicka Add. En browser-flik öppnas där du godkänner anslutningen.',
+      'Klart. Återkalla när som helst i /connections här.',
     ],
-    docsLink: 'https://modelcontextprotocol.io/quickstart/user',
+    docsLink:
+      'https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp',
   },
   mobile: {
     supported: true,
     platforms: ['ios', 'android', 'web'],
     planRequirement: 'Claude Pro, Max, Team eller Enterprise (inte gratis-planen).',
+    oauthDcrSupported: true,
     instructionSteps: [
       'Öppna Claude-appen på telefonen (eller claude.ai i webbläsare).',
-      'Settings → Connectors → Add custom connector.',
-      'Name: Selvra',
-      'URL: https://mcp.selvra.ai/mcp',
-      'Authentication: Bearer token (klistra in token från denna sida).',
-      'Spara och starta nytt samtal.',
-      'Tillbaka hit och klicka "Testa anslutning".',
+      'Settings → Connectors → "+" → "Add custom connector".',
+      'Klistra in URL:en ovan. Lämna namn, client ID och secret tomma.',
+      'Klicka Add. Du redirectas till Selvra för att godkänna.',
+      'Klart. Återkalla när som helst i /connections här.',
     ],
-    docsLink: 'https://support.anthropic.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp',
-    notes:
-      'Token måste kopieras från denna sida till telefonen. Enklast: öppna selvra-app i telefonens webbläsare och kopiera token där.',
+    docsLink:
+      'https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp',
   },
 }

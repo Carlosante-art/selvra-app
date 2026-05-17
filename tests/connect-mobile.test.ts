@@ -17,7 +17,7 @@ import { claudeContent } from '@/content/connect/claude-desktop'
 import { cursorContent } from '@/content/connect/cursor'
 import { genericContent } from '@/content/connect/generic-mcp'
 import { gooseContent } from '@/content/connect/goose'
-import { resolvePlatform } from '@/components/connect/platform-toggle'
+import { resolvePlatform } from '@/components/connect/platform'
 import {
   CLIENT_CONTENTS,
   getClientContentById,

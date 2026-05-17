@@ -27,6 +27,13 @@ export type DesktopContent = {
   notes?: string
   /** Om klient-MCP-stödet är beta — visa upfront. Null = stable. */
   betaStatus?: string | null
+  /**
+   * true = klienten stödjer remote MCP via OAuth 2.1 + Dynamic Client
+   * Registration (MCP-spec 2025-03+). UI visar EN URL + 3-steg-instruktion;
+   * INGEN token-generering, INGEN JSON-config, INGEN filplats-redigering.
+   * Default false = legacy manuell config-flow (token + JSON-snippet).
+   */
+  oauthDcrSupported?: boolean
 }
 
 export type MobileContent = {
@@ -42,6 +49,8 @@ export type MobileContent = {
   docsLink: string
   notes?: string
   betaStatus?: string | null
+  /** Se DesktopContent.oauthDcrSupported. Samma semantik. */
+  oauthDcrSupported?: boolean
 }
 
 export type ConnectClientContent = {

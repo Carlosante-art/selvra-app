@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 
 import { ConnectFlow } from '@/components/connect/connect-flow'
+import { OAuthConnectorInstructions } from '@/components/connect/oauth-connector-instructions'
 import {
   BetaStatusNote,
   PlanRequirementNote,
@@ -92,21 +93,6 @@ export default async function ClientConnectPage({
           }
         />
 
-        <aside
-          className="font-sans text-xs leading-relaxed border rounded-md p-3"
-          style={{
-            borderColor: 'var(--color-hairline)',
-            color: 'var(--color-ink-tertiary)',
-            backgroundColor: 'var(--color-paper-shade, transparent)',
-          }}
-        >
-          Manuell config — fallback för klienter som inte stödjer OAuth
-          2.1 + DCR (MCP-spec 2025-03). När din klient lägger till
-          OAuth-stöd: peka den mot{' '}
-          <code className="font-mono">https://mcp.selvra.ai</code> så
-          sker connect-flow:n automatiskt (ingen JSON att kopiera).
-        </aside>
-
         {activeSection.planRequirement && (
           <PlanRequirementNote requirement={activeSection.planRequirement} />
         )}
@@ -115,17 +101,24 @@ export default async function ClientConnectPage({
           <BetaStatusNote status={activeSection.betaStatus} />
         )}
 
-        <ConnectFlow
-          client={client}
-          mcpEndpoint={mcpEndpoint}
-          platform={platform}
-          mobileInstructionSteps={
-            platform === 'mobile' ? content.mobile.instructionSteps : undefined
-          }
-          mobileDocsLink={
-            platform === 'mobile' ? content.mobile.docsLink : undefined
-          }
-        />
+        {activeSection.oauthDcrSupported ? (
+          <OAuthConnectorInstructions
+            mcpEndpoint={mcpEndpoint}
+            instructionSteps={activeSection.instructionSteps}
+          />
+        ) : (
+          <ConnectFlow
+            client={client}
+            mcpEndpoint={mcpEndpoint}
+            platform={platform}
+            mobileInstructionSteps={
+              platform === 'mobile' ? content.mobile.instructionSteps : undefined
+            }
+            mobileDocsLink={
+              platform === 'mobile' ? content.mobile.docsLink : undefined
+            }
+          />
+        )}
 
         {platform === 'desktop' && activeSection.notes && (
           <aside
