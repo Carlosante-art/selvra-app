@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { auth } from '@/lib/auth/config'
-import { CLIENTS } from '@/lib/connect/clients'
+import { CLIENT_CONTENTS, platformBadge } from '@/lib/connect/clients'
 
 export const metadata: Metadata = {
   title: 'Anslut till AI',
@@ -37,32 +37,41 @@ export default async function ConnectPage() {
             className="leading-relaxed"
             style={{ fontSize: '17px', color: 'var(--color-ink-soft)' }}
           >
-            Välj klient. Du får en konfiguration att klistra in och en token
-            som ger läs-access i 30 dagar.
+            Välj klient. På nästa sida väljer du desktop eller mobile,
+            genererar token, och får en konfiguration eller setup-steg
+            att följa.
           </p>
         </header>
 
         <ul className="flex flex-col gap-3 list-none p-0 m-0">
-          {CLIENTS.map((client) => (
-            <li key={client.id}>
+          {CLIENT_CONTENTS.map((content) => (
+            <li key={content.id}>
               <Link
-                href={`/connect/${client.id}`}
-                className="flex flex-col gap-1 p-5 transition-colors hover:opacity-80"
+                href={`/connect/${content.id}`}
+                className="flex flex-col gap-2 p-5 transition-colors hover:opacity-80"
                 style={{
                   border: '1px solid var(--color-hairline)',
                   borderRadius: '4px',
                   textDecoration: 'none',
                 }}
               >
-                <span
-                  className="font-serif"
-                  style={{
-                    fontSize: '18px',
-                    color: 'var(--color-ink)',
-                  }}
-                >
-                  {client.displayName}
-                </span>
+                <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                  <span
+                    className="font-serif"
+                    style={{
+                      fontSize: '18px',
+                      color: 'var(--color-ink)',
+                    }}
+                  >
+                    {content.displayName}
+                  </span>
+                  <span
+                    className="font-sans text-xs uppercase tracking-wider"
+                    style={{ color: 'var(--color-ink-tertiary)' }}
+                  >
+                    {platformBadge(content)}
+                  </span>
+                </div>
                 <span
                   className="font-sans"
                   style={{
@@ -70,7 +79,7 @@ export default async function ConnectPage() {
                     color: 'var(--color-ink-soft)',
                   }}
                 >
-                  {client.description}
+                  {content.description}
                 </span>
               </Link>
             </li>

@@ -3,12 +3,26 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 
 import { ConnectFlow } from '@/components/connect/connect-flow'
+import {
+  BetaStatusNote,
+  PlanRequirementNote,
+} from '@/components/connect/plan-and-beta-notes'
+import {
+  PlatformToggle,
+  resolvePlatform,
+} from '@/components/connect/platform-toggle'
 import { auth } from '@/lib/auth/config'
-import { getClientById } from '@/lib/connect/clients'
+import {
+  getClientById,
+  getClientContentById,
+} from '@/lib/connect/clients'
 
 export const runtime = 'nodejs'
 
-type Props = { params: Promise<{ client: string }> }
+type Props = {
+  params: Promise<{ client: string }>
+  searchParams: Promise<{ platform?: string }>
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { client: clientParam } = await params
@@ -20,10 +34,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ClientConnectPage({ params }: Props) {
+export default async function ClientConnectPage({
+  params,
+  searchParams,
+}: Props) {
   const { client: clientParam } = await params
+  const { platform: platformParam } = await searchParams
+
   const client = getClientById(clientParam)
-  if (!client) notFound()
+  const content = getClientContentById(clientParam)
+  if (!client || !content) notFound()
 
   const session = await auth()
   if (!session?.user?.id) {
@@ -33,9 +53,13 @@ export default async function ClientConnectPage({ params }: Props) {
   const mcpEndpoint =
     process.env.NEXT_PUBLIC_MCP_ENDPOINT ?? 'https://mcp.selvra.ai/mcp'
 
+  const platform = resolvePlatform(platformParam, content.mobile.supported)
+  const activeSection =
+    platform === 'mobile' ? content.mobile : content.desktop
+
   return (
     <main className="flex flex-1 flex-col px-6 py-12 sm:px-8 sm:py-16">
-      <article className="w-full max-w-[60ch] mx-auto flex flex-col gap-10">
+      <article className="w-full max-w-[60ch] mx-auto flex flex-col gap-8">
         <header className="flex flex-col gap-3">
           <Link
             href="/connect"
@@ -62,24 +86,66 @@ export default async function ClientConnectPage({ params }: Props) {
           </p>
         </header>
 
-        <ConnectFlow client={client} mcpEndpoint={mcpEndpoint} />
+        <PlatformToggle
+          active={platform}
+          mobileSupported={content.mobile.supported}
+          mobileUnsupportedReason={
+            content.mobile.notes ?? 'Inte tillgängligt för denna klient ännu.'
+          }
+        />
 
-        {client.docsUrl && (
-          <footer
-            className="border-t pt-6"
-            style={{ borderColor: 'var(--color-hairline)' }}
-          >
-            <a
-              href={client.docsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-sans text-sm transition-colors hover:opacity-70"
-              style={{ color: 'var(--color-ink-soft)' }}
-            >
-              {client.displayName} MCP-dokumentation →
-            </a>
-          </footer>
+        {activeSection.planRequirement && (
+          <PlanRequirementNote requirement={activeSection.planRequirement} />
         )}
+
+        {activeSection.betaStatus && (
+          <BetaStatusNote status={activeSection.betaStatus} />
+        )}
+
+        <ConnectFlow
+          client={client}
+          mcpEndpoint={mcpEndpoint}
+          platform={platform}
+          mobileInstructionSteps={
+            platform === 'mobile' ? content.mobile.instructionSteps : undefined
+          }
+          mobileDocsLink={
+            platform === 'mobile' ? content.mobile.docsLink : undefined
+          }
+        />
+
+        {platform === 'desktop' && activeSection.notes && (
+          <aside
+            className="font-sans text-xs"
+            style={{ color: 'var(--color-ink-tertiary)' }}
+          >
+            {activeSection.notes}
+          </aside>
+        )}
+
+        {platform === 'mobile' && content.mobile.notes && (
+          <aside
+            className="font-sans text-xs"
+            style={{ color: 'var(--color-ink-tertiary)' }}
+          >
+            {content.mobile.notes}
+          </aside>
+        )}
+
+        <footer
+          className="border-t pt-6"
+          style={{ borderColor: 'var(--color-hairline)' }}
+        >
+          <a
+            href={activeSection.docsLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-sans text-sm transition-colors hover:opacity-70"
+            style={{ color: 'var(--color-ink-soft)' }}
+          >
+            {client.displayName} MCP-dokumentation →
+          </a>
+        </footer>
       </article>
     </main>
   )

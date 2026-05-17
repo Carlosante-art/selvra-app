@@ -1,100 +1,77 @@
 /**
- * Klient-katalog för connect-flow. Hardcoded v1 — strict whitelist matchar
- * selvra-protocol-sidan (src/selvra/mcp/tokens.py _KNOWN_CLIENTS).
+ * Klient-katalog för connect-flow. Innehåll bor i src/content/connect/* —
+ * denna fil är aggregator + helpers.
  *
- * Lägga till ny klient: lägg entry här + uppdatera _KNOWN_CLIENTS i
- * selvra-protocol. Båda sidor måste vara synca för att UUID5-mapping ska
- * fungera konsekvent.
+ * v2 (mobile-stöd, 2026-05-16): varje klient har desktop- + mobile-sektion
+ * (se ConnectClientContent). Vissa klienter har mobile.supported=false
+ * (Cursor, Claude Code) — UI visar disabled-toggle med tooltip.
  *
- * UUID:n nedan är pre-computed via:
- *   uuid.uuid5("e7a4b8d0-1c5f-4e92-8a67-f3d9c2e4b5a1", client_name)
- * Stable över tid — UI använder dessa för reverse-lookup
- * (server → UUID, UI → display-namn).
+ * Strict whitelist matchar selvra-protocol-sidan (src/selvra/mcp/tokens.py
+ * _KNOWN_CLIENTS). Lägga till ny klient: ny content-fil + entry här +
+ * uppdatera _KNOWN_CLIENTS i selvra-protocol. UUID5 pre-computed via:
+ *   uuid.uuid5("e7a4b8d0-1c5f-4e92-8a67-f3d9c2e4b5a1", client_id)
+ *
+ * Bakåtkompatibilitet: `ClientMeta` (gamla typen) bevaras via export så
+ * befintliga konsumenter (ConnectionsList, etc.) inte bryts. Den deriveras
+ * ur ConnectClientContent — desktop-sektion är default.
  */
 
-import type { ConsumerClientName } from '@/lib/protocol/client'
+import { chatgptContent } from '@/content/connect/chatgpt-desktop'
+import { claudeCodeContent } from '@/content/connect/claude-code'
+import { claudeContent } from '@/content/connect/claude-desktop'
+import { cursorContent } from '@/content/connect/cursor'
+import { genericContent } from '@/content/connect/generic-mcp'
+import type {
+  ConnectClientContent,
+  PlatformKey,
+} from '@/content/connect/types'
 
+export type { ConnectClientContent, PlatformKey }
+
+export const CLIENT_CONTENTS: ConnectClientContent[] = [
+  claudeContent,
+  claudeCodeContent,
+  cursorContent,
+  chatgptContent,
+  genericContent,
+]
+
+/**
+ * Bakåtkompatibel ClientMeta-typ för befintliga konsumenter (ConnectionsList,
+ * AccessSummary, etc.) som bara bryr sig om display-namn + config-format.
+ * Härleds ur ConnectClientContent — desktop-config:en är default.
+ */
 export type ClientMeta = {
-  id: ConsumerClientName
+  id: ConnectClientContent['id']
   displayName: string
   description: string
-  /** UUID5-deriverad från id mot SELVRA_SOURCE_AI_NAMESPACE. Pre-computed. */
   sourceAiId: string
-  /** Klient-specifik konfig-format (kopierbar). */
-  configFormat: 'claude-desktop-json' | 'cursor-json' | 'chatgpt-text' | 'generic-mcp'
-  /** Path-instruktioner per OS för config-fil. null = ej tillämpligt. */
+  configFormat: ConnectClientContent['configFormat']
   configPaths: { macos?: string; windows?: string; linux?: string } | null
-  /** Officiell dokumentationslänk. */
   docsUrl: string | null
 }
 
-export const CLIENTS: ClientMeta[] = [
-  {
-    id: 'claude-desktop',
-    displayName: 'Claude Desktop',
-    description:
-      'Anthropics desktop-klient (macOS, Windows). Stöder MCP via claude_desktop_config.json.',
-    sourceAiId: 'f208ffdb-5445-5d4e-93be-c9bac0030571',
-    configFormat: 'claude-desktop-json',
-    configPaths: {
-      macos:
-        '~/Library/Application Support/Claude/claude_desktop_config.json',
-      windows: '%APPDATA%\\Claude\\claude_desktop_config.json',
-    },
-    docsUrl: 'https://modelcontextprotocol.io/quickstart/user',
-  },
-  {
-    id: 'claude-code',
-    displayName: 'Claude Code',
-    description:
-      'Anthropics CLI-agent. Stöder MCP via ~/.claude/mcp.json eller .mcp.json i repo.',
-    sourceAiId: 'ccd910a9-9a99-5beb-a30a-3bab05342e37',
-    configFormat: 'claude-desktop-json',
-    configPaths: {
-      macos: '~/.claude/mcp.json',
-      linux: '~/.claude/mcp.json',
-      windows: '%USERPROFILE%\\.claude\\mcp.json',
-    },
-    docsUrl: 'https://docs.claude.com/en/docs/claude-code/mcp',
-  },
-  {
-    id: 'cursor',
-    displayName: 'Cursor',
-    description:
-      'AI-driven kod-editor. Stöder MCP via ~/.cursor/mcp.json (global) eller .cursor/mcp.json (per workspace).',
-    sourceAiId: '87d04481-b344-5ea6-b799-ab49a202b07f',
-    configFormat: 'cursor-json',
-    configPaths: {
-      macos: '~/.cursor/mcp.json',
-      linux: '~/.cursor/mcp.json',
-      windows: '%USERPROFILE%\\.cursor\\mcp.json',
-    },
-    docsUrl: 'https://docs.cursor.com/context/mcp',
-  },
-  {
-    id: 'chatgpt-desktop',
-    displayName: 'ChatGPT Desktop',
-    description:
-      'OpenAIs desktop-app. MCP-stöd via Connectors (beta, varierar med tier).',
-    sourceAiId: 'd4ad7c9f-b441-55dc-ade3-b641e6151067',
-    configFormat: 'chatgpt-text',
-    configPaths: null,
-    docsUrl: 'https://platform.openai.com/docs/mcp',
-  },
-  {
-    id: 'generic-mcp',
-    displayName: 'Annan MCP-klient',
-    description:
-      'Generisk anslutning för klienter som följer Model Context Protocol-specifikationen.',
-    sourceAiId: 'e40b3b8e-4f6b-50b5-b5cf-5fb2d22e0e96',
-    configFormat: 'generic-mcp',
-    configPaths: null,
-    docsUrl: 'https://modelcontextprotocol.io',
-  },
-]
+function toClientMeta(content: ConnectClientContent): ClientMeta {
+  return {
+    id: content.id,
+    displayName: content.displayName,
+    description: content.description,
+    sourceAiId: content.sourceAiId,
+    configFormat: content.configFormat,
+    configPaths: content.desktop.configPaths ?? null,
+    docsUrl: content.desktop.docsLink ?? null,
+  }
+}
+
+export const CLIENTS: ClientMeta[] = CLIENT_CONTENTS.map(toClientMeta)
 
 export function getClientById(id: string): ClientMeta | null {
   return CLIENTS.find((c) => c.id === id) ?? null
+}
+
+/** v2: hämta full content (med desktop + mobile) för id. */
+export function getClientContentById(id: string): ConnectClientContent | null {
+  return CLIENT_CONTENTS.find((c) => c.id === id) ?? null
 }
 
 /**
@@ -106,7 +83,18 @@ export function getClientBySourceAiId(sourceAiId: string): ClientMeta | null {
 }
 
 /**
+ * Plattform-stöd-badge för klient-val-sidan. Returnerar mänsklig text
+ * baserat på desktop + mobile.supported.
+ */
+export function platformBadge(content: ConnectClientContent): string {
+  return content.mobile.supported ? 'Desktop + Mobile' : 'Desktop endast'
+}
+
+/**
  * Bygg konfig-snippet för en given klient + token + endpoint.
+ * Endast använt för desktop-flöden i v2 — mobile-flöden använder
+ * instructionSteps istället för kopierbar config-snippet.
+ *
  * Returnerar formatted JSON eller text-instruktion beroende på klient.
  */
 export function buildConfigSnippet(input: {

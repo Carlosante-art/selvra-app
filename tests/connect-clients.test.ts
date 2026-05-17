@@ -55,7 +55,9 @@ describe('CLIENTS catalog', () => {
 
 describe('getClientById', () => {
   it('returnerar klient för känd id', () => {
-    expect(getClientById('claude-desktop')?.displayName).toBe('Claude Desktop')
+    // v2 (mobile-stöd): displayName är plattform-agnostiskt — "Claude" inte
+    // "Claude Desktop" eftersom samma id täcker både desktop + mobile.
+    expect(getClientById('claude-desktop')?.displayName).toBe('Claude')
   })
 
   it('returnerar null för okänd id', () => {
