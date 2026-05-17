@@ -1,6 +1,24 @@
 # STATE.md — selvra-app
 
-## Where I am
+## ⚠ AKTUELL STATUS (2026-05-17 kväll)
+
+**LÄSAREN FÖRST:** Den här filen är historisk arbetsdokument från 2026-05-11.
+För senaste session-status (2026-05-17 kväll), läs:
+
+> `.gsd/SESSION_HANDOVER_2026-05-17.md`
+
+Det dokumentet listar:
+- Vad mergades idag
+- Öppna PR:er + vad de väntar på
+- Kvarvarande blockers
+- Konstitutionella dokument och var de bor
+- Anna-test för iOS-design
+- Operativa fakta (UUIDs, deploy-topology)
+- Snabb-orientering för nästa Claude-instans
+
+---
+
+## Where I am (historiskt — 2026-05-11)
 
 **selvra-app live på prod: https://selvra-app-production.up.railway.app**
 
