@@ -121,14 +121,23 @@ Den med smidigast onboarding-flöde, mätt på:
 - Antal steg från Selvra-app till verifierad anslutning
 - Plan-krav (gratis-användare blockerade tidigt = friktion)
 - Mognadsgrad av MCP-stöd
+- Tillgänglighet av MCP-konfigurations-UI för icke-tekniska användare
 
-**Per maj 2026 är det troligen:**
-- **Claude Desktop på Mac** (mest moget MCP-stöd, mest dokumenterat), eller
-- **Claude mobile på iOS Pro** (smidigast på samma enhet som Selvra-appen)
+**Per maj 2026: Claude Desktop på Mac.**
 
-Övriga klienter (ChatGPT, Cursor, Goose) tillgängliga via `/connect/[client]` men inte i primär-flödet i app.
+Detta är det enda alternativet med både moget MCP-stöd OCH en konfigurations-UI som icke-tekniska användare kan navigera till. Övriga klienter har olika varianter av friktion:
 
-Detta är taktiskt val, inte konstitutionellt. Det får revideras när landskapet ändras.
+| Klient | Status maj 2026 | Friktion för icke-teknisk användare |
+|---|---|---|
+| Claude Desktop (Mac) | Fungerar | Cross-device QR-flow från iPhone → Mac, OK |
+| Claude iOS (Pro) | MCP-config finns men begravd i Settings | Hög — användaren hittar inte konfig-vägen |
+| ChatGPT Desktop | Custom connectors kräver Plus | Liknande Claude men sämre dokumenterat |
+| ChatGPT iOS | Inget MCP-config-UI | Inte tillgänglig som default |
+| Cursor / Goose | CLI-only | Inte målgrupp |
+
+**Konsekvens — ärlig:** iPhone-only-användare har inget bra alternativ i v1. Deep-link för MCP-konfiguration från extern app till Claude iOS finns inte ännu (Kategori D, väntar 6-18 mån). Tills dess: vår iPhone-app *måste* tydligt kommunicera att Mac eller dator krävs för Claude-anslutning. Den dolda kostnaden av att vara ärlig om detta är lägre än kostnaden av att låta användaren tro flödet är same-device-smidigt och sedan tappas vid steg 12.
+
+Detta är taktiskt val, inte konstitutionellt. Det får revideras när landskapet ändras — och vi ska aktivt bevaka Anthropic/OpenAI:s utveckling så vi kan ta nytta så fort iOS-deep-link blir möjligt.
 
 ---
 

@@ -82,6 +82,32 @@
 
 ---
 
+## Friktionspunkt 3b — Plan-status-kontroll (NY, flyttad från 10)
+
+**Steg i flödet:** Direkt efter Apple Sign-in. Före välkomst-förklaring.
+
+**Vem äger den:** Selvra (frågan) + Anthropic/OpenAI (planerna).
+
+**Vad vi kan göra:**
+- Fråga direkt efter sign-in: *"Vilken AI-assistent vill du använda Selvra med? Claude eller ChatGPT?"*
+- Per val: kolla plan-status — "Har du Claude Pro eller Claude Free?"
+- Om Free: tydligt visa att custom connectors kräver Pro (200 kr/månad) + erbjuda två alternativ:
+  - **Uppgradera nu** (länk öppnar Anthropic.com — användaren kommer tillbaka senare)
+  - **Fortsätt utan AI-anslutning än** (gå genom HealthKit-flödet, lämna AI-anslutning för senare när Pro är aktiverad)
+- Om Pro: bekräfta + gå vidare
+
+**Varför detta är flyttat hit:** Tidigare version frågade om plan i steg 10 (efter HealthKit-koppling). Anna-test visade att om hon måste uppgradera där, är hon mitt i flödet och tappar 10+ minuter på betalsida/e-postbekräftelse — det är avhopp. Tidig fråga betyder hon kan ordna Pro parallellt med HealthKit-läsning.
+
+**Vad vi inte kan göra:** Ändra Anthropic/OpenAI:s plan-modell. Verifiera plan automatiskt (vi kan bara fråga användaren).
+
+**Acceptabel tid:** Under 20 sekunder.
+
+**Kommunikation:** Direkt och ärlig. Inte sälja Pro — bara säga vad som krävs.
+
+**Kategori:** C (plan-kravet) + A (vår timing av frågan).
+
+---
+
 ## Friktionspunkt 4 — Förklaring av vad Selvra gör (welcome-skärm)
 
 **Steg i flödet:** Steg 3. Efter sign-in, första gången inloggad.
@@ -208,24 +234,23 @@
 
 ---
 
-## Friktionspunkt 10 — Plan-krav-information
+## Friktionspunkt 10 — Plan-status-bekräftelse (kort, eftersom 3b redan körts)
 
-**Steg i flödet:** Steg 9. Innan token-generering.
+**Steg i flödet:** Snabb bekräftelse precis innan token-generering. Om 3b körts ordentligt har vi redan vetat planen — detta är bara sanity-check.
 
-**Vem äger den:** Anthropic/OpenAI (kräver Pro/Plus för custom connectors), Selvra (kommunikation).
+**Vem äger den:** Selvra.
 
 **Vad vi kan göra:**
-- Tydligt säga om vald klient kräver paid plan, *innan* vi börjar token-flödet
-- Länk till hur man uppgraderar (extern länk, vi tar inte betalt själva)
-- Erbjuda alternativ klient om användaren inte vill uppgradera
+- "Vi kommer ansluta din Claude Pro nu. Klart?"
+- Om användaren sa Pro i 3b men inte hade det: detect via misslyckad connect senare, ge graceful fallback
 
-**Vad vi inte kan göra:** Ändra Anthropic/OpenAI:s plan-modell.
+**Vad vi inte kan göra:** Verifiera Pro-status programmatiskt (Anthropic-API:t exponerar inte detta).
 
-**Acceptabel tid:** Under 10 sekunder.
+**Acceptabel tid:** Under 5 sekunder.
 
-**Kommunikation:** *"Claude i webbläsare kräver Claude Pro (200 kr/månad) för anpassade anslutningar. Apple-appen Claude Pro kostar mer via App Store. Vill du fortsätta med Claude eller välja annan AI?"*
+**Kommunikation:** Snabb sanity-bekräftelse, inte plan-pitch (den händer i 3b).
 
-**Kategori:** C (kommunicera tydligt så friktionen inte upplevs som vår).
+**Kategori:** A.
 
 ---
 
@@ -251,31 +276,58 @@
 
 ## Friktionspunkt 12 — Hur token kommer in i AI-klienten
 
-**Steg i flödet:** Steg 11. Den mest komplicerade fasen.
+**Steg i flödet:** Steg 11. Den enda Kategori D-friktion i hela flödet och dess största sårbarhet för v1.
 
-**Vem äger den:** Selvra (presentation) + Anthropic/OpenAI (mottagar-side).
+**Vem äger den:** Anthropic/OpenAI (mottagar-side har inte deep-link-API ännu).
+
+**Verkligheten maj 2026 — ärlig:**
+
+iPhone-only-Pro-användare har **inget bra alternativ idag.** Claude iOS-appen har MCP-config begravd i Settings utan tydlig "lägg till anslutning"-väg som icke-tekniska användare hittar. Cross-device QR-flow är primärt fungerande läge tills Anthropic släpper deep-link-API.
+
+### Default-flöde — Cross-device (iPhone → Claude Desktop på Mac):
+- QR-kod visas på iPhone, skannas av Mac
+- Mac öppnar Claude Desktop med config-snippet ifyllt, en klick för att spara
+- Inte sömlöst, men robust och fungerar idag
+
+### Fallback — Same-device, web Claude:
+- Copy-config till klipp-buffert + öppna `claude.ai` i Safari
+- Klistra i Settings → MCP-servers
+- Acceptabelt men kräver Pro-prenumeration + att Settings-vägen kommunicerats tydligt
+
+### Vad vi inte kan göra
+- Skapa same-device-deep-link till Claude iOS (Anthropic-arbete, väntar)
+- Hjälpa iPhone-only-användare utan dator att nå Mac
+
+### Vad vi måste kommunicera i appen (Anna-test 2026-05-17)
+Innan QR-koden visas: *"Selvra kopplar bäst till Claude via din dator. Har du en Mac med Claude Desktop, eller använder du Claude i webbläsaren? Vi kan inte koppla direkt till Claude-appen på din iPhone än — Anthropic jobbar på det."*
+
+**Acceptabel tid:** Under 90 sekunder från QR-visning till bekräftelse (förhöjd från tidigare 60s — verkligheten är klumpigare).
+
+**Kategori:** D (kvarstår — vänta plattform-mognad. Vi planerar för dagens verklighet, bygger flexibelt för imorgon).
+
+---
+
+## Friktionspunkt 12b — iPhone-only-Pro-användaren (NY, identifierad i Anna-test)
+
+**Steg i flödet:** Edge case som måste hanteras explicit, inte gömmas.
+
+**Vem äger den:** Anthropic (saknar iOS-deep-link), Selvra (kommunikation).
+
+**Vem är denna användare:** Har Claude Pro på iPhone. Har ingen Mac. Förväntar sig same-device-flöde. Vi har inget för henne idag.
 
 **Vad vi kan göra:**
+- Tydligt erkänna luckan i steg 9 eller 3b: *"Just nu kan vi tyvärr inte koppla Selvra till Claude-appen på iPhone direkt — du behöver tillgång till en Mac eller dator. Vi bevakar Anthropic och meddelar dig när det fungerar på iPhone."*
+- Erbjuda email-notifiering när iOS-deep-link blir möjligt
+- Spara hennes Selvra-konto + HealthKit-data — när Anthropic lanserar deep-link kan hon slutföra anslutningen utan att börja om
+- Erbjuda ChatGPT som alternativ (om hon har Plus och ChatGPT iOS får MCP-config först)
 
-### A. Samma enhet (iPhone → Claude iOS):
-- Deep-link direkt till Claude-appen om/när det finns (Kategori D, väntar)
-- Tills dess: konfigurations-text i klipp-buffert + en-klick-knapp till Claude-appen
+**Vad vi inte kan göra:** Lova en tidsplan. Ge henne ett fungerande flöde idag.
 
-### B. Cross-device (iPhone → Claude Desktop på Mac):
-- QR-kod som visas på iPhone, skannas av Mac
-- Mac öppnar Claude Desktop med config-snippet ifyllt, en klick för att spara
-- Detta är inte sömlöst men det är bästa tillgängliga
+**Acceptabel tid:** Det är inte tids-fråga — det är upplevelse-fråga. Hon måste *känna* att vi är ärliga och att hon inte är glömd.
 
-### C. Web-baserat Claude/ChatGPT:
-- QR-kod alternativt copy-config med tydlig instruktion var den ska klistras
+**Kommunikation:** Ärlighet > marknadsföring. Detta är inte ett fel hon gör — det är en lucka i ekosystemet vi är öppna om.
 
-**Vad vi inte kan göra:** Native deep-link API som inte finns ännu (Kategori D).
-
-**Acceptabel tid:** Under 60 sekunder från QR-visning till bekräftelse.
-
-**Kommunikation:** Tydlig step-by-step. *"Skanna QR-koden med din Mac. Claude Desktop öppnas. Klicka 'Spara anslutning'."*
-
-**Kategori:** D (väntar plattform-mognad) + A (vår presentation).
+**Kategori:** C/D.
 
 ---
 
@@ -361,16 +413,24 @@
 
 ---
 
-## Sammanfattning per kategori
+## Sammanfattning per kategori (uppdaterad 2026-05-17 efter Anna-test)
 
 | Kategori | Antal friktionspunkter | Vad detta säger oss |
 |---|---|---|
-| **A** (vi äger, måste elimineras) | 9 | Vår huvudsakliga arbetsbörda |
+| **A** (vi äger, måste elimineras) | 10 | Vår huvudsakliga arbetsbörda |
 | **B** (vi äger delvis, mildrar) | 4 | Vi måste optimera vår förberedelse |
-| **C** (AI-leverantörer äger) | 2 | Kommunikation är försvar |
-| **D** (ekosystem äger, kommer mogna) | 1 | Designa flexibelt för plattform-uppdateringar |
+| **C** (AI-leverantörer äger) | 3 | Kommunikation är försvar |
+| **D** (ekosystem äger, kommer mogna) | 2 | Designa flexibelt för plattform-uppdateringar |
 
-**Total uppskattad tid genom flödet med våra åtgärder optimerade:** 2:30–4:00 minuter.
+**Total uppskattad tid genom flödet:**
+- För Mac-användare med Pro: 2:30–4:00 min
+- För iPhone-only Pro-användare: **kan inte slutföras idag** — vi kommunicerar tydligt att Mac krävs (12b)
+- För Pro-mindre användare: 3b stoppar dem tidigt med uppgradera/skip-val
+
+**Lärdom från Anna-test (T1D-mamma, iPhone-only Pro, 2026-05-17):**
+- Vi hade `Claude iOS Pro = smidigast på samma enhet` som antagande i FRICTION_MINIMIZATION_PRINCIPLE §6. Det är inte sant idag — `Claude iOS` har MCP-config begravd i Settings som icke-tekniska användare inte hittar
+- Vi hade plan-fråga (gammal punkt 10) i mitten av flödet, vilket är dödsstöt om uppgradering krävs där. Flyttad till 3b
+- iPhone-only-Pro-användare var dolda i kartan. Synliggjorda i 12b
 
 ---
 
