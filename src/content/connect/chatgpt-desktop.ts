@@ -1,10 +1,16 @@
 /**
- * ChatGPT — OpenAIs klient. MCP-stöd via Custom Connectors. Beta i maj 2026,
- * mest moget på desktop, mer brokigt på mobile-appen.
+ * ChatGPT — OpenAIs klient. MCP-stöd via Custom Connectors (renamed
+ * "apps" 2025-12-17, men docs + UI använder båda termerna).
  *
  * Tekniskt ID är fortfarande 'chatgpt-desktop' (låst i protocol UUID5
  * pre-computed mapping). Display-namn är "ChatGPT" eftersom samma
  * grants/token gäller desktop, mobile-app och chatgpt.com webb.
+ *
+ * 2026-05-17 update: ChatGPT stödjer OAuth-DCR via Developer Mode-
+ * aktiverade Custom Connectors. Användaren behöver bara aktivera
+ * Developer Mode (engångsklick), klistra in MCP-URL, och ChatGPT
+ * sköter OAuth-handshake automatiskt mot vår /oauth/-stack.
+ * INGEN token-kopiering, INGEN JSON-config.
  */
 
 import type { ConnectClientContent } from './types'
@@ -17,34 +23,37 @@ export const chatgptContent: ConnectClientContent = {
   sourceAiId: 'd4ad7c9f-b441-55dc-ade3-b641e6151067',
   configFormat: 'chatgpt-text',
   desktop: {
-    planRequirement: 'ChatGPT Plus, Pro, Team eller Enterprise (inte gratis-planen).',
-    configPaths: null,
+    planRequirement:
+      'ChatGPT Plus, Pro, Team, Enterprise eller Edu (inte gratis-planen). Free-tier stöder inte Custom Connectors.',
+    oauthDcrSupported: true,
     instructionSteps: [
-      'Öppna ChatGPT Desktop → Settings → Connectors / Custom MCP servers.',
-      'Add Custom Connector.',
-      `URL: https://mcp.selvra.ai/mcp`,
-      'Authorization: Bearer-token (klistra in token från denna sida).',
-      'Spara. Connector aktiveras vid nästa konversation.',
+      'Öppna ChatGPT (web eller desktop). Klicka din profilbild → Settings.',
+      'Connectors → klicka "Advanced" längst ner → toggla på "Developer mode".',
+      'Tillbaka till Connectors → klicka "Add custom connector".',
+      'Klistra in URL:en ovan. Authentication: välj OAuth (inte token).',
+      'Klicka Add. ChatGPT redirectar dig till Selvra för att godkänna.',
+      'Klart. Återkalla när som helst i /connections här.',
     ],
-    docsLink: 'https://platform.openai.com/docs/mcp',
-    betaStatus:
-      'ChatGPT-stöd för MCP är beta i maj 2026. Read-anrop fungerar pålitligt. Avancerade tool-anrop kan misslyckas.',
+    docsLink: 'https://developers.openai.com/api/docs/mcp',
+    notes:
+      'Developer Mode aktiveras engångsvis per ChatGPT-konto. Efter det syns "Add custom connector"-knappen permanent under Connectors.',
   },
   mobile: {
     supported: true,
     platforms: ['ios', 'android'],
-    planRequirement: 'ChatGPT Plus, Pro, Team eller Enterprise (inte gratis-planen).',
+    planRequirement:
+      'ChatGPT Plus, Pro, Team, Enterprise eller Edu (inte gratis-planen).',
+    oauthDcrSupported: true,
     instructionSteps: [
       'Öppna ChatGPT-appen på telefonen.',
-      'Settings → Connectors → Add custom connector.',
-      'URL: https://mcp.selvra.ai/mcp',
-      'Authorization: Bearer-token (klistra in token från denna sida).',
-      'Spara och starta nytt samtal.',
+      'Settings → Connectors → "Advanced" → toggla på "Developer mode" (engångsvis).',
+      'Tillbaka till Connectors → "Add custom connector".',
+      'Klistra in URL:en ovan. Authentication: OAuth.',
+      'Klicka Add. Du redirectas till Selvra för att godkänna.',
+      'Klart. Återkalla när som helst i /connections här.',
     ],
-    docsLink: 'https://platform.openai.com/docs/mcp',
-    betaStatus:
-      'MCP-stödet i ChatGPT mobile är beta i maj 2026. Read-anrop (query_representation, snapshot) fungerar pålitligt. Avancerade tool-anrop kan misslyckas — du kan rapportera problem via audit-loggen i /connections.',
+    docsLink: 'https://developers.openai.com/api/docs/mcp',
     notes:
-      'Token måste kopieras från denna sida till telefonen. Enklast: öppna selvra-app i telefonens webbläsare och kopiera token där.',
+      'Developer Mode aktiveras engångsvis per ChatGPT-konto och syns på alla enheter (desktop/web/mobile).',
   },
 }
