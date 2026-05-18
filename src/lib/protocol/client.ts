@@ -632,3 +632,73 @@ export async function getLatestReflection(
   }
   return (await res.json()) as LatestReflection
 }
+
+/* ─── Communication preferences (v0.2.5) ─────────────────────────── */
+
+export type CommunicationPreference = {
+  id: string
+  raw_utterance: string
+  category: string | null
+  active: boolean
+  created_at: string | null
+  updated_at: string | null
+  attribution: string
+}
+
+export type CommunicationPreferencesResponse = {
+  preferences: CommunicationPreference[]
+  last_modified: string | null
+  constitutional_note: string
+}
+
+export async function listCommunicationPreferences(opts?: {
+  category?: string
+  includeInactive?: boolean
+}): Promise<CommunicationPreferencesResponse> {
+  const ctx = await getRequestContext()
+  const params = new URLSearchParams()
+  if (opts?.category) params.set('category', opts.category)
+  if (opts?.includeInactive) params.set('include_inactive', 'true')
+  const qs = params.toString() ? `?${params.toString()}` : ''
+  return call<CommunicationPreferencesResponse>(
+    ctx,
+    `/v1/subjects/${ctx.subjectId}/communication-preferences${qs}`,
+    {
+      method: 'GET',
+      scopes: ['read'],
+    },
+  )
+}
+
+export async function writeCommunicationPreference(params: {
+  rawUtterance: string
+  category?: string | null
+}): Promise<CommunicationPreference & { status: string }> {
+  const ctx = await getRequestContext()
+  return call(
+    ctx,
+    `/v1/subjects/${ctx.subjectId}/communication-preferences`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        raw_utterance: params.rawUtterance,
+        category: params.category ?? null,
+      }),
+      scopes: ['write'],
+    },
+  )
+}
+
+export async function disableCommunicationPreference(
+  preferenceId: string,
+): Promise<CommunicationPreference & { status: string }> {
+  const ctx = await getRequestContext()
+  return call(
+    ctx,
+    `/v1/subjects/${ctx.subjectId}/communication-preferences/${preferenceId}`,
+    {
+      method: 'DELETE',
+      scopes: ['write'],
+    },
+  )
+}
